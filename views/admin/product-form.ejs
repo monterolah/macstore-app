@@ -1,0 +1,729 @@
+<%- include('../partials/admin-layout', {pageTitle:product?'Editar producto':'Nuevo producto', activePage:'products'}) %>
+<a href="/admin/productos" class="adm-back">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+  Productos
+</a>
+<div class="adm-ph">
+  <div><h1><%=product?'Editar: '+product.name:'Nuevo producto'%></h1></div>
+  <div class="adm-ph-r">
+    <a href="/admin/productos" class="adm-btn-s">Cancelar</a>
+    <button id="saveBtn" class="adm-btn-p" onclick="saveProduct()">Guardar producto</button>
+  </div>
+</div>
+
+<div class="adm-form-layout">
+  <!-- COLUMNA IZQUIERDA -->
+  <div>
+
+    <!-- INFO -->
+    <div class="adm-fc">
+      <div class="adm-fct">Información</div>
+      <div class="adm-f"><label>Nombre *</label><input type="text" id="fName" value="<%=product&&product.name||''%>" placeholder='ej: iPhone 16 Pro'></div>
+      <div class="adm-f-row">
+        <div class="adm-f"><label>Categoría</label>
+          <select id="fCat">
+            <% categories.forEach(c=>{ %><option value="<%=c.slug%>" <%=product&&product.category==c.slug?'selected':''%>><%=c.name%></option><% }) %>
+          </select>
+        </div>
+        <div class="adm-f"><label>Badge</label><input type="text" id="fBadge" value="<%=product&&product.badge||''%>" placeholder="Nuevo, Más vendido…"></div>
+      </div>
+      <div class="adm-f"><label>Descripción</label><textarea id="fDesc" placeholder="Descripción breve…"><%=product&&product.description||''%></textarea></div>
+    </div>
+
+    <!-- PRECIO -->
+    <div class="adm-fc">
+      <div class="adm-fct">Precio y stock</div>
+      <div class="adm-f-row">
+        <div class="adm-f"><label>Precio base (USD) *</label><input type="number" id="fPrice" step="0.01" value="<%=product?product.price:''%>" placeholder="999.00" oninput="calcCuotas(this.value)"></div>
+        <div class="adm-f"><label>Precio original (tachado)</label><input type="number" id="fOrig" step="0.01" value="<%=product&&product.original_price||''%>" placeholder="Opcional"></div>
+      </div>
+      <!-- CUOTAS AUTO -->
+      <div id="cuotasPreview" style="background:#f5f5f7;border-radius:10px;padding:12px;display:<%=product&&product.price?'grid':'none'%>;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+        <div style="background:#fff;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#86868b;margin-bottom:2px">6 cuotas sin intereses</div>
+          <div style="font-size:18px;font-weight:700" id="admCuota6"><%=product?'$'+(product.price/6).toFixed(2):''%></div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#86868b;margin-bottom:2px">10 cuotas sin intereses</div>
+          <div style="font-size:18px;font-weight:700" id="admCuota10"><%=product?'$'+(product.price/10).toFixed(2):''%></div>
+        </div>
+      </div>
+      <div class="adm-f-row" style="margin-top:12px">
+        <div class="adm-f"><label>Stock</label><input type="number" id="fStock" value="<%=product?product.stock:0%>"></div>
+        <div class="adm-f"><label>Orden en catálogo</label><input type="number" id="fOrder" value="<%=product?product.sort_order:0%>"></div>
+      </div>
+    </div>
+
+    <!-- CAPACIDADES -->
+    <div class="adm-fc">
+      <div class="adm-fct">Capacidades / Almacenamiento</div>
+      <p style="font-size:13px;color:#86868b;margin-bottom:14px">Opciones de capacidad disponibles para este producto. Cada una puede tener precio y stock diferente.</p>
+      <div style="background:#f0f8ff;border:1.5px solid #b8d9f5;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#0071e3">
+        💡 Si un color <strong>no tiene</strong> todas las capacidades, se gestiona desde la sección de Colores.
+      </div>
+      <div id="variantList">
+        <% const variants = product&&product.variants ? (Array.isArray(product.variants)?product.variants:JSON.parse(product.variants||'[]')) : []; %>
+        <% variants.forEach((v,i)=>{ %>
+        <div class="variant-row">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 28px;gap:8px;align-items:center;margin-bottom:8px;padding:10px 12px;background:#f5f5f7;border-radius:10px">
+            <div>
+              <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Capacidad</label>
+              <input class="si variant-label" value="<%=v.label||''%>" placeholder="ej: 128 GB, 256 GB, 1 TB">
+            </div>
+            <div>
+              <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Precio $</label>
+              <input class="si variant-price" type="number" step="0.01" value="<%=v.price||''%>" placeholder="0.00" oninput="updateInstallments()">
+            </div>
+            <div>
+              <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Stock</label>
+              <input class="si variant-stock" type="number" value="<%=v.stock||0%>" placeholder="0">
+            </div>
+            <button type="button" class="sdel" onclick="this.closest('.variant-row').remove()" style="margin-top:14px">×</button>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <button type="button" class="adm-btn-s" style="font-size:13px" onclick="addVariant()">+ Agregar capacidad</button>
+      <p style="font-size:11px;color:#86868b;margin-top:8px">Si no hay capacidades, el precio base aplica para todos los colores.</p>
+    </div>
+
+    <!-- COLORES -->
+    <div class="adm-fc">
+      <div class="adm-fct">Colores disponibles</div>
+      <p style="font-size:13px;color:#86868b;margin-bottom:14px">Cada color tiene su propia imagen y burbuja. Si un color no tiene cierta capacidad, activa/desactiva las que aplican.</p>
+      <div id="colorList">
+        <% const colors = product&&product.color_variants ? (Array.isArray(product.color_variants)?product.color_variants:JSON.parse(product.color_variants||'[]')) : []; %>
+        <% const allVariants = product&&product.variants ? (Array.isArray(product.variants)?product.variants:JSON.parse(product.variants||'[]')) : []; %>
+        <% colors.forEach((c,i)=>{ %>
+        <div class="color-variant-row" style="background:#f9f9f9;border:1px solid #e8e8ed;border-radius:12px;padding:14px;margin-bottom:12px">
+          <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+            <!-- Swatch -->
+            <div>
+              <label style="font-size:10px;color:#86868b;display:block;margin-bottom:4px">Burbuja</label>
+              <div class="color-swatch-preview" onclick="this.nextElementSibling.click()" title="Clic para cambiar burbuja" style="cursor:pointer">
+                <% if(c.swatch_url){ %>
+                  <img src="<%=c.swatch_url%>" class="color-thumb-img" alt="<%=c.name%>">
+                <% } else { %>
+                  <span style="font-size:18px;color:#86868b">+</span>
+                <% } %>
+              </div>
+              <input type="file" accept="image/*" style="display:none" onchange="uploadSwatchImg(this)">
+              <input type="hidden" class="color-swatch-url" value="<%=c.swatch_url||''%>">
+            </div>
+            <!-- Nombre y datos -->
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+              <div>
+                <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Nombre del color *</label>
+                <input class="si color-name" value="<%=c.name||''%>" placeholder="ej: Azul Titanio">
+              <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:#515154"><input type="checkbox" class="color-enabled" style="accent-color:#1d1d1f;width:14px;height:14px" <%=c.enabled===false?'':'checked'%>> Color activo</label>
+              </div>
+              <div>
+                <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Imagen del producto en este color</label>
+                <div style="display:flex;gap:6px">
+                  <input type="file" accept="image/*" class="color-prod-file" onchange="uploadProdImg(this)" style="font-size:11px;flex:1">
+                </div>
+                <input class="si color-img-url" value="<%=c.image_url||''%>" placeholder="O pega la URL directa de la imagen" style="margin-top:5px" oninput="updateColorImgPreview(this.closest('.color-variant-row'),this.value)">
+              </div>
+            </div>
+            <button type="button" class="sdel" onclick="this.closest('.color-variant-row').remove()" style="flex-shrink:0">×</button>
+          </div>
+
+          <div class="color-img-preview-box" style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:8px;padding:8px;border:1px solid #e8e8ed;margin-bottom:10px">
+            <img src="<%=c.image_url||''%>" style="width:56px;height:56px;object-fit:<%=c.img_fit||'contain'%>;object-position:<%=c.img_pos||'center'%>;transform:scale(<%=c.img_scale||1%>);transform-origin:center center;border-radius:6px;background:#f5f5f7;flex-shrink:0" onerror="this.style.display='none'">
+            <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div>
+                <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Encuadre</label>
+                <select class="si color-fit" style="font-size:12px;padding:4px 8px;width:100%" onchange="updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')">
+                  <option value="contain" <%=c.img_fit==='contain'||!c.img_fit?'selected':''%>>Completa</option>
+                  <option value="cover" <%=c.img_fit==='cover'?'selected':''%>>Llenar</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Posición</label>
+                <select class="si color-pos" style="font-size:12px;padding:4px 8px;width:100%" onchange="updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')">
+                  <option value="center" <%=!c.img_pos||c.img_pos==='center'?'selected':''%>>Centro</option>
+                  <option value="top" <%=c.img_pos==='top'?'selected':''%>>Arriba</option>
+                  <option value="bottom" <%=c.img_pos==='bottom'?'selected':''%>>Abajo</option>
+                  <option value="left" <%=c.img_pos==='left'?'selected':''%>>Izquierda</option>
+                  <option value="right" <%=c.img_pos==='right'?'selected':''%>>Derecha</option>
+                </select>
+              </div>
+              <div style="grid-column:1 / -1">
+                <label style="font-size:10px;color:#86868b;display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                  <span>Tamaño</span>
+                  <span class="color-scale-val" style="font-weight:700;color:#1d1d1f"><%= c.img_scale ? Math.round(c.img_scale*100) : 100 %>%</span>
+                </label>
+                <input class="color-scale" type="range" min="50" max="150" step="5" value="<%= c.img_scale ? Math.round(c.img_scale*100) : 100 %>" style="width:100%;accent-color:#1d1d1f" oninput="this.closest('.color-variant-row').querySelector('.color-scale-val').textContent=this.value+'%';updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')">
+              </div>
+            </div>
+          </div>
+
+          <% if(allVariants.length){ %>
+          <div style="background:#fff;border-radius:8px;padding:8px 10px;border:1px solid #e8e8ed">
+            <label style="font-size:10px;color:#86868b;font-weight:600;display:block;margin-bottom:6px">CAPACIDADES DISPONIBLES EN ESTE COLOR</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <% const colorCaps = Array.isArray(c.available_caps) ? c.available_caps : allVariants.map(v=>v.label); %>
+              <% allVariants.forEach(v=>{ %>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f5f5f7;padding:4px 10px;border-radius:6px">
+                <input type="checkbox" class="color-cap-check" value="<%=v.label%>"
+                  <%=colorCaps.includes(v.label)?'checked':''%>
+                  style="accent-color:#1d1d1f;width:13px;height:13px">
+                <%=v.label%>
+              </label>
+              <% }) %>
+            </div>
+          </div>
+          <% } %>
+        </div>
+        <% }) %>
+      </div>
+      <button type="button" class="adm-btn-s" style="font-size:13px;margin-top:4px" onclick="addColor()">+ Agregar color</button>
+    </div>
+
+    <!-- SPECS -->
+    <div class="adm-fc">
+      <div class="adm-fct">Especificaciones técnicas</div>
+      <p style="font-size:13px;color:#86868b;margin-bottom:10px">Se muestran en la página del producto y en cotizaciones.</p>
+      <div id="specList">
+        <% const sk=Object.keys(product&&product.specs?product.specs:{}); sk.forEach(k=>{ %>
+        <div class="spec-r">
+          <input class="si spec-key" value="<%=k%>" placeholder="Característica">
+          <input class="si spec-val" value="<%=product.specs[k]%>" placeholder="Valor">
+          <button type="button" class="sdel" onclick="this.closest('.spec-r').remove()">×</button>
+        </div>
+        <% }) %>
+      </div>
+      <button type="button" class="add-s-btn" onclick="addSpec()">+ Agregar especificación</button>
+    </div>
+
+    <!-- FICHA TÉCNICA -->
+    <div class="adm-fc">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="adm-fct" style="margin:0">Ficha técnica</div>
+        <div style="display:flex;gap:8px">
+          <button type="button" onclick="autoFillFicha()" class="adm-btn-s" style="font-size:12px;padding:4px 12px">⚡ Auto-completar</button>
+          <button type="button" onclick="toggleFicha()" id="fichaToggleBtn" class="adm-btn-s" style="font-size:12px;padding:4px 12px"><%=product&&product.ficha?'Ocultar ficha':'+ Agregar ficha'%></button>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#86868b;margin-bottom:10px">Para cotizaciones PDF. Auto-completar toma colores y capacidades automáticamente.</p>
+      <div id="fichaSection" style="display:<%=product&&product.ficha?'block':'none'%>">
+        <% const fichaData = product&&product.ficha ? (typeof product.ficha==='string'?JSON.parse(product.ficha||'{}'):product.ficha) : {}; %>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="adm-f" style="margin:0"><label>Modelo / SKU</label><input id="fch_modelo" class="si" value="<%=fichaData.modelo||''%>" placeholder="ej: iPhone 17 Pro Max"></div>
+          <div class="adm-f" style="margin:0"><label>Marca</label><input id="fch_marca" class="si" value="<%=fichaData.marca||'Apple'%>" placeholder="Apple"></div>
+          <div class="adm-f" style="margin:0">
+            <label style="display:flex;justify-content:space-between">Capacidad <span style="font-size:10px;color:#0071e3;cursor:pointer" onclick="autoFillCapacidad()">↻ desde capacidades</span></label>
+            <input id="fch_capacidad" class="si" value="<%=fichaData.capacidad||''%>" placeholder="ej: 256 GB / 512 GB">
+          </div>
+          <div class="adm-f" style="margin:0">
+            <label style="display:flex;justify-content:space-between">Color(es) <span style="font-size:10px;color:#0071e3;cursor:pointer" onclick="autoFillColores()">↻ desde colores</span></label>
+            <input id="fch_colores" class="si" value="<%=fichaData.colores||''%>" placeholder="ej: Negro, Blanco">
+          </div>
+          <div class="adm-f" style="margin:0"><label>Pantalla</label><input id="fch_pantalla" class="si" value="<%=fichaData.pantalla||''%>" placeholder='ej: 6.3" OLED'></div>
+          <div class="adm-f" style="margin:0"><label>Chip</label><input id="fch_chip" class="si" value="<%=fichaData.chip||''%>" placeholder="ej: Apple A18 Pro"></div>
+          <div class="adm-f" style="margin:0"><label>RAM</label><input id="fch_ram" class="si" value="<%=fichaData.ram||''%>" placeholder="ej: 8 GB"></div>
+          <div class="adm-f" style="margin:0"><label>Cámara principal</label><input id="fch_camara" class="si" value="<%=fichaData.camara||''%>" placeholder="ej: 48MP"></div>
+          <div class="adm-f" style="margin:0"><label>Cámara frontal</label><input id="fch_frontal" class="si" value="<%=fichaData.frontal||''%>" placeholder="ej: 12MP"></div>
+          <div class="adm-f" style="margin:0"><label>Batería</label><input id="fch_bateria" class="si" value="<%=fichaData.bateria||''%>" placeholder="ej: Hasta 27h video"></div>
+          <div class="adm-f" style="margin:0"><label>Sistema operativo</label><input id="fch_so" class="si" value="<%=fichaData.so||''%>" placeholder="ej: iOS 18"></div>
+          <div class="adm-f" style="margin:0"><label>Conectividad</label><input id="fch_conect" class="si" value="<%=fichaData.conect||''%>" placeholder="ej: 5G, WiFi 7"></div>
+          <div class="adm-f" style="margin:0"><label>Dimensiones</label><input id="fch_dim" class="si" value="<%=fichaData.dim||''%>" placeholder="ej: 163 x 77.6 x 8.25 mm"></div>
+          <div class="adm-f" style="margin:0"><label>Peso</label><input id="fch_peso" class="si" value="<%=fichaData.peso||''%>" placeholder="ej: 227g"></div>
+          <div class="adm-f" style="margin:0"><label>Resistencia</label><input id="fch_resist" class="si" value="<%=fichaData.resist||''%>" placeholder="ej: IP68"></div>
+          <div class="adm-f" style="margin:0"><label>Garantía</label><input id="fch_garantia" class="si" value="<%=fichaData.garantia||'1 año garantía Apple'%>" placeholder="ej: 1 año"></div>
+        </div>
+        <div class="adm-f"><label>Contenido de la caja</label><input id="fch_caja" class="si" value="<%=fichaData.caja||''%>" placeholder="ej: iPhone, Cable USB-C"></div>
+        <div class="adm-f"><label>Notas adicionales</label><textarea id="fch_notas" class="si" style="min-height:60px;resize:vertical"><%=fichaData.notas||''%></textarea></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:4px">
+          <button type="button" onclick="clearFicha()" style="font-size:12px;color:#c0392b;background:none;border:none;cursor:pointer;font-family:inherit">Eliminar ficha</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGOS -->
+    <div class="adm-fc">
+      <div class="adm-fct">Logos y certificaciones</div>
+      <p style="font-size:13px;color:#86868b;margin-bottom:14px">Logos de pago, Apple Intelligence, garantías, etc.</p>
+      <div id="logoList">
+        <% const logos = product&&product.logos ? (Array.isArray(product.logos)?product.logos:JSON.parse(product.logos||'[]')) : []; %>
+        <% logos.forEach(l=>{ %>
+        <div class="logo-row-item" style="display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;margin-bottom:10px;padding:10px;background:#f5f5f7;border-radius:10px">
+          <div style="width:52px;height:52px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #e8e8ed">
+            <% if(l.image_url){ %><img src="<%=l.image_url%>" style="max-width:46px;max-height:46px;object-fit:contain" onerror="this.style.display='none'"><% } else { %><span style="font-size:18px">🏷</span><% } %>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <input class="si logo-label" value="<%=l.label||''%>" placeholder="Etiqueta (ej: Apple Intelligence)">
+            <input class="si logo-img-url" value="<%=l.image_url||''%>" placeholder="URL del logo" oninput="updateLogoPreview(this)">
+            <input class="si logo-link" value="<%=l.link||''%>" placeholder="URL al hacer clic (opcional)">
+          </div>
+          <button type="button" class="sdel" onclick="this.closest('.logo-row-item').remove()">×</button>
+        </div>
+        <% }) %>
+      </div>
+      <button type="button" class="adm-btn-s" style="font-size:13px" onclick="addLogo()">+ Agregar logo</button>
+    </div>
+
+  </div>
+
+  <!-- COLUMNA DERECHA -->
+  <div>
+    <!-- IMAGEN PRINCIPAL -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Imagen principal</div>
+      <div id="mainImgPreview" style="margin-bottom:12px;overflow:hidden;border-radius:10px;background:#f5f5f7;aspect-ratio:1;max-height:220px;display:flex;align-items:center;justify-content:center">
+        <% if(product&&product.image_url){ %>
+        <img id="mainImgThumb" src="<%=product.image_url%>"
+          style="width:100%;height:100%;object-fit:<%=product.img_fit||'contain'%>;object-position:<%=product.img_pos||'center'%>;transform:scale(<%=product.img_scale||1%>);transform-origin:center center;transition:transform .2s">
+        <% } else { %>
+        <span style="color:#86868b;font-size:13px">Sin imagen</span>
+        <% } %>
+      </div>
+      <div class="adm-f"><label>Subir desde archivo</label><input type="file" id="imgFile" accept="image/*" onchange="prevMainImg(this)"></div>
+      <div class="adm-f"><label>O URL externa</label><input type="text" id="fImgUrl" value="<%=product&&product.image_url||''%>" placeholder="https://…" oninput="prevMainImgUrl(this.value)"></div>
+      <div style="background:#f5f5f7;border-radius:10px;padding:12px;margin-top:6px">
+        <div style="font-size:12px;font-weight:600;color:#515154;margin-bottom:8px">Ajuste de imagen</div>
+        <div class="adm-f-row">
+          <div class="adm-f"><label>Encuadre</label>
+            <select id="fImgFit" onchange="applyMainImgStyle()">
+              <option value="contain" <%=!product||!product.img_fit||product.img_fit==='contain'?'selected':''%>>Completa (recomendado)</option>
+              <option value="cover" <%=product&&product.img_fit==='cover'?'selected':''%>>Llenar espacio</option>
+            </select>
+          </div>
+          <div class="adm-f"><label>Posición</label>
+            <select id="fImgPos" onchange="applyMainImgStyle()">
+              <option value="center" <%=!product||!product.img_pos||product.img_pos==='center'?'selected':''%>>Centro</option>
+              <option value="top" <%=product&&product.img_pos==='top'?'selected':''%>>Arriba</option>
+              <option value="bottom" <%=product&&product.img_pos==='bottom'?'selected':''%>>Abajo</option>
+              <option value="left" <%=product&&product.img_pos==='left'?'selected':''%>>Izquierda</option>
+              <option value="right" <%=product&&product.img_pos==='right'?'selected':''%>>Derecha</option>
+            </select>
+          </div>
+        </div>
+        <div class="adm-f" style="margin-top:8px">
+          <label>Tamaño — <span id="imgScaleVal" style="font-weight:700;color:#1d1d1f"><%= product&&product.img_scale ? Math.round(product.img_scale*100) : 100 %>%</span></label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:#86868b">50%</span>
+            <input type="range" id="fImgScale" min="50" max="150" step="5" value="<%= product&&product.img_scale ? Math.round(product.img_scale*100) : 100 %>"
+              oninput="document.getElementById('imgScaleVal').textContent=this.value+'%';applyMainImgStyle()"
+              style="flex:1;accent-color:#1d1d1f;height:4px">
+            <span style="font-size:11px;color:#86868b">150%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPCIONES -->
+    <div class="adm-fc">
+      <div class="adm-fct">Opciones</div>
+      <div class="tog-r">
+        <span>Producto destacado <span style="font-size:11px;color:#86868b">(aparece en home)</span></span>
+        <label class="tog"><input type="checkbox" id="fFeatured" <%=product&&product.featured?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label>
+      </div>
+      <div class="tog-r">
+        <span>Visible en tienda</span>
+        <label class="tog"><input type="checkbox" id="fActive" <%=!product||product.active!==false?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.color-variant-row{display:block;margin-bottom:12px;background:#f9f9f9;border:1px solid #e8e8ed;border-radius:12px;padding:14px}
+.color-swatch-preview{width:52px;height:52px;border-radius:50%;overflow:hidden;background:#e8e8ed;border:2.5px solid #d2d2d7;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .2s}
+.color-swatch-preview:hover{border-color:#1d1d1f}
+.color-thumb-img{width:100%;height:100%;object-fit:cover}
+.tog-r{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #f0f0f2}
+.tog-r:last-child{border-bottom:none;padding-bottom:0}
+.tog-r span{font-size:14px}
+</style>
+
+</div></div>
+<script>
+const TOKEN = '<%=token%>';
+const PRODUCT_ID = '<%=product?product.id:""-%>';
+
+function calcCuotas(val){
+  const p = parseFloat(val);
+  const prev = document.getElementById('cuotasPreview');
+  if(!p||isNaN(p)){prev.style.display='none';return;}
+  prev.style.display='grid';
+  document.getElementById('admCuota6').textContent  = '$'+(p/6).toFixed(2);
+  document.getElementById('admCuota10').textContent = '$'+(p/10).toFixed(2);
+}
+
+function toggleFicha(){
+  const s=document.getElementById('fichaSection');
+  const b=document.getElementById('fichaToggleBtn');
+  const visible=s.style.display!=='none';
+  s.style.display=visible?'none':'block';
+  b.textContent=visible?'+ Agregar ficha':'Ocultar ficha';
+  if(!visible) document.getElementById('fch_modelo').focus();
+}
+function clearFicha(){
+  ['modelo','marca','capacidad','colores','pantalla','chip','ram','camara','frontal','bateria','so','conect','dim','peso','resist','garantia','caja','notas']
+    .forEach(k=>{ const el=document.getElementById('fch_'+k); if(el) el.value=''; });
+  document.getElementById('fichaSection').style.display='none';
+  document.getElementById('fichaToggleBtn').textContent='+ Agregar ficha';
+}
+
+function autoFillColores(){
+  const colors = [...document.querySelectorAll('.color-variant-row .color-name')].map(i=>i.value.trim()).filter(Boolean);
+  if(!colors.length){ alert('No hay colores cargados en el producto'); return; }
+  document.getElementById('fch_colores').value = colors.join(', ');
+}
+
+function autoFillCapacidad(){
+  const variants = [...document.querySelectorAll('.variant-row .variant-label')].map(i=>i.value.trim()).filter(Boolean);
+  if(!variants.length){ alert('No hay variantes de almacenamiento cargadas'); return; }
+  document.getElementById('fch_capacidad').value = variants.join(' / ');
+}
+
+function autoFillFicha(){
+  // Abrir sección si está cerrada
+  const s=document.getElementById('fichaSection');
+  if(s.style.display==='none'){ s.style.display='block'; document.getElementById('fichaToggleBtn').textContent='Ocultar ficha'; }
+  // Auto-fill colores y capacidades
+  const colors = [...document.querySelectorAll('.color-variant-row .color-name')].map(i=>i.value.trim()).filter(Boolean);
+  const variants = [...document.querySelectorAll('.variant-row .variant-label')].map(i=>i.value.trim()).filter(Boolean);
+  if(colors.length && !document.getElementById('fch_colores').value) document.getElementById('fch_colores').value = colors.join(', ');
+  if(variants.length && !document.getElementById('fch_capacidad').value) document.getElementById('fch_capacidad').value = variants.join(' / ');
+  // Auto-fill nombre del producto como modelo si está vacío
+  if(!document.getElementById('fch_modelo').value){ const n=document.getElementById('fName')?.value.trim(); if(n) document.getElementById('fch_modelo').value=n; }
+  // Auto-fill marca si está vacía
+  if(!document.getElementById('fch_marca').value) document.getElementById('fch_marca').value='Apple';
+  // Auto-fill garantía si está vacía
+  if(!document.getElementById('fch_garantia').value) document.getElementById('fch_garantia').value='1 año garantía Apple';
+  // Auto-fill specs conocidos
+  const specKeys = [...document.querySelectorAll('.spec-key')].map(i=>i.value.trim().toLowerCase());
+  const specVals = [...document.querySelectorAll('.spec-val')].map(i=>i.value.trim());
+  specKeys.forEach((k,i)=>{
+    if(!specVals[i]) return;
+    if((k.includes('chip')||k.includes('proces'))&&!document.getElementById('fch_chip').value) document.getElementById('fch_chip').value=specVals[i];
+    if(k.includes('pantalla')&&!document.getElementById('fch_pantalla').value) document.getElementById('fch_pantalla').value=specVals[i];
+    if(k.includes('ram')&&!document.getElementById('fch_ram').value) document.getElementById('fch_ram').value=specVals[i];
+    if(k.includes('cámara')||k.includes('camara')){}
+    if(k.includes('batería')||k.includes('bateria')){}
+  });
+  flash('Campos auto-completados ✓');
+}
+
+// ── VARIANTES ─────────────────────────────────────────────────────────────
+function addVariant(){
+  const list=document.getElementById('variantList');
+  const div=document.createElement('div');div.className='variant-row';
+  div.innerHTML=`<div style="display:grid;grid-template-columns:2fr 1fr 1fr 28px;gap:8px;align-items:center;margin-bottom:8px;padding:10px;background:#f5f5f7;border-radius:10px">
+    <input class="si variant-label" placeholder="ej: 256 GB">
+    <input class="si variant-price" type="number" step="0.01" placeholder="Precio">
+    <input class="si variant-stock" type="number" placeholder="Stock" value="0">
+    <button type="button" class="sdel" onclick="this.closest('.variant-row').remove()">×</button>
+  </div>`;
+  list.appendChild(div);div.querySelector('.si').focus();
+}
+
+// ── SPECS ─────────────────────────────────────────────────────────────────
+function addSpec(){
+  const c=document.getElementById('specList');
+  const r=document.createElement('div');r.className='spec-r';
+  r.innerHTML='<input class="si spec-key" placeholder="Característica"><input class="si spec-val" placeholder="Valor"><button type="button" class="sdel" onclick="this.closest(\'.spec-r\').remove()">×</button>';
+  c.appendChild(r);r.querySelector('.si').focus();
+}
+
+// ── LOGOS ─────────────────────────────────────────────────────────────────
+function addLogo(){
+  const list=document.getElementById('logoList');
+  const div=document.createElement('div');div.className='logo-row-item';
+  div.style.cssText='display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;margin-bottom:10px;padding:10px;background:#f5f5f7;border-radius:10px';
+  div.innerHTML=`
+    <div style="width:52px;height:52px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid #e8e8ed" id="logoPrev_new"><span style="font-size:18px">🏷</span></div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <input class="si logo-label" placeholder="Etiqueta">
+      <input class="si logo-img-url" placeholder="URL del logo" oninput="updateLogoPreview(this)">
+      <input class="si logo-link" placeholder="Link (opcional)">
+    </div>
+    <button type="button" class="sdel" onclick="this.closest('.logo-row-item').remove()">×</button>`;
+  list.appendChild(div);div.querySelector('.logo-label').focus();
+}
+function updateLogoPreview(input){
+  const prev=input.closest('.logo-row-item').querySelector('div[style*="52px"]');
+  const url=input.value.trim();
+  if(url) prev.innerHTML=`<img src="${url}" style="max-width:46px;max-height:46px;object-fit:contain" onerror="this.style.display='none'">`;
+  else prev.innerHTML='<span style="font-size:18px">🏷</span>';
+}
+
+// ── COLORES ───────────────────────────────────────────────────────────────
+function addColor(){
+  const list=document.getElementById('colorList');
+  const div=document.createElement('div');
+  div.className='color-variant-row';
+
+  // Get current variants for capacity checkboxes
+  const varLabels=[...document.querySelectorAll('.variant-label')].map(i=>i.value.trim()).filter(Boolean);
+  const capsHTML = varLabels.length ? `
+    <div style="background:#fff;border-radius:8px;padding:8px 10px;border:1px solid #e8e8ed;margin-top:10px">
+      <label style="font-size:10px;color:#86868b;font-weight:600;display:block;margin-bottom:6px">CAPACIDADES EN ESTE COLOR</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${varLabels.map(v=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f5f5f7;padding:4px 10px;border-radius:6px">
+          <input type="checkbox" class="color-cap-check" value="${v}" checked style="accent-color:#1d1d1f;width:13px;height:13px"> ${v}
+        </label>`).join('')}
+      </div>
+    </div>` : '';
+
+  div.innerHTML=`
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+      <div>
+        <label style="font-size:10px;color:#86868b;display:block;margin-bottom:4px">Burbuja</label>
+        <div class="color-swatch-preview" onclick="this.nextElementSibling.click()"><span style="font-size:18px;color:#86868b">+</span></div>
+        <input type="file" accept="image/*" style="display:none" onchange="uploadSwatchImg(this)">
+        <input type="hidden" class="color-swatch-url" value="">
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div>
+          <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Nombre del color *</label>
+          <input class="si color-name" placeholder="ej: Azul Titanio">
+                <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:#515154"><input type="checkbox" class="color-enabled" style="accent-color:#1d1d1f;width:14px;height:14px" checked> Color activo</label>
+        </div>
+        <div>
+          <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Imagen del producto en este color</label>
+          <input type="file" accept="image/*" class="color-prod-file" onchange="uploadProdImg(this)" style="font-size:11px;width:100%">
+          <input class="si color-img-url" placeholder="O pega URL de imagen" style="margin-top:5px" oninput="updateColorImgPreview(this.closest('.color-variant-row'),this.value)">
+        </div>
+        <div class="color-img-preview-box" style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:8px;padding:8px;border:1px solid #e8e8ed;margin-top:4px">
+          <img src="" style="width:56px;height:56px;border-radius:6px;background:#f5f5f7;flex-shrink:0;object-fit:contain;object-position:center;transform:scale(1);transform-origin:center center">
+          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div>
+              <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Encuadre</label>
+              <select class="si color-fit" style="font-size:12px;padding:4px 8px;width:100%" onchange="updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')"><option value="contain">Completa</option><option value="cover">Llenar</option></select>
+            </div>
+            <div>
+              <label style="font-size:10px;color:#86868b;display:block;margin-bottom:2px">Posición</label>
+              <select class="si color-pos" style="font-size:12px;padding:4px 8px;width:100%" onchange="updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')"><option value="center">Centro</option><option value="top">Arriba</option><option value="bottom">Abajo</option><option value="left">Izquierda</option><option value="right">Derecha</option></select>
+            </div>
+            <div style="grid-column:1 / -1">
+              <label style="font-size:10px;color:#86868b;display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><span>Tamaño</span><span class="color-scale-val" style="font-weight:700;color:#1d1d1f">100%</span></label>
+              <input class="color-scale" type="range" min="50" max="150" step="5" value="100" style="width:100%;accent-color:#1d1d1f" oninput="this.closest('.color-variant-row').querySelector('.color-scale-val').textContent=this.value+'%';updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')">
+            </div>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="sdel" onclick="this.closest('.color-variant-row').remove()">×</button>
+    </div>
+    ${capsHTML}`;
+  list.appendChild(div);
+  div.querySelector('.color-name').focus();
+}
+
+async function uploadSwatchImg(input){
+  if(!input.files||!input.files[0]) return;
+  const row=input.closest('.color-variant-row');
+  const preview=row.querySelector('.color-swatch-preview');
+  const reader=new FileReader();
+  reader.onload=e=>{
+    preview.innerHTML=`<img src="${e.target.result}" class="color-thumb-img">`;
+    row.querySelector('.color-swatch-url').value=e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+  const fd=new FormData();fd.append('image',input.files[0]);
+  const res=await fetch('/api/upload',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+  if(res.ok){const d=await res.json();row.querySelector('.color-swatch-url').value=d.url;preview.innerHTML=`<img src="${d.url}" class="color-thumb-img">`;}
+}
+
+async function uploadProdImg(input){
+  if(!input.files||!input.files[0]) return;
+  const row=input.closest('.color-variant-row');
+  const reader=new FileReader();
+  reader.onload=e=>{row.querySelector('.color-img-url').value=e.target.result;updateColorImgPreview(row,e.target.result);};
+  reader.readAsDataURL(input.files[0]);
+  const fd=new FormData();fd.append('image',input.files[0]);
+  const res=await fetch('/api/upload',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+  if(res.ok){const d=await res.json();row.querySelector('.color-img-url').value=d.url;updateColorImgPreview(row,d.url);}
+}
+
+function updateColorImgPreview(row,url){
+  const fit=row.querySelector('.color-fit')?.value||'contain';
+  const pos=row.querySelector('.color-pos')?.value||'center';
+  const scale=(parseInt(row.querySelector('.color-scale')?.value)||100)/100;
+  let box=row.querySelector('.color-img-preview-box');
+  if(!box){
+    box=document.createElement('div');box.className='color-img-preview-box';
+    box.style.cssText='display:flex;gap:8px;align-items:center;background:#fff;border-radius:8px;padding:8px;border:1px solid #e8e8ed;margin-top:4px';
+    box.innerHTML='<img src="" style="width:56px;height:56px;border-radius:6px;background:#f5f5f7;flex-shrink:0;object-fit:contain;object-position:center;transform:scale(1);transform-origin:center center">';
+    row.querySelector('div[style*="flex:1"]').appendChild(box);
+  }
+  const img=box.querySelector('img');
+  img.style.display = '';
+  img.src=url||'';
+  img.style.objectFit=fit;
+  img.style.objectPosition=pos;
+  img.style.transform=`scale(${scale})`;
+  img.style.transformOrigin='center center';
+}
+
+// ── IMAGEN PRINCIPAL ──────────────────────────────────────────────────────
+function prevMainImg(input){
+  if(!input.files||!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const prev=document.getElementById('mainImgPreview');
+    let thumb=document.getElementById('mainImgThumb');
+    if(!thumb){
+      prev.innerHTML='';
+      thumb=document.createElement('img');thumb.id='mainImgThumb';
+      prev.appendChild(thumb);
+    }
+    const scale=(parseInt(document.getElementById('fImgScale')?.value)||100)/100;
+    const fit=document.getElementById('fImgFit')?.value||'contain';
+    const pos=document.getElementById('fImgPos')?.value||'center';
+    thumb.style.cssText=`width:100%;height:100%;object-fit:${fit};object-position:${pos};transform:scale(${scale});transform-origin:center center;transition:transform .2s`;
+    thumb.src=e.target.result;
+    document.getElementById('fImgUrl').value='';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function prevMainImgUrl(url){
+  let thumb=document.getElementById('mainImgThumb');
+  if(!url.trim()) return;
+  const prev=document.getElementById('mainImgPreview');
+  if(!thumb){
+    prev.innerHTML='';
+    thumb=document.createElement('img');thumb.id='mainImgThumb';
+    const scale=(parseInt(document.getElementById('fImgScale')?.value)||100)/100;
+    const fit=document.getElementById('fImgFit')?.value||'contain';
+    const pos=document.getElementById('fImgPos')?.value||'center';
+    thumb.style.cssText=`width:100%;height:100%;object-fit:${fit};object-position:${pos};transform:scale(${scale});transform-origin:center center`;
+    prev.appendChild(thumb);
+  }
+  thumb.src=url.trim();
+}
+function applyMainImgStyle(){
+  const thumb=document.getElementById('mainImgThumb');
+  if(!thumb) return;
+  const fit=document.getElementById('fImgFit').value;
+  const pos=document.getElementById('fImgPos').value;
+  const scale=(parseInt(document.getElementById('fImgScale')?.value)||100)/100;
+  thumb.style.objectFit=fit;
+  thumb.style.objectPosition=pos;
+  thumb.style.transform=`scale(${scale})`;
+  thumb.style.transformOrigin='center center';
+}
+
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  applyMainImgStyle();
+  document.querySelectorAll('.color-variant-row').forEach(row=>{
+    const scaleInput=row.querySelector('.color-scale');
+    const scaleVal=row.querySelector('.color-scale-val');
+    if(scaleInput && scaleVal) scaleVal.textContent = scaleInput.value + '%';
+    updateColorImgPreview(row, row.querySelector('.color-img-url')?.value||'');
+  });
+});
+
+// ── GUARDAR ───────────────────────────────────────────────────────────────
+async function saveProduct(){
+  const name=document.getElementById('fName').value.trim();
+  const price=document.getElementById('fPrice').value;
+  if(!name||!price){flash('Nombre y precio son requeridos','error');return;}
+
+  const specs={};
+  document.querySelectorAll('.spec-r').forEach(r=>{
+    const k=r.querySelector('.spec-key')?.value.trim();
+    const v=r.querySelector('.spec-val')?.value.trim();
+    if(k&&v) specs[k]=v;
+  });
+
+  const variants=[];
+  document.querySelectorAll('.variant-row').forEach(row=>{
+    const label=row.querySelector('.variant-label')?.value.trim();
+    const price=row.querySelector('.variant-price')?.value;
+    const stock=row.querySelector('.variant-stock')?.value;
+    if(label) variants.push({label,price:parseFloat(price)||0,stock:parseInt(stock)||0});
+  });
+
+  const logos=[];
+  document.querySelectorAll('.logo-row-item').forEach(row=>{
+    const label=row.querySelector('.logo-label')?.value.trim();
+    const img=row.querySelector('.logo-img-url')?.value.trim();
+    const link=row.querySelector('.logo-link')?.value.trim();
+    if(label||img) logos.push({label:label||'',image_url:img||'',link:link||''});
+  });
+
+  const colors=[];
+  document.querySelectorAll('.color-variant-row').forEach(row=>{
+    const name=row.querySelector('.color-name')?.value.trim();
+    const img=row.querySelector('.color-img-url')?.value.trim();
+    const swatch=row.querySelector('.color-swatch-url')?.value.trim();
+    const fit=row.querySelector('.color-fit')?.value||'contain';
+    const pos=row.querySelector('.color-pos')?.value||'center';
+    const scale=(parseInt(row.querySelector('.color-scale')?.value)||100)/100;
+    const caps=[...row.querySelectorAll('.color-cap-check:checked')].map(cb=>cb.value);
+    const enabled=row.querySelector('.color-enabled') ? row.querySelector('.color-enabled').checked : true;
+    if(name||img) colors.push({name:name||'',image_url:img||swatch||'',swatch_url:swatch||img||'',img_fit:fit,img_pos:pos,img_scale:scale,available_caps:caps,enabled});
+  });
+
+  const fd=new FormData();
+  fd.append('name',name);
+  fd.append('description',document.getElementById('fDesc').value);
+  fd.append('price',price);
+  fd.append('original_price',document.getElementById('fOrig').value);
+  fd.append('category',document.getElementById('fCat').value);
+  fd.append('badge',document.getElementById('fBadge').value);
+  fd.append('stock',document.getElementById('fStock').value);
+  fd.append('sort_order',document.getElementById('fOrder').value);
+  fd.append('featured',document.getElementById('fFeatured').checked?'1':'0');
+  fd.append('active',document.getElementById('fActive').checked?'1':'0');
+  fd.append('enable_installments',document.getElementById('fInstallments') && document.getElementById('fInstallments').checked ? '1' : '0');
+  fd.append('specs',JSON.stringify(specs));
+  // Ficha técnica — siempre guardar aunque esté oculta
+  const ficha = {
+    modelo:   document.getElementById('fch_modelo')?.value.trim()||'',
+    marca:    document.getElementById('fch_marca')?.value.trim()||'',
+    capacidad:document.getElementById('fch_capacidad')?.value.trim()||'',
+    colores:  document.getElementById('fch_colores')?.value.trim()||'',
+    pantalla: document.getElementById('fch_pantalla')?.value.trim()||'',
+    chip:     document.getElementById('fch_chip')?.value.trim()||'',
+    ram:      document.getElementById('fch_ram')?.value.trim()||'',
+    camara:   document.getElementById('fch_camara')?.value.trim()||'',
+    frontal:  document.getElementById('fch_frontal')?.value.trim()||'',
+    bateria:  document.getElementById('fch_bateria')?.value.trim()||'',
+    so:       document.getElementById('fch_so')?.value.trim()||'',
+    conect:   document.getElementById('fch_conect')?.value.trim()||'',
+    dim:      document.getElementById('fch_dim')?.value.trim()||'',
+    peso:     document.getElementById('fch_peso')?.value.trim()||'',
+    resist:   document.getElementById('fch_resist')?.value.trim()||'',
+    garantia: document.getElementById('fch_garantia')?.value.trim()||'',
+    caja:     document.getElementById('fch_caja')?.value.trim()||'',
+    notas:    document.getElementById('fch_notas')?.value.trim()||'',
+  };
+  fd.append('ficha', JSON.stringify(ficha));
+  fd.append('variants',JSON.stringify(variants));
+  fd.append('logos',JSON.stringify(logos));
+  fd.append('color_variants',JSON.stringify(colors));
+  fd.append('img_fit',document.getElementById('fImgFit').value);
+  fd.append('img_pos',document.getElementById('fImgPos').value);
+  fd.append('img_scale',(parseInt(document.getElementById('fImgScale')?.value)||100)/100);
+
+  const imgFile=document.getElementById('imgFile');
+  if(imgFile.files&&imgFile.files[0]) fd.append('image',imgFile.files[0]);
+  else fd.append('image_url',document.getElementById('fImgUrl').value);
+
+  const id=PRODUCT_ID;
+  const url=id?'/api/products/'+id:'/api/products';
+  const method=id?'PUT':'POST';
+  const btn=document.getElementById('saveBtn');
+  btn.disabled=true;btn.textContent='Guardando…';
+
+  try{
+    const res=await fetch(url,{method,headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+    const data=await res.json();
+    if(res.ok){flash('Guardado ✓');setTimeout(()=>location.href='/admin/productos',900);}
+    else flash(data.error||'Error al guardar','error');
+  }catch(e){flash('Error de conexión','error');}
+  btn.disabled=false;btn.textContent='Guardar producto';
+}
+
+function flash(msg,type='ok'){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap`;
+  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3000);
+}
+</script>
+</body></html>

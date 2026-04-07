@@ -1,0 +1,244 @@
+<%- include('../partials/admin-layout', {pageTitle:'Productos', activePage:'products'}) %>
+<div class="adm-ph">
+  <div><h1>Productos</h1><p><%=products.length%> productos en catálogo</p></div>
+  <div class="adm-ph-r" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <button type="button" class="adm-btn-s" onclick="openImportModal()">Importar</button>
+    <button type="button" class="adm-btn-s" onclick="bulkDeleteSelected()">Eliminar seleccionados</button>
+    <a href="/admin/productos/nuevo" class="adm-btn-p">+ Nuevo producto</a>
+  </div>
+</div>
+<div style="margin-bottom:24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+  <input type="search" id="prodSearch" placeholder="Buscar producto…" oninput="applyFilters()"
+    style="border:1px solid #d2d2d7;border-radius:980px;padding:9px 18px;font-size:14px;outline:none;width:240px;font-family:inherit">
+  <select id="filterCat" onchange="applyFilters()" style="border:1px solid #d2d2d7;border-radius:980px;padding:9px 16px;font-size:14px;outline:none;font-family:inherit;background:#fff;cursor:pointer">
+    <option value="">Todas las categorías</option>
+    <% categories.forEach(c=>{ %><option value="<%=c.slug%>"><%=c.name%></option><% }) %>
+  </select>
+  <select id="filterStatus" onchange="applyFilters()" style="border:1px solid #d2d2d7;border-radius:980px;padding:9px 16px;font-size:14px;outline:none;font-family:inherit;background:#fff;cursor:pointer">
+    <option value="">Todos los estados</option>
+    <option value="active">Activos</option>
+    <option value="inactive">Inactivos</option>
+  </select>
+  <button onclick="clearFilters()" style="border:1px solid #d2d2d7;border-radius:980px;padding:9px 16px;font-size:13px;background:#fff;cursor:pointer;font-family:inherit;color:#6e6e73">Limpiar filtros</button>
+  <span id="filterCount" style="font-size:13px;color:#6e6e73"></span>
+  <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#1d1d1f;margin-left:auto">
+    <input type="checkbox" id="selectAllVisible" onchange="toggleSelectAllVisible(this.checked)">
+    Seleccionar visibles
+  </label>
+  <span id="selectedCounter" style="font-size:13px;color:#6e6e73">0 seleccionados</span>
+</div>
+
+<div id="importModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;padding:24px;align-items:center;justify-content:center">
+  <div style="width:min(620px,100%);background:#fff;border-radius:24px;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.28)">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:start;margin-bottom:12px">
+      <div>
+        <div style="font-size:24px;font-weight:700;letter-spacing:-.03em">Importar archivo</div>
+        <div style="color:#6e6e73;font-size:14px;margin-top:6px">Puedes importar catálogo web o ingresos de mercadería. El ingreso es inteligente: compara por SKU + categoría, suma stock, no depende del número de parte y genera una notificación con opción de anular.</div>
+      </div>
+      <button type="button" onclick="closeImportModal()" style="border:none;background:#f5f5f7;width:36px;height:36px;border-radius:999px;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div style="display:grid;gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="border:1px solid #d2d2d7;border-radius:18px;padding:14px;background:#fbfbfd;cursor:pointer">
+          <input type="radio" name="importKind" value="inventory" checked onchange="syncImportMode()">
+          <div style="font-weight:700;margin-top:8px">Ingreso de mercadería</div>
+          <div style="font-size:13px;color:#6e6e73;margin-top:6px">Lee tu formato tipo #Item / #parte / Descripción / Qty / Precio y suma existencias sin duplicar.</div>
+        </label>
+        <label style="border:1px solid #d2d2d7;border-radius:18px;padding:14px;background:#fbfbfd;cursor:pointer">
+          <input type="radio" name="importKind" value="catalog" onchange="syncImportMode()">
+          <div style="font-weight:700;margin-top:8px">Catálogo web</div>
+          <div style="font-size:13px;color:#6e6e73;margin-top:6px">Actualiza o crea productos a partir de tu plantilla del sitio.</div>
+        </label>
+      </div>
+      <div style="border:1px dashed #d2d2d7;border-radius:18px;padding:18px;background:#fbfbfd">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Archivo Excel</div>
+        <input type="file" id="catalogFile" accept=".xlsx,.xls,.csv" style="width:100%">
+      </div>
+      <label id="hideMissingWrap" style="display:none;gap:10px;align-items:flex-start;background:#f5f5f7;border-radius:16px;padding:14px">
+        <input type="checkbox" id="hideMissing" style="margin-top:2px">
+        <span style="font-size:14px;color:#1d1d1f">
+          Ocultar productos que no aparezcan en este Excel.
+          <span style="display:block;color:#6e6e73;margin-top:4px">Déjalo desmarcado si solo vas a agregar o actualizar mercadería.</span>
+        </span>
+      </label>
+      <div id="importResult" style="display:none;padding:14px 16px;border-radius:16px;font-size:14px"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button type="button" class="adm-btn-s" onclick="closeImportModal()">Cancelar</button>
+        <button type="button" class="adm-btn-p" id="importBtn" onclick="importCatalog()">Importar ahora</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pgrid" id="prodGrid">
+  <% products.forEach(p=>{ %>
+  <div class="pc" data-name="<%=p.name.toLowerCase()%>" data-cat="<%=p.category||''%>" data-status="<%=p.active===false?'inactive':'active'%>">
+    <div style="position:absolute;top:12px;left:12px;z-index:5">
+      <input type="checkbox" class="bulk-check" value="<%=p.id%>" onchange="updateSelectedCounter()" style="width:18px;height:18px">
+    </div>
+    <div class="pc-img">
+      <img src="<%=p.image_url||''%>" alt="<%=p.name%>" onerror="this.style.display='none'">
+      <% if(p.badge){ %><div class="pc-badge"><%=p.badge%></div><% } %>
+      <div class="pc-acts">
+        <a href="/admin/productos/<%=p.id%>/editar" class="pc-act" title="Editar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </a>
+        <a href="/producto/<%=p.slug%>" target="_blank" class="pc-act" title="Ver en tienda">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <button class="pc-act del" data-delete="/api/products/<%=p.id%>" data-token="<%=token%>" title="Eliminar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-cat"><%=p.category||'Sin categoría'%></div>
+      <div class="pc-name"><%=p.name%></div>
+      <div class="pc-foot">
+        <div><span class="pc-price"><%=formatPrice(p.price)%></span><% if(p.original_price){ %><span class="pc-orig"><%=formatPrice(p.original_price)%></span><% } %></div>
+        <div class="pc-status"><div class="pc-dot" style="background:<%=p.active?'#1a7f37':'#d2d2d7'%>"></div><%=p.active?'Activo':'Inactivo'%></div>
+      </div>
+    </div>
+  </div>
+  <% }) %>
+  <a href="/admin/productos/nuevo" class="pc-add">
+    <div class="pc-add-ico">+</div>
+    <span style="font-size:13px;font-weight:500">Nuevo producto</span>
+  </a>
+</div>
+  </div></div>
+<script>
+const TOKEN = <%- JSON.stringify(token) %>;
+
+function selectedIds(){
+  return [...document.querySelectorAll('.bulk-check:checked')].map(el=>el.value);
+}
+function updateSelectedCounter(){
+  const count=selectedIds().length;
+  document.getElementById('selectedCounter').textContent=`${count} seleccionados`;
+}
+function toggleSelectAllVisible(checked){
+  document.querySelectorAll('#prodGrid .pc[data-name]').forEach(card=>{
+    if(card.style.display==='none') return;
+    const box=card.querySelector('.bulk-check');
+    if(box) box.checked=checked;
+  });
+  updateSelectedCounter();
+}
+function filterProds(q){ applyFilters(); }
+function applyFilters(){
+  const q = (document.getElementById('prodSearch').value||'').toLowerCase();
+  const cat = document.getElementById('filterCat').value;
+  const status = document.getElementById('filterStatus').value;
+  let visible = 0;
+  document.querySelectorAll('#prodGrid .pc').forEach(c=>{
+    const nameMatch = !q || c.dataset.name.includes(q);
+    const catMatch  = !cat || c.dataset.cat === cat;
+    const stMatch   = !status || c.dataset.status === status;
+    const show = nameMatch && catMatch && stMatch;
+    c.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  const total = document.querySelectorAll('#prodGrid .pc').length;
+  document.getElementById('filterCount').textContent = visible === total ? '' : `${visible} de ${total}`;
+}
+function clearFilters(){
+  document.getElementById('prodSearch').value = '';
+  document.getElementById('filterCat').value = '';
+  document.getElementById('filterStatus').value = '';
+  applyFilters();
+}
+function flash(msg,type='ok'){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:10000;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap`;
+  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3000);
+}
+function openImportModal(){
+  document.getElementById('importModal').style.display='flex';
+  syncImportMode();
+}
+function closeImportModal(){
+  document.getElementById('importModal').style.display='none';
+  const box=document.getElementById('importResult');
+  box.style.display='none';
+  box.textContent='';
+}
+function currentImportKind(){
+  return document.querySelector('input[name="importKind"]:checked')?.value || 'inventory';
+}
+function syncImportMode(){
+  const isCatalog=currentImportKind()==='catalog';
+  document.getElementById('hideMissingWrap').style.display=isCatalog?'flex':'none';
+}
+async function importCatalog(){
+  const file=document.getElementById('catalogFile').files[0];
+  if(!file) return flash('Selecciona un Excel primero','error');
+  const btn=document.getElementById('importBtn');
+  const box=document.getElementById('importResult');
+  const kind=currentImportKind();
+  const fd=new FormData();
+  fd.append('catalogo',file);
+  fd.append('importKind',kind);
+  fd.append('hideMissing',document.getElementById('hideMissing').checked?'1':'0');
+  btn.disabled=true; btn.textContent='Importando…';
+  box.style.display='none';
+  try{
+    const res=await fetch('/api/products/import',{method:'POST',headers:{Authorization:'Bearer '+TOKEN},body:fd});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'No se pudo importar');
+    box.style.display='block';
+    box.style.background='#f5fbf5';
+    box.style.color='#125f2e';
+    box.style.border='1px solid #cfead4';
+    box.innerHTML=kind==='inventory'
+      ? `Ingreso completado.<br>Creados: <b>${data.created}</b> · Actualizados: <b>${data.updated}</b> · <a href="/admin/notificaciones" style="color:inherit;text-decoration:underline">Ver notificaciones</a>`
+      : `Importación completada.<br>Creados: <b>${data.created}</b> · Actualizados: <b>${data.updated}</b> · Ocultados: <b>${data.hidden}</b>`;
+    flash(kind==='inventory'?'Ingreso aplicado correctamente':'Catálogo importado correctamente');
+    setTimeout(()=>location.reload(),1200);
+  }catch(e){
+    box.style.display='block';
+    box.style.background='#fff5f5';
+    box.style.color='#9f1c1c';
+    box.style.border='1px solid #f1c9c9';
+    box.textContent=e.message||'Error al importar';
+    flash(e.message||'Error al importar','error');
+  }finally{
+    btn.disabled=false; btn.textContent='Importar ahora';
+  }
+}
+async function deleteProduct(btn){
+  const url=btn.dataset.delete;
+  if(!url) return;
+  if(!confirm('¿Eliminar este producto permanentemente? Esta acción no se puede deshacer.')) return;
+  btn.disabled=true;
+  try{
+    const res=await fetch(url,{method:'DELETE',headers:{Authorization:'Bearer '+TOKEN}});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||'No se pudo eliminar');
+    const card=btn.closest('.pc');
+    if(card) card.remove();
+    flash('Producto eliminado del catálogo');
+    updateSelectedCounter();
+  }catch(e){
+    flash(e.message||'Error al eliminar','error');
+    btn.disabled=false;
+  }
+}
+async function bulkDeleteSelected(){
+  const ids=selectedIds();
+  if(!ids.length) return flash('Selecciona al menos un producto','error');
+  if(!confirm(`¿Deseas ocultar ${ids.length} producto(s)?`)) return;
+  try{
+    const res=await fetch('/api/products/bulk-delete',{method:'POST',headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({ids})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||'No se pudo eliminar');
+    flash(`${data.affected||ids.length} producto(s) eliminados`);
+    setTimeout(()=>location.reload(),700);
+  }catch(e){
+    flash(e.message||'Error al eliminar','error');
+  }
+}
+document.querySelectorAll('.pc-act.del').forEach(btn=>btn.addEventListener('click',()=>deleteProduct(btn)));
+updateSelectedCounter();
+</script>
+</body></html>

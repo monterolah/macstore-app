@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title><%=title||settings.store_name||'MacStore'%><% if(settings.store_tagline){ %> — <%=settings.store_tagline%><% } %></title>
+<meta name="description" content="<%=(typeof description!=='undefined'&&description)?description:(settings.store_tagline||'')%>">
+<link rel="stylesheet" href="/css/macstore.css">
+<script src="/js/protect.js"></script>
+</head>
+<body>
+<% if(settings.promo_bar_active=='1'&&settings.promo_bar_text){ %>
+<div class="promo-bar" style="background:<%=settings.promo_bar_color||'#1d1d1f'%>">
+  <%=settings.promo_bar_text%>
+  <% const ann=announcements&&announcements[0]; if(ann&&ann.link_url){ %><a href="<%=ann.link_url%>"><%=ann.link_text||'Ver más'%></a><% } %>
+</div>
+<% } %>
+<header class="apple-nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <% if(settings.logo_url){ %>
+        <img src="<%=settings.logo_url%>" alt="<%=settings.store_name||'MacStore'%>" style="height:36px;width:auto">
+      <% } else { %>
+        <span style="font-size:22px;font-weight:700;letter-spacing:-.04em;color:#1d1d1f">Mac<span style="color:#1d1d1f">Store</span></span>
+      <% } %>
+    </a>
+    <nav class="nav-links">
+      <% (categories||[]).forEach(c=>{ %><a href="/categoria/<%=c.slug%>"><%=c.name%></a><% }) %>
+      <a href="/productos">Catálogo</a>
+      <a href="/#soporte">Soporte</a>
+    </nav>
+    <button class="nav-search-btn" id="searchToggle" aria-label="Buscar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+    <button onclick="openQuotationModal(null)"
+      style="margin-left:8px;background:#1d1d1f;color:#fff;border:none;padding:7px 14px;border-radius:980px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:background .2s;white-space:nowrap"
+      onmouseover="this.style.background='#333'" onmouseout="this.style.background='#1d1d1f'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Cotización
+    </button>
+    <% if(!settings || settings.show_admin_icon !== false){ %>
+    <a href="<% if(typeof req !== 'undefined' && req.session && req.session.adminToken){ %>/admin<% } else { %>/admin/login<% } %>"
+       style="margin-left:6px;display:flex;align-items:center;color:var(--black);opacity:.8;transition:opacity .2s"
+       onmouseover="this.style.opacity='.5'" onmouseout="this.style.opacity='.8'" title="Admin">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </a>
+    <% } %>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Menú"><span></span><span></span><span></span></button>
+  </div>
+  <div class="nav-search-bar" id="searchBar" style="display:none">
+    <input type="search" id="searchInput" placeholder="Buscar en MacStore…" autocomplete="off">
+  </div>
+</header>
+<div class="mob-nav" id="mobNav">
+  <button class="mob-close" id="mobClose">×</button>
+  <% (categories||[]).forEach(c=>{ %><a href="/categoria/<%=c.slug%>"><%=c.name%></a><% }) %>
+  <a href="/productos">Catálogo completo</a>
+  <a href="/#soporte">Soporte</a>
+</div>

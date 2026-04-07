@@ -1,0 +1,264 @@
+<%- include('../partials/admin-layout', {pageTitle:'Asistente IA', activePage:'gemini'}) %>
+
+<div class="adm-ph">
+  <div>
+    <h1>Asistente IA</h1>
+    <p style="font-size:14px;color:#86868b;margin-top:4px">Gestiona tus productos con lenguaje natural o pegando una ficha técnica</p>
+  </div>
+</div>
+
+<div style="max-width:860px;margin:0 auto;padding:0 0 60px">
+
+  <!-- PASO 1: BUSCAR PRODUCTO -->
+  <div class="adm-fc" id="step1">
+    <div class="adm-fct">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:middle"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Paso 1 — Selecciona el producto
+    </div>
+    <p style="font-size:13px;color:#86868b;margin-bottom:14px">Escribe el nombre del producto que quieres gestionar</p>
+
+    <div style="position:relative">
+      <input
+        id="productSearch"
+        type="text"
+        placeholder="ej: iPhone 16 Pro, MacBook Air..."
+        style="width:100%;border:1.5px solid #e8e8ed;border-radius:10px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box"
+        oninput="searchProducts(this.value)"
+        autocomplete="off"
+      >
+      <div id="searchResults" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid #e8e8ed;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:100;max-height:300px;overflow-y:auto"></div>
+    </div>
+
+    <!-- Producto seleccionado -->
+    <div id="selectedProduct" style="display:none;margin-top:14px;background:#f5f5f7;border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:center">
+      <img id="selImg" src="" style="width:52px;height:52px;object-fit:contain;border-radius:8px;background:#fff;padding:4px" onerror="this.style.display='none'">
+      <div style="flex:1">
+        <div id="selName" style="font-weight:600;font-size:15px"></div>
+        <div id="selMeta" style="font-size:12px;color:#86868b;margin-top:2px"></div>
+      </div>
+      <span id="selStatus" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500"></span>
+      <button onclick="clearSelection()" style="background:none;border:none;cursor:pointer;color:#86868b;font-size:18px;padding:0 4px">×</button>
+    </div>
+  </div>
+
+  <!-- PASO 2: CHAT -->
+  <div class="adm-fc" id="step2" style="opacity:.4;pointer-events:none;transition:opacity .3s">
+    <div class="adm-fct">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Paso 2 — Dile al asistente qué hacer
+    </div>
+
+    <!-- Ejemplos rápidos -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      <button class="chip-btn" onclick="setInstruction('Desactiva este producto')">Desactivar producto</button>
+      <button class="chip-btn" onclick="setInstruction('Activa este producto')">Activar producto</button>
+      <button class="chip-btn" onclick="setInstruction('Cambia el precio a ')">Cambiar precio</button>
+      <button class="chip-btn" onclick="setInstruction('Agrega el color ')">Agregar color</button>
+      <button class="chip-btn" onclick="setInstruction('')">Pegar ficha técnica</button>
+    </div>
+
+    <textarea
+      id="instruction"
+      placeholder="Escribe qué quieres hacer, o pega aquí una ficha técnica completa del producto...
+
+Ejemplos:
+• Desactiva este producto
+• Cambia el precio a $1299
+• Agrega el color Titanio Negro
+• [pegar ficha técnica de Apple o de cualquier fuente]"
+      style="width:100%;min-height:160px;border:1.5px solid #e8e8ed;border-radius:10px;padding:12px 14px;font-size:13px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.5"
+    ></textarea>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:12px">
+      <button id="sendBtn" onclick="sendToGemini()" class="adm-btn-p" style="display:flex;align-items:center;gap:8px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Enviar al asistente
+      </button>
+    </div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="resultBox" style="display:none" class="adm-fc">
+    <div class="adm-fct" id="resultTitle">Resultado</div>
+    <div id="resultContent" style="font-size:13px;line-height:1.6"></div>
+    <div style="display:flex;gap:10px;margin-top:14px" id="resultActions">
+      <a id="editLink" href="#" class="adm-btn-p" style="font-size:13px">Ver producto completo</a>
+      <button onclick="clearAll()" class="adm-btn-s" style="font-size:13px">Nuevo ajuste</button>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.chip-btn {
+  background:#f0f0f5;
+  border:1px solid #e0e0e8;
+  border-radius:20px;
+  padding:6px 14px;
+  font-size:12px;
+  cursor:pointer;
+  font-family:inherit;
+  color:#1d1d1f;
+  transition:background .15s;
+}
+.chip-btn:hover { background:#e5e5ea; }
+</style>
+
+<script>
+let _selectedProduct = null;
+let _searchTimer = null;
+
+async function searchProducts(q) {
+  clearTimeout(_searchTimer);
+  const box = document.getElementById('searchResults');
+  if (!q || q.length < 2) { box.style.display = 'none'; return; }
+  _searchTimer = setTimeout(async () => {
+    try {
+      const r = await fetch('/api/gemini/search?q=' + encodeURIComponent(q), {
+        headers: { 'Authorization': 'Bearer <%= token %>' }
+      });
+      const products = await r.json();
+      if (!products.length) {
+        box.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:#86868b">Sin resultados</div>';
+      } else {
+        box.innerHTML = products.map(p => `
+          <div onclick="selectProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})"
+            style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f5;transition:background .1s"
+            onmouseover="this.style.background='#f5f5f7'" onmouseout="this.style.background=''"
+          >
+            <img src="${p.image_url||''}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:#f5f5f7;padding:2px" onerror="this.style.display='none'">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500">${p.name}</div>
+              <div style="font-size:11px;color:#86868b">${p.category||''} · $${p.price||'—'}</div>
+            </div>
+            <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${p.active?'#e3f9e5':'#fde8e8'};color:${p.active?'#1a7f37':'#cf2020'}">${p.active?'Activo':'Inactivo'}</span>
+          </div>
+        `).join('');
+      }
+      box.style.display = 'block';
+    } catch(e) { console.error(e); }
+  }, 300);
+}
+
+async function selectProduct(p) {
+  document.getElementById('searchResults').style.display = 'none';
+  document.getElementById('productSearch').value = p.name;
+
+  // Cargar datos completos
+  try {
+    const r = await fetch('/api/gemini/product/' + p.id, {
+      headers: { 'Authorization': 'Bearer <%= token %>' }
+    });
+    _selectedProduct = await r.json();
+  } catch(e) {
+    _selectedProduct = p;
+  }
+
+  // Mostrar tarjeta
+  document.getElementById('selImg').src = p.image_url || '';
+  document.getElementById('selName').textContent = p.name;
+  document.getElementById('selMeta').textContent = (p.category || '') + (p.price ? ' · $' + p.price : '');
+  const st = document.getElementById('selStatus');
+  st.textContent = p.active ? 'Activo' : 'Inactivo';
+  st.style.background = p.active ? '#e3f9e5' : '#fde8e8';
+  st.style.color = p.active ? '#1a7f37' : '#cf2020';
+  document.getElementById('selectedProduct').style.display = 'flex';
+
+  // Activar paso 2
+  const step2 = document.getElementById('step2');
+  step2.style.opacity = '1';
+  step2.style.pointerEvents = 'auto';
+  document.getElementById('editLink').href = '/admin/productos/' + p.id + '/editar';
+}
+
+function clearSelection() {
+  _selectedProduct = null;
+  document.getElementById('productSearch').value = '';
+  document.getElementById('selectedProduct').style.display = 'none';
+  document.getElementById('step2').style.opacity = '.4';
+  document.getElementById('step2').style.pointerEvents = 'none';
+  document.getElementById('resultBox').style.display = 'none';
+}
+
+function clearAll() {
+  clearSelection();
+  document.getElementById('instruction').value = '';
+  document.getElementById('resultBox').style.display = 'none';
+}
+
+function setInstruction(text) {
+  const el = document.getElementById('instruction');
+  el.value = text;
+  el.focus();
+  el.setSelectionRange(text.length, text.length);
+}
+
+async function sendToGemini() {
+  if (!_selectedProduct) return alert('Selecciona un producto primero');
+  const instruction = document.getElementById('instruction').value.trim();
+  if (!instruction) return alert('Escribe qué quieres hacer');
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Procesando...';
+
+  try {
+    const r = await fetch('/api/gemini/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer <%= token %>' },
+      body: JSON.stringify({
+        productId: _selectedProduct.id,
+        instruction,
+        productData: _selectedProduct
+      })
+    });
+    const data = await r.json();
+    showResult(data);
+  } catch(e) {
+    showResult({ success: false, message: 'Error de conexión: ' + e.message });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Enviar al asistente';
+  }
+}
+
+function showResult(data) {
+  const box = document.getElementById('resultBox');
+  const title = document.getElementById('resultTitle');
+  const content = document.getElementById('resultContent');
+
+  box.style.display = 'block';
+
+  if (data.success) {
+    title.textContent = '✅ Producto actualizado';
+    const fields = Object.entries(data.updates || {});
+    content.innerHTML = `
+      <p style="color:#1a7f37;margin-bottom:10px">Los cambios se aplicaron correctamente en Firestore.</p>
+      ${fields.length ? `<div style="background:#f5f5f7;border-radius:8px;padding:10px 14px">
+        <div style="font-size:11px;color:#86868b;margin-bottom:6px;font-weight:500">CAMPOS ACTUALIZADOS</div>
+        ${fields.map(([k,v]) => `<div style="font-size:12px;margin-bottom:4px"><strong>${k}:</strong> ${typeof v === 'object' ? JSON.stringify(v) : String(v)}</div>`).join('')}
+      </div>` : ''}
+    `;
+  } else if (data.raw) {
+    title.textContent = '💬 Respuesta del asistente';
+    content.innerHTML = `<pre style="background:#f5f5f7;padding:12px;border-radius:8px;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere">${data.message}</pre>`;
+    document.getElementById('resultActions').style.display = 'none';
+  } else {
+    title.textContent = '❌ Error';
+    content.innerHTML = `<p style="color:#cf2020">${data.error || data.message}</p>`;
+  }
+
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Cerrar resultados al click fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('#productSearch') && !e.target.closest('#searchResults')) {
+    document.getElementById('searchResults').style.display = 'none';
+  }
+});
+</script>
+
+<style>
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+</style>

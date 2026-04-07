@@ -1,0 +1,42 @@
+<%- include('../partials/admin-layout', {pageTitle:'Dashboard', activePage:'dashboard'}) %>
+<div class="adm-ph">
+  <div><h1>Dashboard</h1><p>Bienvenido, <%=admin.name%>. Tu tienda está activa.</p></div>
+  <div class="adm-ph-r">
+    <a href="/admin/productos/nuevo" class="adm-btn-p">+ Nuevo producto</a>
+  </div>
+</div>
+<div class="adm-stats">
+  <div class="adm-stat"><div class="adm-stat-n"><%=stats.products%></div><div class="adm-stat-l">Productos activos</div></div>
+  <div class="adm-stat"><div class="adm-stat-n"><%=stats.categories%></div><div class="adm-stat-l">Categorías</div></div>
+  <div class="adm-stat"><div class="adm-stat-n"><%=stats.banners%></div><div class="adm-stat-l">Banners activos</div></div>
+  <div class="adm-stat"><div class="adm-stat-n" style="font-size:18px;color:#1a7f37;padding-top:6px">● En línea</div><div class="adm-stat-l">Estado de tienda</div></div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+  <h2 style="font-size:18px;font-weight:600;letter-spacing:-.03em">Productos recientes</h2>
+  <a href="/admin/productos" class="adm-btn-s" style="font-size:12px;padding:6px 14px">Ver todos →</a>
+</div>
+<div class="pgrid">
+  <% (recentProducts||[]).slice(0,4).forEach(p=>{ %>
+  <div class="pc">
+    <div class="pc-img">
+      <img src="<%=p.image_url||''%>" alt="<%=p.name%>" onerror="this.style.display='none'">
+      <% if(p.badge){ %><div class="pc-badge"><%=p.badge%></div><% } %>
+      <div class="pc-acts">
+        <a href="/admin/productos/<%=p.id%>/editar" class="pc-act" title="Editar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-name"><%=p.name%></div>
+      <div class="pc-foot">
+        <span class="pc-price"><%=formatPrice(p.price)%></span>
+        <div class="pc-status"><div class="pc-dot"></div><%=p.active?'Activo':'Inactivo'%></div>
+      </div>
+    </div>
+  </div>
+  <% }) %>
+</div>
+  </div></div>
+<script src="/js/admin.js"></script>
+</body></html>

@@ -1,0 +1,46 @@
+# ── Dependencias ────────────────────────────────
+node_modules/
+
+# ── Variables de entorno (NUNCA subir) ──────────
+.env
+.env.local
+.env.production
+
+# ── Credenciales Firebase (NUNCA subir) ─────────
+serviceAccountKey.json
+*serviceAccount*.json
+firebase-adminsdk*.json
+
+# ── Certificados SSL (NUNCA subir) ──────────────
+ssl/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# ── Archivos subidos por usuarios ───────────────
+public/uploads/*
+!public/uploads/.gitkeep
+
+# ── JS y CSS compilados/ofuscados (se regeneran con npm run obfuscate / minify-css) ──
+public/js/macstore.js
+public/js/quotation.js
+public/js/admin.js
+public/js/protect.js
+public/css/macstore.css
+
+# ── Logs ─────────────────────────────────────────
+*.log
+logs/
+temp_uploads/
+
+# ── Sistema operativo ─────────────────────────────
+.DS_Store
+Thumbs.db
+__MACOSX/
+
+# ── IDEs ──────────────────────────────────────────
+.vscode/
+.idea/
+*.swp

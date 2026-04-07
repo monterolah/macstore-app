@@ -1,0 +1,122 @@
+<%- include('../partials/admin-layout', {pageTitle:'Métodos de Pago', activePage:'payment-methods'}) %>
+<div class="adm-ph">
+  <div><h1>Métodos de pago</h1><p>Aparecen en las cotizaciones para mostrar opciones de financiamiento</p></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+  <!-- FORM -->
+  <div class="adm-fc">
+    <div class="adm-fct" id="pmFormTitle">Nuevo método de pago</div>
+    <input type="hidden" id="pmId">
+    <div class="adm-f"><label>Nombre *</label><input id="pm_name" placeholder="ej: Credisiman Visa, BAC Credomatic"></div>
+    <div class="adm-f"><label>Descripción</label><input id="pm_desc" placeholder="ej: Hasta 10 cuotas sin intereses"></div>
+    <div class="adm-f">
+      <label>Logo</label>
+      <div style="border:1.5px dashed #d2d2d7;border-radius:10px;padding:18px;text-align:center;cursor:pointer;background:#f5f5f7;margin-bottom:8px" onclick="document.getElementById('pmLogo').click()">
+        <input type="file" id="pmLogo" accept="image/*" style="display:none" onchange="prevPMLogo(this)">
+        <div id="pmLogoPrev" style="font-size:13px;color:#86868b">Haz clic para subir logo</div>
+      </div>
+      <input type="text" id="pm_logo_url" placeholder="O pega URL del logo" oninput="prevPMUrl(this.value)" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none">
+    </div>
+    <div class="adm-f"><label>Orden</label><input type="number" id="pm_order" value="0"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="adm-btn-p" onclick="savePM()">Guardar</button>
+      <button class="adm-btn-s" onclick="resetPMForm()">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div>
+    <% if(methods&&methods.length){ %>
+    <% methods.forEach(m=>{ %>
+    <div class="adm-fc" style="margin-bottom:10px;padding:14px" id="pm-<%=m.id%>">
+      <div style="display:flex;align-items:center;gap:12px">
+        <% if(m.logo_url){ %>
+        <img src="<%=m.logo_url%>" style="height:36px;max-width:80px;object-fit:contain;border-radius:6px;background:#f5f5f7;padding:4px" onerror="this.style.display='none'">
+        <% } else { %>
+        <div style="width:48px;height:36px;background:#f5f5f7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px">💳</div>
+        <% } %>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600"><%=m.name%></div>
+          <div style="font-size:12px;color:#86868b"><%=m.description||''%></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="adm-btn-s" style="font-size:12px;padding:5px 12px" onclick="editPM('<%=m.id%>','<%=encodeURIComponent(m.name)%>','<%=encodeURIComponent(m.description||"")%>','<%=encodeURIComponent(m.logo_url||"")%>',<%=m.sort_order||0%>)">Editar</button>
+          <button class="adm-btn-danger" onclick="deletePM('<%=m.id%>','pm-<%=m.id%>')">×</button>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+    <% } else { %>
+    <div class="adm-fc" style="text-align:center;color:#86868b;padding:32px">No hay métodos de pago. Agrega uno.</div>
+    <% } %>
+  </div>
+</div>
+
+  </div></div>
+<script>
+const TOKEN='<%=token%>';
+
+function prevPMLogo(input){
+  if(!input.files||!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('pmLogoPrev').innerHTML=`<img src="${e.target.result}" style="max-height:50px;border-radius:6px;margin:0 auto;display:block">`;
+    document.getElementById('pm_logo_url').value='';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function prevPMUrl(url){
+  if(!url.trim()) return;
+  document.getElementById('pmLogoPrev').innerHTML=`<img src="${url}" style="max-height:50px;border-radius:6px;margin:0 auto;display:block" onerror="this.style.display='none'">`;
+}
+function editPM(id,name,desc,logo,order){
+  document.getElementById('pmId').value=id;
+  document.getElementById('pm_name').value=decodeURIComponent(name);
+  document.getElementById('pm_desc').value=decodeURIComponent(desc);
+  document.getElementById('pm_logo_url').value=decodeURIComponent(logo);
+  document.getElementById('pm_order').value=order;
+  document.getElementById('pmFormTitle').textContent='Editar método';
+  const url=decodeURIComponent(logo);
+  if(url) document.getElementById('pmLogoPrev').innerHTML=`<img src="${url}" style="max-height:50px;border-radius:6px;margin:0 auto;display:block">`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function resetPMForm(){
+  document.getElementById('pmId').value='';
+  document.getElementById('pm_name').value='';
+  document.getElementById('pm_desc').value='';
+  document.getElementById('pm_logo_url').value='';
+  document.getElementById('pm_order').value='0';
+  document.getElementById('pmLogo').value='';
+  document.getElementById('pmLogoPrev').innerHTML='Haz clic para subir logo';
+  document.getElementById('pmFormTitle').textContent='Nuevo método de pago';
+}
+async function savePM(){
+  const name=document.getElementById('pm_name').value.trim();
+  if(!name){flash('El nombre es requerido','error');return;}
+  const fd=new FormData();
+  fd.append('name',name);
+  fd.append('description',document.getElementById('pm_desc').value.trim());
+  fd.append('sort_order',document.getElementById('pm_order').value);
+  const logoFile=document.getElementById('pmLogo');
+  if(logoFile.files&&logoFile.files[0]) fd.append('logo',logoFile.files[0]);
+  else fd.append('logo_url',document.getElementById('pm_logo_url').value.trim());
+  const id=document.getElementById('pmId').value;
+  const url=id?'/api/payment-methods/'+id:'/api/payment-methods';
+  const res=await fetch(url,{method:id?'PUT':'POST',headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+  if(res.ok){flash('Guardado ✓');setTimeout(()=>location.reload(),800);}
+  else{const d=await res.json();flash(d.error||'Error','error');}
+}
+async function deletePM(id,rowId){
+  if(!confirm('¿Eliminar este método de pago?')) return;
+  const res=await fetch('/api/payment-methods/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}});
+  if(res.ok){document.getElementById(rowId)?.remove();flash('Eliminado');}
+  else flash('Error','error');
+}
+function flash(msg,type='ok'){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)`;
+  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2800);
+}
+</script>
+</body></html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%=pageTitle||'Admin'%> — MacStore</title>
+<link rel="stylesheet" href="/css/macstore.css">
+<script src="/js/protect.js"></script>
+</head>
+<body class="adm-body">
+<div class="adm-top">
+  <div class="adm-brand" style="font-size:20px;letter-spacing:-.04em">Mac<span>Store</span></div>
+  <div class="adm-tabs">
+    <a href="/admin" class="adm-tab <%=activePage==='dashboard'?'active':''%>">Dashboard</a>
+    <a href="/admin/productos" class="adm-tab <%=activePage==='products'?'active':''%>">Productos</a>
+    <a href="/admin/notificaciones" class="adm-tab <%=activePage==='notifications'?'active':''%>">Notificaciones</a>
+    <a href="/admin/categorias" class="adm-tab <%=activePage==='categories'?'active':''%>">Categorías</a>
+    <a href="/admin/banners" class="adm-tab <%=activePage==='banners'?'active':''%>">Banners</a>
+    <a href="/admin/anuncios" class="adm-tab <%=activePage==='announcements'?'active':''%>">Anuncios</a>
+    <a href="/admin/configuracion" class="adm-tab <%=activePage==='settings'?'active':''%>">Configuración</a>
+  </div>
+  <div class="adm-top-r">
+    <a href="/" target="_blank" class="adm-preview">Ver tienda ↗</a>
+    <div class="adm-ava"><%=(admin.name||'A').slice(0,2).toUpperCase()%></div>
+  </div>
+</div>
+<div class="adm-shell">
+  <div class="adm-side">
+    <div class="adm-sg">Catálogo</div>
+    <a href="/admin" class="adm-sn <%=activePage==='dashboard'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="/admin/productos" class="adm-sn <%=activePage==='products'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Productos
+    </a>
+    <a href="/admin/categorias" class="adm-sn <%=activePage==='categories'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Categorías
+    </a>
+    <div class="adm-sdiv"></div>
+    <div class="adm-sg">Contenido</div>
+    <a href="/admin/banners" class="adm-sn <%=activePage==='banners'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+      Banners
+    </a>
+    <a href="/admin/anuncios" class="adm-sn <%=activePage==='announcements'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Anuncios / Promos
+    </a>
+    <a href="/admin/metodos-pago" class="adm-sn <%=activePage==='payment-methods'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Métodos de pago
+    </a>
+    <a href="/admin/notificaciones" class="adm-sn <%=activePage==='notifications'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+      Notificaciones
+    </a>
+    <a href="/admin/cotizaciones" class="adm-sn <%=activePage==='quotations'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Cotizaciones
+    </a>
+    <div class="adm-sdiv"></div>
+    <div class="adm-sg">Sistema</div>
+    <a href="/admin/configuracion" class="adm-sn <%=activePage==='settings'?'active':''%>">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      Configuración
+    </a>
+    <div class="adm-sdiv"></div>
+    <a href="/admin/logout" class="adm-sn adm-logout">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Cerrar sesión
+    </a>
+  </div>
+  <div class="adm-main">
+
+<!-- ═══════════ RAMIRO — Asistente IA ═══════════ -->
+<% if(settings && settings.show_ramiro !== false){ %>
+<div id="ramiroBtn" onclick="toggleRamiro()" title="Ramiro — Asistente IA" style="position:fixed;bottom:28px;right:28px;z-index:9998;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#0071e3,#5e5ce6);box-shadow:0 4px 24px rgba(0,113,227,.45);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="9" cy="10" r="1" fill="#fff" stroke="none"/><circle cx="12" cy="10" r="1" fill="#fff" stroke="none"/><circle cx="15" cy="10" r="1" fill="#fff" stroke="none"/></svg>
+  <div id="ramiroDot" style="display:none;position:absolute;top:4px;right:4px;width:12px;height:12px;background:#ff3b30;border-radius:50%;border:2px solid #fff"></div>
+</div>
+
+<div id="ramiroPanel" style="display:none;position:fixed;bottom:96px;right:28px;z-index:9997;width:390px;max-height:560px;background:#fff;border-radius:22px;box-shadow:0 16px 56px rgba(0,0,0,.2);flex-direction:column;overflow:hidden">
+  <!-- Header -->
+  <div id="ramiroHeader" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="ramiroAvatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0071e3,#5e5ce6);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff">R</div>
+      <div>
+        <div id="ramiroNameLabel" style="font-weight:700;font-size:14px;color:#1d1d1f">Ramiro</div>
+        <div style="font-size:11px;color:#86868b">Asistente de MacStore ✦</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="openRamiroConfig()" title="Configurar Ramiro" style="background:#f5f5f7;border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+      <button onclick="toggleRamiro()" style="background:#f5f5f7;border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;color:#86868b;display:flex;align-items:center;justify-content:center">×</button>
+    </div>
+  </div>
+
+  <!-- Mensajes -->
+  <div id="ramiroMessages" style="flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px;max-height:390px;min-height:200px"></div>
+
+  <!-- Input -->
+  <div style="padding:10px 14px;border-top:1px solid #f0f0f5;display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
+    <textarea id="ramiroInput" placeholder="Pregúntale a Ramiro…" rows="2"
+      style="flex:1;border:1.5px solid #e8e8ed;border-radius:12px;padding:8px 12px;font-size:13px;outline:none;font-family:inherit;resize:none;line-height:1.4"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRamiro()}"
+    ></textarea>
+    <button onclick="sendRamiro()" style="background:#0071e3;color:#fff;border:none;border-radius:12px;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Modal de configuración de Ramiro -->
+<div id="ramiroConfigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:24px;width:min(480px,100%);max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="font-size:20px;font-weight:700;margin:0">Configurar a Ramiro</h2>
+      <button onclick="closeRamiroConfig()" style="background:#f5f5f7;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <label style="font-size:13px;font-weight:600;color:#1d1d1f;display:block;margin-bottom:6px">Nombre del asistente</label>
+        <input id="cfgName" type="text" placeholder="Ramiro" style="width:100%;border:1.5px solid #e8e8ed;border-radius:10px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:13px;font-weight:600;color:#1d1d1f;display:block;margin-bottom:6px">Saludo inicial</label>
+        <input id="cfgGreeting" type="text" placeholder="¡Hola! Soy Ramiro…" style="width:100%;border:1.5px solid #e8e8ed;border-radius:10px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:13px;font-weight:600;color:#1d1d1f;display:block;margin-bottom:6px">Personalidad y contexto</label>
+        <textarea id="cfgPersonality" rows="4" placeholder="Describe cómo quieres que se comporte Ramiro…" style="width:100%;border:1.5px solid #e8e8ed;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
+      </div>
+      <div>
+        <label style="font-size:13px;font-weight:600;color:#1d1d1f;display:block;margin-bottom:6px">Color del avatar</label>
+        <input id="cfgColor" type="color" value="#0071e3" style="width:60px;height:40px;border:none;border-radius:8px;cursor:pointer">
+      </div>
+      <div>
+        <label style="font-size:13px;font-weight:600;color:#1d1d1f;display:block;margin-bottom:6px">Notas privadas para Ramiro</label>
+        <textarea id="cfgNotes" rows="3" placeholder="Información importante que debe recordar siempre…" style="width:100%;border:1.5px solid #e8e8ed;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
+      </div>
+      <div id="ramiroMemoryList" style="background:#f5f5f7;border-radius:12px;padding:12px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Memoria de Ramiro</div>
+        <div id="memoryItems" style="font-size:12px;color:#86868b">Cargando...</div>
+      </div>
+      <button onclick="saveRamiroConfig()" style="background:#0071e3;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Guardar configuración</button>
+    </div>
+  </div>
+</div>
+
+<style>
+#ramiroBtn:hover { transform:scale(1.08); box-shadow:0 6px 32px rgba(0,113,227,.55); }
+#ramiroPanel { display:none;flex-direction:column }
+#ramiroPanel.open { display:flex!important }
+#ramiroConfigModal.open { display:flex!important }
+.r-msg { max-width:90%;padding:9px 13px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word }
+.r-msg-bot { background:#f0f4ff;color:#1d1d1f;align-self:flex-start;border-bottom-left-radius:4px }
+.r-msg-user { background:#0071e3;color:#fff;align-self:flex-end;border-bottom-right-radius:4px }
+.r-msg-thinking { background:#f5f5f7;color:#86868b;align-self:flex-start;font-style:italic;font-size:12px }
+.r-msg-action { background:#e8f5e9;color:#1a7f37;align-self:flex-start;border-bottom-left-radius:4px;font-size:12px }
+.r-msg-error { background:#fde8e8;color:#cf2020;align-self:flex-start;font-size:12px }
+@keyframes ramiroPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.r-thinking-dots::after { content:'...'; animation:ramiroPulse 1.2s infinite }
+</style>
+
+<script>
+const _RT = '<%= token %>';
+let _ramiroOpen = false;
+let _ramiroHistory = [];
+let _ramiroConfig = {};
+let _ramiroLoaded = false;
+
+async function loadRamiroConfig() {
+  try {
+    const r = await fetch('/api/ramiro/config', { headers: { 'Authorization': 'Bearer ' + _RT } });
+    _ramiroConfig = await r.json();
+    // Aplicar nombre
+    const nameEl = document.getElementById('ramiroNameLabel');
+    if(nameEl) nameEl.textContent = _ramiroConfig.name || 'Ramiro';
+    // Aplicar color avatar
+    const avatarEl = document.getElementById('ramiroAvatar');
+    if(avatarEl) {
+      avatarEl.style.background = _ramiroConfig.avatar_color || 'linear-gradient(135deg,#0071e3,#5e5ce6)';
+      avatarEl.textContent = (_ramiroConfig.name || 'R')[0].toUpperCase();
+    }
+    // Aplicar color al botón
+    const btn = document.getElementById('ramiroBtn');
+    if(btn && _ramiroConfig.avatar_color) btn.style.background = _ramiroConfig.avatar_color;
+  } catch(e) { console.error('Error cargando config de Ramiro', e); }
+}
+
+async function toggleRamiro() {
+  _ramiroOpen = !_ramiroOpen;
+  const panel = document.getElementById('ramiroPanel');
+  if (_ramiroOpen) {
+    panel.classList.add('open');
+    if (!_ramiroLoaded) {
+      await loadRamiroConfig();
+      const greeting = _ramiroConfig.greeting || '¡Hola! Soy Ramiro, tu asistente de MacStore. ¿En qué te ayudo hoy?';
+      addRamiroMsg(greeting, 'bot');
+      _ramiroLoaded = true;
+    }
+    document.getElementById('ramiroInput').focus();
+  } else {
+    panel.classList.remove('open');
+  }
+}
+
+function addRamiroMsg(text, role) {
+  const box = document.getElementById('ramiroMessages');
+  const div = document.createElement('div');
+  div.className = 'r-msg r-msg-' + role;
+  if (role === 'thinking') div.innerHTML = '<span class="r-thinking-dots">Ramiro está pensando</span>';
+  else div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
+}
+
+async function sendRamiro() {
+  const input = document.getElementById('ramiroInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  addRamiroMsg(text, 'user');
+  _ramiroHistory.push({ role: 'user', text });
+  const thinking = addRamiroMsg('', 'thinking');
+
+  try {
+    // Detectar si es una URL
+    const urlMatch = text.match(/https?:\/\/[^\s]+/);
+    if (urlMatch) {
+      const fetchR = await fetch('/api/ramiro/fetch-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _RT },
+        body: JSON.stringify({ url: urlMatch[0] })
+      });
+      const fetchData = await fetchR.json();
+      if (fetchData.ok) {
+        const augmentedMsg = `${text}\n\n[Contenido de la URL leído por Ramiro]:\n${fetchData.text}`;
+        const r = await callRamiroChat(augmentedMsg);
+        thinking.remove();
+        handleRamiroResponse(r);
+        return;
+      }
+    }
+
+    const r = await callRamiroChat(text);
+    thinking.remove();
+    handleRamiroResponse(r);
+
+  } catch(e) {
+    thinking.remove();
+    addRamiroMsg('Error de conexión. Intenta de nuevo.', 'error');
+  }
+}
+
+async function callRamiroChat(message) {
+  const r = await fetch('/api/ramiro/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _RT },
+    body: JSON.stringify({
+      message,
+      history: _ramiroHistory.slice(-12),
+      pageContext: window.location.pathname
+    })
+  });
+  return await r.json();
+}
+
+function handleRamiroResponse(data) {
+  if (data.error && !data.message) {
+    addRamiroMsg('Ocurrió un error: ' + data.error, 'error');
+    return;
+  }
+
+  // Mostrar mensaje principal
+  if (data.message) {
+    addRamiroMsg(data.message, 'bot');
+    _ramiroHistory.push({ role: 'bot', text: data.message });
+  }
+
+  // Mostrar resultado de acción
+  if (data.actionResult) {
+    const ar = data.actionResult;
+    if (ar.ok) {
+      const msgs = {
+        update: '✅ Producto actualizado en Firestore',
+        delete: '🗑️ Producto eliminado permanentemente',
+        bulk: `✅ ${ar.affected} productos afectados`,
+        memory: '🧠 Lo recordaré para la próxima vez',
+        create: '✅ Producto creado correctamente'
+      };
+      addRamiroMsg(msgs[ar.type] || '✅ Acción completada', 'action');
+    } else {
+      addRamiroMsg('❌ Error ejecutando acción: ' + ar.error, 'error');
+    }
+  }
+
+  // Ejecutar navegación
+  if (data.action === 'NAVIGATE' && data.data?.url) {
+    setTimeout(() => { window.location.href = data.data.url; }, 1200);
+  }
+}
+
+// ── CONFIGURACIÓN ──────────────────────────────
+async function openRamiroConfig() {
+  await loadRamiroConfig();
+  document.getElementById('cfgName').value = _ramiroConfig.name || 'Ramiro';
+  document.getElementById('cfgGreeting').value = _ramiroConfig.greeting || '';
+  document.getElementById('cfgPersonality').value = _ramiroConfig.personality || '';
+  document.getElementById('cfgColor').value = _ramiroConfig.avatar_color || '#0071e3';
+  document.getElementById('cfgNotes').value = _ramiroConfig.notes || '';
+
+  // Cargar memorias
+  const mem = _ramiroConfig.memory || [];
+  const memEl = document.getElementById('memoryItems');
+  if (!mem.length) {
+    memEl.textContent = 'Sin memorias aún. Ramiro irá aprendiendo a medida que interactúas.';
+  } else {
+    memEl.innerHTML = mem.map((m, i) => `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid #e8e8ed">
+        <span style="flex:1;font-size:12px;color:#1d1d1f">${m.text}</span>
+        <button onclick="deleteMemory(${i})" style="background:none;border:none;color:#cf2020;cursor:pointer;font-size:16px;padding:0 0 0 8px;flex-shrink:0">×</button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('ramiroConfigModal').classList.add('open');
+}
+
+function closeRamiroConfig() {
+  document.getElementById('ramiroConfigModal').classList.remove('open');
+}
+
+async function saveRamiroConfig() {
+  const body = {
+    name: document.getElementById('cfgName').value || 'Ramiro',
+    greeting: document.getElementById('cfgGreeting').value,
+    personality: document.getElementById('cfgPersonality').value,
+    avatar_color: document.getElementById('cfgColor').value,
+    notes: document.getElementById('cfgNotes').value
+  };
+  await fetch('/api/ramiro/config', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _RT },
+    body: JSON.stringify(body)
+  });
+  _ramiroConfig = { ..._ramiroConfig, ...body };
+  // Actualizar UI
+  document.getElementById('ramiroNameLabel').textContent = body.name;
+  document.getElementById('ramiroAvatar').textContent = body.name[0].toUpperCase();
+  document.getElementById('ramiroAvatar').style.background = body.avatar_color;
+  document.getElementById('ramiroBtn').style.background = body.avatar_color;
+  closeRamiroConfig();
+  addRamiroMsg(`Configuración guardada. ${body.name} listo.`, 'action');
+}
+
+async function deleteMemory(index) {
+  await fetch('/api/ramiro/memory/' + index, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + _RT }
+  });
+  await loadRamiroConfig();
+  await openRamiroConfig();
+}
+</script>
+<% } %>
+<!-- ═══════════ FIN RAMIRO ═══════════ -->

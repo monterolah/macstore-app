@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — MacStore</title>
+<link rel="stylesheet" href="/css/macstore.css">
+</head>
+<body>
+<div class="adm-login-wrap">
+  <div class="adm-login-card">
+    <div class="adm-login-logo">Mac<span>Store</span> <span style="font-size:14px;font-weight:400;color:#86868b">Admin</span></div>
+    <% if(error){ %><div class="adm-login-error"><%=error%></div><% } %>
+    <form action="/admin/login" method="POST">
+      <div class="adm-f"><label>Email</label><input type="email" name="email" required autofocus placeholder="admin@macstore.com"></div>
+      <div class="adm-f" style="margin-bottom:24px"><label>Contraseña</label><input type="password" name="password" required placeholder="••••••••"></div>
+      <button type="submit" class="adm-btn-p" style="width:100%;justify-content:center;padding:12px;border-radius:12px">Iniciar sesión</button>
+    </form>
+    <p style="text-align:center;font-size:12px;color:#86868b;margin-top:24px">Panel privado · Solo personal autorizado</p>
+  </div>
+</div>
+</body></html>

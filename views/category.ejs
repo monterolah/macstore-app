@@ -1,0 +1,346 @@
+<%- include('partials/header', {title:category.name, description:category.description||''}) %>
+<div style="padding:44px 22px 80px;max-width:1100px;margin:0 auto">
+  <div style="display:flex;gap:5px;font-size:13px;color:#86868b;margin-bottom:20px;flex-wrap:wrap">
+    <a href="/" style="color:#86868b">MacStore</a>
+    <span>/ <%=category.name%></span>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:<%=category.description?'8px':'32px'%>">
+    <h1 style="font-size:clamp(32px,5vw,52px);font-weight:700;letter-spacing:-.045em;margin:0"><%=category.name%></h1>
+    <% if(category.share_whatsapp !== false) { %>
+    <button onclick="shareCategory()" id="shareCatBtn" style="display:flex;align-items:center;gap:8px;background:#25D366;color:#fff;border:none;border-radius:980px;padding:10px 20px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;flex-shrink:0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Compartir catálogo
+    </button>
+    <% } %>
+  </div>
+  <% if(category.description){ %><p style="font-size:16px;color:#86868b;margin-bottom:20px"><%=category.description%></p><% } %>
+
+  <!-- Ordenamiento -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;flex-wrap:wrap">
+    <span style="font-size:13px;color:#86868b">Ordenar por:</span>
+    <button onclick="sortProducts('default')" class="sort-btn active" id="sort-default">Destacados</button>
+    <button onclick="sortProducts('price-asc')" class="sort-btn" id="sort-price-asc">Precio: menor a mayor</button>
+    <button onclick="sortProducts('price-desc')" class="sort-btn" id="sort-price-desc">Precio: mayor a menor</button>
+    <button onclick="sortProducts('name')" class="sort-btn" id="sort-name">Nombre A–Z</button>
+  </div>
+  <style>
+    .sort-btn{background:transparent;border:1.5px solid #d2d2d7;border-radius:980px;padding:7px 16px;font-size:13px;cursor:pointer;font-family:inherit;color:#515154;transition:all .15s}
+    .sort-btn:hover,.sort-btn.active{background:#1d1d1f;color:#fff;border-color:#1d1d1f}
+  </style>
+
+  <% if(products&&products.length){ %>
+  <div id="prodGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px">
+    <% products.forEach(p=>{ %>
+    <%
+      const pvars = Array.isArray(p.variants) ? p.variants : [];
+      const pcols = Array.isArray(p.color_variants) ? p.color_variants.filter(c=>c && c.enabled !== false) : [];
+      const allCaps = pvars.map(v=>v.label).filter(Boolean);
+      const firstColorCaps = pcols.length && Array.isArray(pcols[0].available_caps) && pcols[0].available_caps.length ? pcols[0].available_caps : allCaps;
+      const firstColor = pcols.length ? pcols[0] : null;
+      const pid = (p.id||p.slug||'').replace(/[^a-z0-9]/gi,'');
+    %>
+    <a href="/producto/<%=p.slug%>" class="ms-card" data-price="<%=p.price||0%>" data-name="<%=(p.name||'').toLowerCase()%>" data-order="<%=p.sort_order||0%>" style="text-decoration:none;color:inherit">
+      <div class="ms-card-img" style="--img-scale:<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>">
+        <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
+        <div class="ms-card-glow"></div>
+        <img id="cardimg_<%=pid%>" src="<%=firstColor&&firstColor.image_url ? firstColor.image_url : (p.image_url||'')%>" alt="<%=p.name%>" loading="lazy" style="object-fit:<%=firstColor&&firstColor.img_fit ? firstColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstColor&&firstColor.img_pos ? firstColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
+      </div>
+      <div style="padding:12px 14px 16px;flex:1;display:flex;flex-direction:column;gap:8px">
+        <h3 style="font-size:15px;font-weight:600;letter-spacing:-.02em;line-height:1.2;margin:0"><%=p.name%></h3>
+
+        <% if(pcols.length){ %>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+          <% pcols.slice(0,6).forEach((c,ci)=>{
+            const sw = c.swatch_url||c.image_url||'';
+            const img = c.image_url||p.image_url||'';
+            const caps = Array.isArray(c.available_caps)&&c.available_caps.length ? c.available_caps : allCaps;
+            if(!sw) return;
+          %>
+          <span
+            class="ms-card-swatch <%=ci===0?'active':''%>"
+            style="background-image:url('<%=sw%>')"
+            title="<%=c.name||''%>"
+            onclick="(function(el,e){e.preventDefault();e.stopPropagation();swatchClick(el,'<%=pid%>','<%=img%>',<%=JSON.stringify(caps)%>,'<%=c.img_fit||p.img_fit||'contain'%>','<%=c.img_pos||p.img_pos||'center'%>','<%=c.img_scale||p.img_scale||1%>')})(this,event)"
+          ></span>
+          <% }) %>
+          <% if(pcols.length>6){ %><span class="ms-card-swatch-more">+<%=pcols.length-6%></span><% } %>
+        </div>
+        <% } %>
+
+        <% if(allCaps.length){ %>
+        <div id="caps_<%=pid%>" style="display:flex;flex-wrap:wrap;gap:5px">
+          <% allCaps.forEach(cap=>{ const active=firstColorCaps.includes(cap); %>
+          <span data-cap="<%=cap%>" style="font-size:11px;border:1px solid <%=active?'#d2d2d7':'#e8e8ed'%>;border-radius:6px;padding:2px 8px;color:<%=active?'#515154':'#c0c0c0'%>;font-weight:<%=active?'500':'400'%>;text-decoration:<%=active?'none':'line-through'%>"><%=cap%></span>
+          <% }) %>
+        </div>
+        <% } %>
+
+        <div style="margin-top:auto">
+          <% if((p.price||0) > 150 && p.enable_installments !== false){ %>
+          <div style="font-size:11px;color:#86868b;margin-bottom:4px">
+            10 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong>
+            &nbsp;·&nbsp;
+            6 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong>
+          </div>
+          <% } %>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
+            <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+          </div>
+        </div>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <div style="text-align:center;padding:80px 0;color:#86868b">
+    <p style="font-size:17px">No hay productos en esta categoría.</p>
+    <a href="/productos" style="display:inline-flex;margin-top:20px;background:#0071e3;color:#fff;padding:12px 22px;border-radius:980px;font-size:15px">Ver catálogo</a>
+  </div>
+  <% } %>
+</div>
+<script>
+// ── DATOS DEL SERVIDOR ──────────────────────────
+const _catName    = '<%=category.name%>';
+const _storeName  = '<%=settings.store_name||"MacStore"%>';
+const _storePhone = '<%=settings.phone||""%>';
+const _storeWeb   = '<%=settings.website||""%>';
+const _logoUrl    = '/images/logo.png';
+
+const _catProducts = <%- JSON.stringify(products.map(p => ({
+  name: p.name,
+  price: p.price,
+  sort_order: p.sort_order || 0,
+  color_variants: (p.color_variants||[]).filter(c=>c&&c.enabled!==false).map(c=>({
+    name: c.name||'',
+    swatch_url: c.swatch_url||c.image_url||'',
+    image_url: c.image_url||''
+  })),
+  image_url: (p.color_variants && p.color_variants[0] && p.color_variants[0].image_url)
+    ? p.color_variants[0].image_url
+    : (p.image_url || '')
+}))) %>;
+
+// ── ORDENAMIENTO ─────────────────────────────────
+const _prodGrid = document.getElementById('prodGrid');
+const _prodCards = _prodGrid ? [..._prodGrid.children] : [];
+
+function sortProducts(mode) {
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById('sort-' + mode);
+  if(activeBtn) activeBtn.classList.add('active');
+
+  const cards = [..._prodGrid.children];
+  cards.sort((a, b) => {
+    const pa = parseFloat(a.dataset.price||0);
+    const pb = parseFloat(b.dataset.price||0);
+    const na = (a.dataset.name||'');
+    const nb = (b.dataset.name||'');
+    const oa = parseInt(a.dataset.order||0);
+    const ob = parseInt(b.dataset.order||0);
+    if(mode === 'price-asc')  return pa - pb;
+    if(mode === 'price-desc') return pb - pa;
+    if(mode === 'name')       return na.localeCompare(nb);
+    return oa - ob; // default: sort_order
+  });
+  cards.forEach(c => _prodGrid.appendChild(c));
+}
+
+// ── FLYER WHATSAPP ───────────────────────────────
+async function shareCategory() {
+  const btn = document.getElementById('shareCatBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Generando flyer...';
+
+  try {
+    const cols   = _catProducts.length === 1 ? 1 : _catProducts.length === 2 ? 2 : 3;
+    const rows   = Math.ceil(_catProducts.length / cols);
+    const CARD_W = cols === 1 ? 860 : cols === 2 ? 460 : 310;
+    const CARD_H = 360;
+    const PAD    = 32;
+    const GAP    = 20;
+    const W      = PAD * 2 + cols * CARD_W + (cols - 1) * GAP;
+    const H      = 180 + rows * (CARD_H + GAP) + 100;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Fondo
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#1a1a1e');
+    bg.addColorStop(1, '#111114');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Logo / nombre tienda
+    let logoH = 52;
+    try {
+      const logoImg = await loadImg(_logoUrl);
+      const logoW   = (logoImg.width / logoImg.height) * logoH;
+      ctx.drawImage(logoImg, (W - logoW) / 2, 28, logoW, logoH);
+    } catch {
+      ctx.fillStyle = '#fff';
+      ctx.font      = `700 ${cols===1?32:28}px -apple-system,Arial,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(_storeName, W / 2, 64);
+      logoH = 52;
+    }
+
+    // Nombre de categoría
+    ctx.fillStyle = '#f5f5f7';
+    ctx.font      = `700 ${cols===1?44:36}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText(_catName, W / 2, logoH + 72);
+
+    // Línea
+    ctx.strokeStyle = '#2a2a2e';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD, logoH + 90);
+    ctx.lineTo(W - PAD, logoH + 90);
+    ctx.stroke();
+
+    const startY = logoH + 108;
+
+    // Cards de productos
+    for (let i = 0; i < _catProducts.length; i++) {
+      const p   = _catProducts[i];
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x   = PAD + col * (CARD_W + GAP);
+      const y   = startY + row * (CARD_H + GAP);
+
+      // Card bg
+      ctx.fillStyle = '#242428';
+      roundRect(ctx, x, y, CARD_W, CARD_H, 18);
+      ctx.fill();
+
+      // Imagen del producto
+      const imgH = CARD_H - 110;
+      try {
+        const img  = await loadImg(p.image_url);
+        const asp  = img.width / img.height;
+        let dw = CARD_W - 40, dh = imgH - 16;
+        if (asp > dw / dh) dh = dw / asp; else dw = dh * asp;
+        ctx.drawImage(img, x + (CARD_W - dw) / 2, y + 16, dw, dh);
+      } catch { /* sin imagen */ }
+
+      // Burbujas de colores
+      const swatches = p.color_variants || [];
+      if (swatches.length) {
+        const SR   = 11; // radio swatch
+        const SW   = swatches.length * (SR * 2 + 6) - 6;
+        let sx     = x + (CARD_W - SW) / 2;
+        const sy   = y + CARD_H - 78;
+
+        for (const sw of swatches.slice(0, 6)) {
+          const swSrc = sw.swatch_url || sw.image_url || '';
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(sx + SR, sy + SR, SR, 0, Math.PI * 2);
+          ctx.clip();
+          if (swSrc) {
+            try {
+              const swImg = await loadImg(swSrc);
+              ctx.drawImage(swImg, sx, sy, SR * 2, SR * 2);
+            } catch {
+              ctx.fillStyle = '#555'; ctx.fill();
+            }
+          } else {
+            ctx.fillStyle = '#555'; ctx.fill();
+          }
+          ctx.restore();
+          // Borde sutil
+          ctx.strokeStyle = 'rgba(255,255,255,.15)';
+          ctx.lineWidth   = 1;
+          ctx.beginPath();
+          ctx.arc(sx + SR, sy + SR, SR, 0, Math.PI * 2);
+          ctx.stroke();
+          sx += SR * 2 + 6;
+        }
+        if(swatches.length > 6) {
+          ctx.fillStyle = '#86868b';
+          ctx.font      = '11px Arial';
+          ctx.textAlign = 'left';
+          ctx.fillText(`+${swatches.length-6}`, sx, sy + SR + 4);
+        }
+      }
+
+      // Nombre
+      const fontSize = cols === 1 ? 20 : cols === 2 ? 17 : 14;
+      ctx.fillStyle  = '#f5f5f7';
+      ctx.font       = `600 ${fontSize}px Arial`;
+      ctx.textAlign  = 'center';
+      wrapText(ctx, p.name, x + CARD_W / 2, y + CARD_H - (swatches.length ? 52 : 44), CARD_W - 32, fontSize + 4, 2);
+
+      // Precio
+      ctx.fillStyle = '#0a84ff';
+      ctx.font      = `700 ${cols===1?22:18}px Arial`;
+      ctx.fillText(p.price ? '$' + Number(p.price).toLocaleString('en-US') : '', x + CARD_W / 2, y + CARD_H - 18);
+    }
+
+    // Footer
+    const footY = startY + rows * (CARD_H + GAP) + 10;
+    ctx.strokeStyle = '#2a2a2e'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, footY); ctx.lineTo(W - PAD, footY); ctx.stroke();
+    ctx.fillStyle  = '#515154';
+    ctx.font       = '16px Arial';
+    ctx.textAlign  = 'center';
+    let footLine   = _storeName;
+    if (_storePhone) footLine += '  ·  ' + _storePhone;
+    if (_storeWeb)   footLine += '  ·  ' + _storeWeb;
+    ctx.fillText(footLine, W / 2, footY + 36);
+
+    // Descargar
+    const link    = document.createElement('a');
+    link.download = 'catalogo-' + _catName.toLowerCase().replace(/\s+/g, '-') + '.png';
+    link.href     = canvas.toDataURL('image/png');
+    link.click();
+
+  } catch(e) {
+    alert('Error generando el flyer: ' + e.message);
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Compartir catálogo';
+  }
+}
+
+function loadImg(src) {
+  return new Promise((resolve, reject) => {
+    const img    = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => resolve(img);
+    img.onerror = () => reject(new Error('No cargó: ' + src));
+    img.src     = src;
+    setTimeout(() => reject(new Error('Timeout')), 8000);
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, x, y, maxW, lineH, maxLines) {
+  const words = text.split(' ');
+  let line = '', lines = 0;
+  for (const w of words) {
+    const test = line + (line ? ' ' : '') + w;
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, y + lines * lineH);
+      line = w; lines++;
+      if (lines >= maxLines - 1) { line += '…'; break; }
+    } else { line = test; }
+  }
+  ctx.fillText(line, x, y + lines * lineH);
+}
+</script>
+<%- include('partials/footer') %>

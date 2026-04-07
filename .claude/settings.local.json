@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node server.js)",
+      "Bash(curl -sk https://localhost:3443 -o /dev/null -w \"HTTPS: %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"HTTP: %{http_code}\\\\n\")"
+    ]
+  }
+}

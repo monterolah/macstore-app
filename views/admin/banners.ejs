@@ -1,0 +1,186 @@
+<%- include('../partials/admin-layout', {pageTitle:'Banners', activePage:'banners'}) %>
+<div class="adm-ph">
+  <div><h1>Banners</h1><p>Hero principal de la tienda — se actualiza al instante</p></div>
+</div>
+
+<!-- BANNER CARDS -->
+<div class="banner-grid" style="margin-bottom:32px">
+  <% banners.forEach(b=>{ %>
+  <div class="b-card" id="bcard-<%=b.id%>">
+    <div class="b-card-img" style="background:<%=b.bg_color||'#1d1d1f'%>">
+      <% if(b.image_url){ %><img src="<%=b.image_url%>" alt="<%=b.title%>" onerror="this.style.display='none'"><% } %>
+      <span style="position:relative;z-index:1;color:<%=b.text_color||'#fff'%>;font-weight:700;font-size:18px;letter-spacing:-.03em"><%=b.title||'Sin título'%></span>
+    </div>
+    <div class="b-card-body">
+      <div class="b-card-name"><%=b.title||'Sin título'%></div>
+      <div class="b-card-meta">
+        <span class="pill <%=b.active?'pill-on':'pill-off'%>"><%=b.active?'Activo':'Inactivo'%></span>
+        <span><%=b.position%> · Orden <%=b.sort_order%></span>
+      </div>
+      <div class="b-card-acts">
+        <button class="adm-btn-s" style="font-size:12px;padding:6px 14px" onclick="loadBanner(<%=JSON.stringify(b).replace(/</g,'&lt;').replace(/>/g,'&gt;')%>)">Editar</button>
+        <button class="adm-btn-danger" onclick="deleteBanner(<%=b.id%>,'bcard-<%=b.id%>')">Eliminar</button>
+      </div>
+    </div>
+  </div>
+  <% }) %>
+  <div style="border:1.5px dashed #d2d2d7;border-radius:16px;min-height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#86868b;cursor:pointer;transition:all .2s" onclick="resetForm()" onmouseover="this.style.borderColor='#1d1d1f';this.style.color='#1d1d1f'" onmouseout="this.style.borderColor='#d2d2d7';this.style.color='#86868b'">
+    <div style="width:36px;height:36px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:20px">+</div>
+    <span style="font-size:13px;font-weight:500">Nuevo banner</span>
+  </div>
+</div>
+
+<!-- FORM -->
+<div class="adm-fc" style="max-width:800px">
+  <div class="adm-fct" id="formTitle">Nuevo banner</div>
+  <form id="bannerForm" enctype="multipart/form-data">
+    <input type="hidden" id="bid">
+    <div class="adm-f-row">
+      <div class="adm-f"><label>Título <span style="font-size:11px;color:#86868b;font-weight:400">(opcional)</span></label><input type="text" id="bTitle" placeholder="ej: iPhone 16 Pro"></div>
+      <div class="adm-f"><label>Subtítulo</label><input type="text" id="bSub" placeholder="Lo más Pro que existe."></div>
+    </div>
+    <div class="adm-f-row">
+      <div class="adm-f"><label>Texto del botón</label><input type="text" id="bCta" placeholder="Más información"></div>
+      <div class="adm-f"><label>URL del botón</label><input type="text" id="bUrl" placeholder="/productos/iphone-16-pro"></div>
+    </div>
+    <div class="adm-f">
+      <label>Subir imagen de fondo</label>
+      <input type="file" id="bFile" accept="image/*" onchange="previewBanner(this)">
+      <div class="adm-f-hint">Recomendado: 1600×900px o mayor. JPG, PNG, WebP.</div>
+    </div>
+    <div class="adm-f">
+      <label>O URL de imagen (pega una URL directa)</label>
+      <input type="text" id="bImg" placeholder="https://images.unsplash.com/…">
+      <div class="adm-f-hint">Si subes archivo Y pegas URL, se usa el archivo subido.</div>
+    </div>
+    <div id="bPreviewWrap" style="display:none;margin-bottom:14px">
+      <img id="bPreview" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px" alt="Vista previa">
+    </div>
+    <div class="adm-f-row">
+      <div class="adm-f"><label>Color de fondo</label><input type="color" id="bBg" value="#1d1d1f" style="height:40px;padding:4px 8px;width:100%"></div>
+      <div class="adm-f"><label>Color de texto</label><input type="color" id="bTxt" value="#ffffff" style="height:40px;padding:4px 8px;width:100%"></div>
+      <div class="adm-f"><label>Posición</label><select id="bPos"><option value="hero">Hero principal</option><option value="promo">Promo</option></select></div>
+      <div class="adm-f"><label>Orden</label><input type="number" id="bOrder" value="0" min="0"></div>
+    </div>
+    <div class="adm-f" style="margin-bottom:20px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;text-transform:none;letter-spacing:0">
+        <input type="checkbox" id="bActive" checked style="width:16px;height:16px;accent-color:#1d1d1f"> Banner activo (visible en tienda)
+      </label>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button type="submit" class="adm-btn-p" id="saveBtn">Guardar banner</button>
+      <button type="button" class="adm-btn-s" onclick="resetForm()">Nuevo banner</button>
+    </div>
+  </form>
+</div>
+
+  </div></div>
+<script>
+const TOKEN = '<%=token%>';
+
+function previewBanner(input){
+  if(!input.files||!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('bPreview').src=e.target.result;
+    document.getElementById('bPreviewWrap').style.display='block';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function loadBanner(b){
+  document.getElementById('bid').value = b.id;
+  document.getElementById('bTitle').value = b.title||'';
+  document.getElementById('bSub').value = b.subtitle||'';
+  document.getElementById('bCta').value = b.cta_text||'';
+  document.getElementById('bUrl').value = b.cta_url||'';
+  document.getElementById('bImg').value = b.image_url||'';
+  document.getElementById('bBg').value = b.bg_color||'#1d1d1f';
+  document.getElementById('bTxt').value = b.text_color||'#ffffff';
+  document.getElementById('bPos').value = b.position||'hero';
+  document.getElementById('bOrder').value = b.sort_order||0;
+  document.getElementById('bActive').checked = !!b.active;
+  document.getElementById('formTitle').textContent = 'Editar banner: ' + b.title;
+  if(b.image_url){
+    document.getElementById('bPreview').src = b.image_url;
+    document.getElementById('bPreviewWrap').style.display = 'block';
+  }
+  document.getElementById('bannerForm').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('bTitle').focus();
+}
+
+function resetForm(){
+  document.getElementById('bid').value='';
+  document.getElementById('bTitle').value='';
+  document.getElementById('bSub').value='';
+  document.getElementById('bCta').value='';
+  document.getElementById('bUrl').value='';
+  document.getElementById('bImg').value='';
+  document.getElementById('bBg').value='#1d1d1f';
+  document.getElementById('bTxt').value='#ffffff';
+  document.getElementById('bPos').value='hero';
+  document.getElementById('bOrder').value='0';
+  document.getElementById('bActive').checked=true;
+  document.getElementById('bFile').value='';
+  document.getElementById('bPreviewWrap').style.display='none';
+  document.getElementById('formTitle').textContent='Nuevo banner';
+}
+
+document.getElementById('bannerForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const id = document.getElementById('bid').value;
+  const fd = new FormData();
+
+  // Si hay archivo seleccionado, lo mandamos
+  const fileInput = document.getElementById('bFile');
+  if(fileInput.files && fileInput.files[0]){
+    fd.append('image', fileInput.files[0]);
+  }
+
+  fd.append('title',      document.getElementById('bTitle').value);
+  fd.append('subtitle',   document.getElementById('bSub').value);
+  fd.append('cta_text',   document.getElementById('bCta').value);
+  fd.append('cta_url',    document.getElementById('bUrl').value);
+  fd.append('image_url',  document.getElementById('bImg').value);
+  fd.append('bg_color',   document.getElementById('bBg').value);
+  fd.append('text_color', document.getElementById('bTxt').value);
+  fd.append('position',   document.getElementById('bPos').value);
+  fd.append('sort_order', document.getElementById('bOrder').value);
+  fd.append('active',     document.getElementById('bActive').checked ? '1' : '0');
+
+  const url    = id ? '/api/banners/'+id : '/api/banners';
+  const method = id ? 'PUT' : 'POST';
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled=true; btn.textContent='Guardando…';
+
+  try{
+    const res = await fetch(url,{method,headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+    if(res.ok){
+      flash('Banner guardado ✓ — la tienda ya se actualizó');
+      setTimeout(()=>location.reload(), 1200);
+    } else {
+      const d = await res.json();
+      flash(d.error||'Error al guardar','error');
+    }
+  }catch{ flash('Error de conexión','error'); }
+  btn.disabled=false; btn.textContent='Guardar banner';
+});
+
+async function deleteBanner(id, rowId){
+  if(!confirm('¿Eliminar este banner?')) return;
+  const res = await fetch('/api/banners/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}});
+  if(res.ok){ document.getElementById(rowId)?.remove(); flash('Eliminado'); }
+  else flash('Error al eliminar','error');
+}
+
+function flash(msg,type='ok'){
+  const el=document.createElement('div');
+  el.className='flash-msg';
+  el.style.background=type==='error'?'#c0392b':'#1d1d1f';
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+</script>
+</body></html>

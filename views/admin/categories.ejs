@@ -1,0 +1,169 @@
+<%- include('../partials/admin-layout', {pageTitle:'Categorías', activePage:'categories'}) %>
+<div class="adm-ph">
+  <div><h1>Categorías</h1><p>Gestiona las categorías de la tienda</p></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+  <!-- FORM -->
+  <div class="adm-fc">
+    <div class="adm-fct" id="catFormTitle">Nueva categoría</div>
+    <input type="hidden" id="catId">
+    <div class="adm-f"><label>Nombre *</label><input type="text" id="catName" placeholder="ej: Mac"></div>
+    <div class="adm-f"><label>Descripción</label><textarea id="catDesc" placeholder="Descripción breve…" style="min-height:70px"></textarea></div>
+    <div class="adm-f">
+      <label>Imagen de categoría</label>
+      <div style="border:1.5px dashed var(--g3);border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:var(--g1);position:relative;margin-bottom:8px" onclick="document.getElementById('catImgFile').click()">
+        <input type="file" id="catImgFile" accept="image/*" style="display:none" onchange="prevCatImg(this)">
+        <div id="catImgPrev" style="font-size:13px;color:#86868b">Haz clic para subir imagen</div>
+      </div>
+      <input type="text" id="catImg" placeholder="O pega una URL de imagen" oninput="prevCatImgUrl(this.value)">
+      <div class="adm-f-hint">Esta imagen aparece en los showcases de la home</div>
+    </div>
+    <div class="adm-f"><label>Orden</label><input type="number" id="catOrder" value="0"></div>
+    <div class="adm-f">
+      <label>Color de fondo en home</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input type="color" id="catBgColor" value="#f5f5f7" style="width:50px;height:38px;border:none;border-radius:8px;cursor:pointer" oninput="document.getElementById('catBgColorText').value=this.value">
+        <input type="text" id="catBgColorText" placeholder="#f5f5f7" oninput="document.getElementById('catBgColor').value=this.value||'#f5f5f7'" style="flex:1;border:1.5px solid var(--g3);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:inherit">
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;padding:10px 0">
+      <input type="checkbox" id="catShareWA" checked style="accent-color:#25D366;width:16px;height:16px">
+      Mostrar botón "Compartir por WhatsApp" en esta categoría
+    </label>
+    <div class="adm-f">
+      <label>Color de fondo en home</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input type="color" id="catBgColor" value="#f5f5f7" style="width:50px;height:38px;border:none;border-radius:8px;cursor:pointer">
+        <input type="text" id="catBgColorText" placeholder="#f5f5f7 o cualquier color CSS" oninput="document.getElementById('catBgColor').value=this.value" style="flex:1;border:1.5px solid var(--g3);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:inherit">
+      </div>
+      <div class="adm-f-hint">Color del showcase en la página de inicio</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="adm-btn-p" onclick="saveCat()">Guardar categoría</button>
+      <button class="adm-btn-s" onclick="resetCatForm()">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div>
+    <% (cats||[]).forEach(c=>{ %>
+    <div class="adm-fc" style="margin-bottom:12px;padding:16px" id="cat-<%=c.id%>">
+      <div style="display:flex;align-items:center;gap:12px">
+        <% if(c.image_url){ %>
+        <img src="<%=c.image_url%>" style="width:48px;height:48px;border-radius:8px;object-fit:cover;background:#f5f5f7;flex-shrink:0" onerror="this.style.display='none'">
+        <% } else { %>
+        <div style="width:48px;height:48px;border-radius:8px;background:#f5f5f7;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📁</div>
+        <% } %>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600"><%=c.name%></div>
+          <div style="font-size:12px;color:#86868b"><%=c.slug%> · Orden: <%=c.sort_order||0%></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="adm-btn-s" style="font-size:12px;padding:5px 12px"
+            data-id="<%=c.id%>"
+            data-name="<%=encodeURIComponent(c.name||'')%>"
+            data-desc="<%=encodeURIComponent(c.description||'')%>"
+            data-img="<%=encodeURIComponent(c.image_url||'')%>"
+            data-order="<%=c.sort_order||0%>"
+            data-bg="<%=c.bg_color||'#f5f5f7'%>"
+            data-wa="<%=c.share_whatsapp===false||String(c.share_whatsapp)==='0'?'0':'1'%>"
+            onclick="editCatBtn(this)">Editar</button>
+          <button class="adm-btn-danger" onclick="deleteCat('<%=c.id%>','cat-<%=c.id%>')">Eliminar</button>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+    <% if(!cats||!cats.length){ %>
+    <div class="adm-fc" style="text-align:center;color:#86868b;padding:32px">No hay categorías aún</div>
+    <% } %>
+  </div>
+</div>
+
+  </div></div>
+<script>
+const TOKEN = '<%=token%>';
+
+function prevCatImg(input){
+  if(!input.files||!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('catImgPrev').innerHTML=`<img src="${e.target.result}" style="max-height:80px;border-radius:6px;margin:0 auto">`;
+    document.getElementById('catImg').value='';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function prevCatImgUrl(url){
+  if(!url.trim()) return;
+  document.getElementById('catImgPrev').innerHTML=`<img src="${url}" style="max-height:80px;border-radius:6px;margin:0 auto" onerror="this.style.display='none'">`;
+}
+
+function editCatBtn(btn){
+  const id=btn.dataset.id, name=decodeURIComponent(btn.dataset.name),
+    desc=decodeURIComponent(btn.dataset.desc), img=decodeURIComponent(btn.dataset.img),
+    order=btn.dataset.order, bgColor=btn.dataset.bg, shareWA=btn.dataset.wa;
+  editCat(id,name,desc,img,order,bgColor,shareWA);
+}
+function editCat(id,name,desc,img,order,bgColor,shareWA){
+  document.getElementById('catId').value=id;
+  document.getElementById('catName').value=name;
+  document.getElementById('catDesc').value=desc;
+  document.getElementById('catImg').value=img;
+  document.getElementById('catOrder').value=order;
+  document.getElementById('catBgColor').value=bgColor||'#f5f5f7';
+  document.getElementById('catBgColorText').value=bgColor||'#f5f5f7';
+  document.getElementById('catFormTitle').textContent='Editar: '+name;
+  if(img) document.getElementById('catImgPrev').innerHTML=`<img src="${img}" style="max-height:80px;border-radius:6px;margin:0 auto">`;
+  document.getElementById('catName').focus();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetCatForm(){
+  document.getElementById('catId').value='';
+  document.getElementById('catName').value='';
+  document.getElementById('catDesc').value='';
+  document.getElementById('catImg').value='';
+  document.getElementById('catOrder').value='0';
+  document.getElementById('catBgColor').value='#f5f5f7';
+  document.getElementById('catBgColorText').value='#f5f5f7';
+  document.getElementById('catShareWA').checked = (shareWA !== '0' && shareWA !== false);
+  document.getElementById('catImgFile').value='';
+  document.getElementById('catImgPrev').innerHTML='Haz clic para subir imagen';
+  document.getElementById('catFormTitle').textContent='Nueva categoría';
+}
+
+async function saveCat(){
+  const name=document.getElementById('catName').value.trim();
+  if(!name){flash('El nombre es requerido','error');return;}
+  const fd=new FormData();
+  fd.append('name',name);
+  fd.append('description',document.getElementById('catDesc').value.trim());
+  fd.append('sort_order',document.getElementById('catOrder').value);
+  fd.append('bg_color',document.getElementById('catBgColor').value);
+  fd.append('share_whatsapp',document.getElementById('catShareWA').checked?'1':'0');
+  fd.append('bg_color',document.getElementById('catBgColor').value);
+  const imgFile=document.getElementById('catImgFile');
+  if(imgFile.files&&imgFile.files[0]) fd.append('image',imgFile.files[0]);
+  else fd.append('image_url',document.getElementById('catImg').value.trim());
+  const id=document.getElementById('catId').value;
+  const url=id?'/api/categories/'+id:'/api/categories';
+  const method=id?'PUT':'POST';
+  const res=await fetch(url,{method,headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+  if(res.ok){flash('Categoría guardada ✓');setTimeout(()=>location.reload(),800);}
+  else{const d=await res.json();flash(d.error||'Error','error');}
+}
+
+async function deleteCat(id,rowId){
+  if(!confirm('¿Eliminar esta categoría?')) return;
+  const res=await fetch('/api/categories/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}});
+  if(res.ok){document.getElementById(rowId)?.remove();flash('Eliminada');}
+  else flash('Error al eliminar','error');
+}
+
+function flash(msg,type='ok'){
+  const el=document.createElement('div');el.className='flash-msg';
+  el.style.cssText=`position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)`;
+  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2800);
+}
+</script>
+</body></html>

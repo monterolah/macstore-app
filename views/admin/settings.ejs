@@ -1,0 +1,300 @@
+<%- include('../partials/admin-layout', {pageTitle:'Configuración', activePage:'settings'}) %>
+<div class="adm-ph">
+  <div><h1>Configuración</h1><p>Controla todo el contenido de tu tienda</p></div>
+  <button class="adm-btn-p" onclick="saveAllSettings()">Guardar todo</button>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+  <!-- COLUMNA IZQUIERDA -->
+  <div>
+
+    <!-- TIENDA -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Información de la tienda</div>
+      <div class="adm-f"><label>Nombre</label><input id="s_name" value="<%=settings.store_name||'MacStore'%>"></div>
+      <div class="adm-f"><label>Slogan</label><input id="s_tagline" value="<%=settings.store_tagline||''%>"></div>
+      <div class="adm-f"><label>Teléfono</label><input id="s_phone" value="<%=settings.store_phone||''%>" placeholder="+503 0000-0000"></div>
+      <div class="adm-f"><label>WhatsApp (solo dígitos)</label><input id="s_wa" value="<%=settings.store_whatsapp||''%>" placeholder="50370001234"><div class="adm-f-hint">Sin +, sin espacios. Ej: 50370001234</div></div>
+      <div class="adm-f"><label>Email</label><input id="s_email" value="<%=settings.store_email||''%>" placeholder="ventas@macstore.com"></div>
+      <div class="adm-f"><label>Dirección</label><input id="s_address" value="<%=settings.store_address||''%>" placeholder="El Salvador"></div>
+    </div>
+
+    <!-- CUOTAS SIN INTERESES -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="adm-fct" style="margin:0">Cuotas sin intereses</div>
+        <label class="tog" style="margin:0">
+          <input type="checkbox" id="s_cuotas_on" <%=settings.cuotas_active!==false?'checked':''%>>
+          <div class="tog-t"><div class="tog-th"></div></div>
+        </label>
+      </div>
+      <p style="font-size:12px;color:#86868b;margin-bottom:12px">Logos de tarjetas que aparecen en la página principal. Activa para mostrarlos.</p>
+      <div id="cuotaLogoList">
+        <% const cuotaLogos = Array.isArray(settings.cuota_logos) ? settings.cuota_logos : []; %>
+        <% cuotaLogos.forEach((l,i)=>{ %>
+        <div class="cuota-logo-row" style="display:grid;grid-template-columns:48px 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px;padding:10px;background:#f5f5f7;border-radius:10px">
+          <div style="width:48px;height:48px;background:#fff;border-radius:8px;border:1px solid #e8e8ed;display:flex;align-items:center;justify-content:center;overflow:hidden">
+            <% if(l.logo_url){ %><img src="<%=l.logo_url%>" style="max-width:44px;max-height:44px;object-fit:contain" onerror="this.style.display='none'"><% } else { %><span style="font-size:18px">💳</span><% } %>
+          </div>
+          <input class="si cl-name" value="<%=l.name||''%>" placeholder="Nombre (ej: Visa, Mastercard)">
+          <input class="si cl-url" value="<%=l.logo_url||''%>" placeholder="URL del logo" oninput="updateCuotaPreview(this)">
+          <button type="button" class="sdel" onclick="this.closest('.cuota-logo-row').remove()">×</button>
+        </div>
+        <% }) %>
+      </div>
+      <button class="adm-btn-s" style="font-size:12px" onclick="addCuotaLogo()">+ Agregar logo de tarjeta</button>
+    </div>
+
+    <!-- VENDEDORES -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Vendedores</div>
+      <p style="font-size:12px;color:#86868b;margin-bottom:12px">Aparecen como opciones en el modal de cotización.</p>
+      <div id="sellerList">
+        <% const sellersArr = Array.isArray(settings.sellers) ? settings.sellers : (typeof settings.sellers==='string' ? JSON.parse(settings.sellers||'[]') : []); %>
+        <% sellersArr.forEach((s,i)=>{ %>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input class="si seller-name" value="<%=s%>" placeholder="Nombre del vendedor" style="flex:1">
+          <button type="button" class="sdel" onclick="this.closest('div').remove()">×</button>
+        </div>
+        <% }) %>
+      </div>
+      <button class="adm-btn-s" style="font-size:12px" onclick="addSeller()">+ Agregar vendedor</button>
+    </div>
+
+    <!-- REDES SOCIALES -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Redes sociales</div>
+      <div class="adm-f"><label>Instagram</label><input id="s_ig" value="<%=settings.footer_instagram||''%>" placeholder="https://instagram.com/macstore"></div>
+      <div class="adm-f"><label>Facebook</label><input id="s_fb" value="<%=settings.footer_facebook||''%>" placeholder="https://facebook.com/macstore"></div>
+      <div class="adm-f"><label>TikTok</label><input id="s_tiktok" value="<%=settings.footer_tiktok||''%>" placeholder="https://tiktok.com/@macstore"></div>
+    </div>
+
+    <!-- BARRA PROMOCIONAL -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Barra promocional</div>
+      <div class="adm-f"><label>Texto</label><input id="s_promo" value="<%=settings.promo_bar_text||''%>"></div>
+      <div class="adm-f"><label>Color de fondo</label><input type="color" id="s_promo_color" value="<%=settings.promo_bar_color||'#0071e3'%>" style="height:40px;padding:4px 8px;border-radius:8px;border:1px solid var(--g3);width:100%"></div>
+      <div class="tog-r" style="border:none;padding-bottom:0"><span>Barra activa</span><label class="tog"><input type="checkbox" id="s_promo_on" <%=settings.promo_bar_active!==false?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label></div>
+    </div>
+
+    <!-- SECCIÓN DISTRIBUIDOR AUTORIZADO -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Sección "Distribuidor Autorizado"</div>
+      <div class="tog-r"><span>Mostrar sección</span><label class="tog"><input type="checkbox" id="s_auth_on" <%=settings.auth_section_active!==false?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label></div>
+      <div class="adm-f"><label>Título</label><input id="s_auth_title" value="<%=settings.auth_title||'Distribuidor Autorizado Apple'%>"></div>
+      <div class="adm-f"><label>Descripción</label><textarea id="s_auth_desc" style="min-height:60px"><%=settings.auth_desc||'Productos 100% originales con garantía oficial Apple. Servicio certificado en El Salvador.'%></textarea></div>
+    </div>
+
+  </div>
+
+  <!-- COLUMNA DERECHA -->
+  <div>
+
+    <!-- LOGO -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Logo de la tienda</div>
+      <% if(settings.logo_url){ %>
+      <img src="<%=settings.logo_url%>" style="max-height:50px;margin-bottom:12px;object-fit:contain" onerror="this.style.display='none'">
+      <% } %>
+      <div class="adm-f"><label>Subir logo PNG transparente</label>
+        <div style="border:1.5px dashed var(--g3);border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:var(--g1)" onclick="document.getElementById('logoFile').click()">
+          <input type="file" id="logoFile" accept="image/*" style="display:none" onchange="prevLogo(this)">
+          <div id="logoPrev" style="font-size:13px;color:#86868b">Haz clic para subir logo<br><span style="font-size:11px;color:#d2d2d7">Altura recomendada: 40–60px</span></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ADMIN Y RAMIRO -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Admin y asistente</div>
+      <div class="tog-r">
+        <span>Mostrar ícono de admin en la tienda</span>
+        <label class="tog"><input type="checkbox" id="s_admin_icon" <%=settings.show_admin_icon!==false?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label>
+      </div>
+      <div class="tog-r">
+        <span>Mostrar asistente Ramiro en el admin</span>
+        <label class="tog"><input type="checkbox" id="s_ramiro_on" <%=settings.show_ramiro!==false?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label>
+      </div>
+    </div>
+    <!-- SECCIÓN SOPORTE -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Sección "Soporte"</div>
+      <div class="tog-r"><span>Mostrar sección</span><label class="tog"><input type="checkbox" id="s_sup_on" <%=settings.support_section_active!==false?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label></div>
+      <div class="adm-f"><label>Título de la sección</label><input id="s_sup_title" value="<%=settings.support_title||'Soporte'%>"></div>
+      <div class="adm-f"><label>Subtítulo</label><input id="s_sup_sub" value="<%=settings.support_subtitle||'Asistencia y acompañamiento para tus dispositivos Apple'%>"></div>
+      <p style="font-size:12px;font-weight:600;color:var(--g4);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.03em">Tarjetas de soporte</p>
+      <% const supCards = settings.support_cards || [
+        {icon:'⚙️',title:'Configuración inicial',desc:'Te ayudamos a poner en marcha tu equipo de forma rápida y correcta.'},
+        {icon:'📦',title:'Migración de datos',desc:'Pasamos tu información desde otros dispositivos al ecosistema Apple.'},
+        {icon:'💬',title:'Asesoría personalizada',desc:'Resolvemos dudas sobre compatibilidad, uso y accesorios ideales.'}
+      ]; %>
+      <div id="supCardList">
+        <% supCards.forEach((c,i)=>{ %>
+        <div class="sup-card-row" style="background:var(--g1);border-radius:10px;padding:10px;margin-bottom:8px">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <input class="si sup-icon" value="<%=c.icon||''%>" placeholder="Emoji" style="width:56px;text-align:center;font-size:18px">
+            <input class="si sup-title" value="<%=c.title||''%>" placeholder="Título" style="flex:1">
+            <button type="button" class="sdel" onclick="this.closest('.sup-card-row').remove()">×</button>
+          </div>
+          <textarea class="si sup-desc" placeholder="Descripción" style="width:100%;min-height:52px;font-size:13px"><%=c.desc||''%></textarea>
+        </div>
+        <% }) %>
+      </div>
+      <button class="adm-btn-s" style="font-size:12px;margin-top:4px" onclick="addSupCard()">+ Agregar tarjeta</button>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="adm-fc" style="margin-bottom:14px">
+      <div class="adm-fct">Footer — columnas de links</div>
+      <p style="font-size:12px;color:var(--g4);margin-bottom:12px">Cada columna tiene un título y links separados por líneas (formato: Texto|URL)</p>
+      <% const footerCols = settings.footer_cols || [
+        {title:'Soporte',links:'Financiamiento|#\nGarantía Apple|#\nEnvíos|#\nContacto|#'}
+      ]; %>
+      <div id="footerColList">
+        <% footerCols.forEach((col,i)=>{ %>
+        <div class="footer-col-row" style="background:var(--g1);border-radius:10px;padding:10px;margin-bottom:8px">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <input class="si footer-col-title" value="<%=col.title||''%>" placeholder="Título de columna" style="flex:1">
+            <button type="button" class="sdel" onclick="this.closest('.footer-col-row').remove()">×</button>
+          </div>
+          <textarea class="si footer-col-links" placeholder="Texto|URL (una por línea)" style="width:100%;min-height:80px;font-size:12px;font-family:monospace"><%=col.links||''%></textarea>
+        </div>
+        <% }) %>
+      </div>
+      <button class="adm-btn-s" style="font-size:12px;margin-top:4px" onclick="addFooterCol()">+ Agregar columna</button>
+    </div>
+
+  </div>
+</div>
+
+  </div></div>
+<script>
+const TOKEN = '<%=token%>';
+
+function prevLogo(input){
+  if(!input.files||!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>document.getElementById('logoPrev').innerHTML=`<img src="${e.target.result}" style="max-height:50px;object-fit:contain;margin:0 auto;display:block">`;
+  reader.readAsDataURL(input.files[0]);
+}
+
+function addSupCard(){
+  const list=document.getElementById('supCardList');
+  const div=document.createElement('div');div.className='sup-card-row';
+  div.style.cssText='background:var(--g1);border-radius:10px;padding:10px;margin-bottom:8px';
+  div.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+    <input class="si sup-icon" placeholder="😊" style="width:56px;text-align:center;font-size:18px">
+    <input class="si sup-title" placeholder="Título" style="flex:1">
+    <button type="button" class="sdel" onclick="this.closest('.sup-card-row').remove()">×</button>
+  </div>
+  <textarea class="si sup-desc" placeholder="Descripción" style="width:100%;min-height:52px;font-size:13px"></textarea>`;
+  list.appendChild(div);div.querySelector('.sup-icon').focus();
+}
+
+function addFooterCol(){
+  const list=document.getElementById('footerColList');
+  const div=document.createElement('div');div.className='footer-col-row';
+  div.style.cssText='background:var(--g1);border-radius:10px;padding:10px;margin-bottom:8px';
+  div.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+    <input class="si footer-col-title" placeholder="Título" style="flex:1">
+    <button type="button" class="sdel" onclick="this.closest('.footer-col-row').remove()">×</button>
+  </div>
+  <textarea class="si footer-col-links" placeholder="Texto|URL (una por línea)" style="width:100%;min-height:80px;font-size:12px;font-family:monospace"></textarea>`;
+  list.appendChild(div);div.querySelector('.si').focus();
+}
+
+function addSeller(){
+  const list=document.getElementById('sellerList');
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:8px;margin-bottom:8px';
+  div.innerHTML=`<input class="si seller-name" placeholder="Nombre del vendedor" style="flex:1"><button type="button" class="sdel" onclick="this.closest('div').remove()">×</button>`;
+  list.appendChild(div);div.querySelector('input').focus();
+}
+
+function addCuotaLogo(){
+  const list=document.getElementById('cuotaLogoList');
+  const div=document.createElement('div');
+  div.className='cuota-logo-row';
+  div.style.cssText='display:grid;grid-template-columns:48px 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px;padding:10px;background:#f5f5f7;border-radius:10px';
+  div.innerHTML=`
+    <div style="width:48px;height:48px;background:#fff;border-radius:8px;border:1px solid #e8e8ed;display:flex;align-items:center;justify-content:center;overflow:hidden" class="cl-preview"><span style="font-size:18px">💳</span></div>
+    <input class="si cl-name" placeholder="Nombre (ej: Visa)">
+    <input class="si cl-url" placeholder="URL del logo" oninput="updateCuotaPreview(this)">
+    <button type="button" class="sdel" onclick="this.closest('.cuota-logo-row').remove()">×</button>`;
+  list.appendChild(div);div.querySelector('.cl-name').focus();
+}
+
+function updateCuotaPreview(input){
+  const row=input.closest('.cuota-logo-row');
+  const prev=row.querySelector('.cl-preview');
+  if(!prev) return;
+  const url=input.value.trim();
+  prev.innerHTML=url?`<img src="${url}" style="max-width:44px;max-height:44px;object-fit:contain" onerror="this.parentElement.innerHTML='<span style=font-size:18px>💳</span>'">`:'<span style="font-size:18px">💳</span>';
+}
+
+async function saveAllSettings(){
+  const sellers=[...document.querySelectorAll('.seller-name')].map(i=>i.value.trim()).filter(Boolean);
+  // Support cards
+  const supCards=[];
+  document.querySelectorAll('.sup-card-row').forEach(r=>{
+    const icon=r.querySelector('.sup-icon')?.value.trim();
+    const title=r.querySelector('.sup-title')?.value.trim();
+    const desc=r.querySelector('.sup-desc')?.value.trim();
+    if(title) supCards.push({icon:icon||'⚙️',title,desc:desc||''});
+  });
+  // Footer cols
+  const footerCols=[];
+  document.querySelectorAll('.footer-col-row').forEach(r=>{
+    const title=r.querySelector('.footer-col-title')?.value.trim();
+    const links=r.querySelector('.footer-col-links')?.value.trim();
+    if(title) footerCols.push({title,links:links||''});
+  });
+
+  // Guardar vendedores por JSON primero (no FormData para evitar que llegue como string)
+  const cuotaLogos=[...document.querySelectorAll('.cuota-logo-row')].map(r=>({
+    name: r.querySelector('.cl-name')?.value.trim()||'',
+    logo_url: r.querySelector('.cl-url')?.value.trim()||''
+  })).filter(l=>l.name||l.logo_url);
+  await fetch('/api/settings/sellers',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},body:JSON.stringify({sellers, cuota_logos:cuotaLogos, cuotas_active:document.getElementById('s_cuotas_on').checked})});
+
+  const fd=new FormData();
+  fd.append('store_name',        document.getElementById('s_name').value);
+  fd.append('store_tagline',     document.getElementById('s_tagline').value);
+  fd.append('store_phone',       document.getElementById('s_phone').value);
+  fd.append('store_whatsapp',    document.getElementById('s_wa').value);
+  fd.append('store_email',       document.getElementById('s_email').value);
+  fd.append('store_address',     document.getElementById('s_address').value);
+  fd.append('footer_instagram',  document.getElementById('s_ig').value);
+  fd.append('footer_facebook',   document.getElementById('s_fb').value);
+  fd.append('footer_tiktok',     document.getElementById('s_tiktok').value);
+  fd.append('promo_bar_text',    document.getElementById('s_promo').value);
+  fd.append('promo_bar_color',   document.getElementById('s_promo_color').value);
+  fd.append('promo_bar_active',  document.getElementById('s_promo_on').checked?'1':'0');
+  fd.append('auth_section_active', document.getElementById('s_auth_on').checked?'1':'0');
+  fd.append('auth_title',        document.getElementById('s_auth_title').value);
+  fd.append('auth_desc',         document.getElementById('s_auth_desc').value);
+  fd.append('show_admin_icon', document.getElementById('s_admin_icon')?document.getElementById('s_admin_icon').checked?'1':'0':'1');
+  fd.append('show_ramiro', document.getElementById('s_ramiro_on')?document.getElementById('s_ramiro_on').checked?'1':'0':'1');
+  fd.append('support_section_active', document.getElementById('s_sup_on').checked?'1':'0');
+  fd.append('support_title',     document.getElementById('s_sup_title').value);
+  fd.append('support_subtitle',  document.getElementById('s_sup_sub').value);
+  fd.append('support_cards',     JSON.stringify(supCards));
+  fd.append('footer_cols',       JSON.stringify(footerCols));
+
+  const logoFile=document.getElementById('logoFile');
+  if(logoFile.files&&logoFile.files[0]) fd.append('logo',logoFile.files[0]);
+
+  const res=await fetch('/api/settings',{method:'PUT',headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+  if(res.ok) flash('Configuración guardada ✓');
+  else flash('Error al guardar','error');
+}
+
+function flash(msg,type='ok'){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)`;
+  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2800);
+}
+</script>
+</body></html>

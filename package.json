@@ -1,0 +1,40 @@
+{
+  "name": "macstore-firebase",
+  "version": "2.0.0",
+  "description": "MacStore — Firebase + Node.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "gen-cert": "mkdir -p ssl && openssl req -x509 -newkey rsa:2048 -keyout ssl/key.pem -out ssl/cert.pem -days 825 -nodes -subj \"/C=MX/ST=Local/L=Local/O=MacStore/CN=192.168.1.244\" -addext \"subjectAltName=IP:192.168.1.244,IP:127.0.0.1,DNS:localhost\"",
+    "obfuscate": "for f in macstore quotation admin protect; do node_modules/.bin/javascript-obfuscator src/js/${f}.src.js --output public/js/${f}.js --compact true --control-flow-flattening true --control-flow-flattening-threshold 0.4 --dead-code-injection true --dead-code-injection-threshold 0.2 --identifier-names-generator hexadecimal --rename-globals false --self-defending true --string-array true --string-array-encoding rc4 --string-array-threshold 0.75 --transform-object-keys true --disable-console-output true --debug-protection true --debug-protection-interval 2000; done",
+    "minify-css": "node_modules/.bin/cleancss -o public/css/macstore.css src/macstore.src.css"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-redis": "^7.0.0",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "firebase-admin": "^12.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.0",
+    "pdfkit": "^0.15.1",
+    "redis": "^4.6.7",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "clean-css-cli": "^5.6.3",
+    "javascript-obfuscator": "^5.4.1",
+    "nodemon": "^3.1.9"
+  },
+  "overrides": {
+    "@tootallnate/once": "^3.0.1",
+    "http-proxy-agent": "^7.0.0",
+    "glob": "^10.0.0",
+    "rimraf": "^5.0.0",
+    "inflight": "npm:lru-cache@^10.0.0"
+  }
+}

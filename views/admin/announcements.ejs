@@ -1,0 +1,144 @@
+<%- include('../partials/admin-layout', {pageTitle:'Anuncios', activePage:'announcements'}) %>
+<div class="adm-ph">
+  <div><h1>Anuncios y promociones</h1><p>Aparecen en la página principal debajo del catálogo</p></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+  <!-- FORM -->
+  <div class="adm-fc">
+    <div class="adm-fct" id="annFormTitle">Nuevo anuncio</div>
+    <input type="hidden" id="annId">
+    <div class="adm-f"><label>Título (opcional)</label><input type="text" id="annTitle" placeholder="ej: Hasta 10 meses sin intereses"></div>
+    <div class="adm-f">
+      <label>Imagen *</label>
+      <div style="border:1.5px dashed #d2d2d7;border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:#f5f5f7;position:relative;margin-bottom:8px" onclick="document.getElementById('annImgFile').click()">
+        <input type="file" id="annImgFile" accept="image/*" style="display:none" onchange="prevAnnImg(this)">
+        <div id="annImgPrev">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868b" stroke-width="1.5" style="margin:0 auto 8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style="font-size:13px;color:#86868b">Haz clic para subir imagen</div>
+          <div style="font-size:11px;color:#d2d2d7;margin-top:4px">PNG, JPG, WebP — cualquier tamaño</div>
+        </div>
+      </div>
+      <input type="text" id="annImgUrl" placeholder="O pega una URL de imagen" oninput="prevAnnImgUrl(this.value)" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none">
+    </div>
+    <div class="adm-f"><label>Link al hacer clic (opcional)</label><input type="text" id="annLink" placeholder="https://… o /categoria/iphone"></div>
+    <div class="adm-f-row">
+      <div class="adm-f"><label>Orden</label><input type="number" id="annOrder" value="0"></div>
+      <div class="adm-f"><label>Alto del logo (px)</label><input type="number" id="annLogoHeight" value="64" min="20" max="200" placeholder="64"><div class="adm-f-hint">Tamaño del logo en la página del producto</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="adm-btn-p" onclick="saveAnn()">Guardar anuncio</button>
+      <button class="adm-btn-s" onclick="resetAnnForm()">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div>
+    <div id="annList">
+      <% (announcements||[]).forEach(a=>{ %>
+      <div class="adm-fc" style="margin-bottom:12px;padding:14px" id="ann-<%=a.id%>">
+        <div style="display:flex;align-items:center;gap:12px">
+          <% if(a.image_url){ %>
+          <img src="<%=a.image_url%>" style="width:80px;height:50px;object-fit:contain;border-radius:6px;background:#f5f5f7;flex-shrink:0" onerror="this.style.display='none'">
+          <% } else { %>
+          <div style="width:80px;height:50px;background:#f5f5f7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📢</div>
+          <% } %>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:500"><%=a.title||'Sin título'%></div>
+            <div style="font-size:12px;color:#86868b">Orden: <%=a.sort_order||0%> · <%=a.active!==false?'Activo':'Inactivo'%></div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="adm-btn-s" style="font-size:12px;padding:5px 12px" onclick="editAnn('<%=a.id%>','<%=encodeURIComponent(a.title||"")%>','<%=encodeURIComponent(a.image_url||"")%>','<%=encodeURIComponent(a.link||"")%>',<%=a.sort_order||0%>,<%=a.logo_height||64%>)">Editar</button>
+            <button class="adm-btn-s" style="font-size:12px;padding:5px 12px" onclick="toggleAnn('<%=a.id%>')"><%=a.active!==false?'Ocultar':'Mostrar'%></button>
+            <button class="adm-btn-danger" onclick="deleteAnn('<%=a.id%>','ann-<%=a.id%>')">×</button>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+      <% if(!(announcements&&announcements.length)){ %>
+      <div class="adm-fc" style="text-align:center;color:#86868b;padding:32px">No hay anuncios aún. Agrega uno.</div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+  </div></div>
+<script>
+const TOKEN = '<%=token%>';
+
+function prevAnnImg(input){
+  if(!input.files||!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('annImgPrev').innerHTML=`<img src="${e.target.result}" style="max-height:80px;border-radius:6px;margin:0 auto;display:block">`;
+    document.getElementById('annImgUrl').value='';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function prevAnnImgUrl(url){
+  if(!url.trim()) return;
+  document.getElementById('annImgPrev').innerHTML=`<img src="${url}" style="max-height:80px;border-radius:6px;margin:0 auto;display:block" onerror="this.style.display='none'">`;
+}
+
+function editAnn(id,title,img,link,order,logoH){
+  document.getElementById('annId').value=id;
+  document.getElementById('annTitle').value=decodeURIComponent(title);
+  document.getElementById('annImgUrl').value=decodeURIComponent(img);
+  document.getElementById('annLink').value=decodeURIComponent(link);
+  document.getElementById('annOrder').value=order;
+  document.getElementById('annLogoHeight').value=logoH||64;
+  document.getElementById('annFormTitle').textContent='Editar anuncio';
+  const url=decodeURIComponent(img);
+  if(url) document.getElementById('annImgPrev').innerHTML=`<img src="${url}" style="max-height:80px;border-radius:6px;margin:0 auto;display:block">`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetAnnForm(){
+  document.getElementById('annId').value='';
+  document.getElementById('annTitle').value='';
+  document.getElementById('annImgUrl').value='';
+  document.getElementById('annLink').value='';
+  document.getElementById('annOrder').value='0';
+  document.getElementById('annLogoHeight').value='64';
+  document.getElementById('annImgFile').value='';
+  document.getElementById('annImgPrev').innerHTML=`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868b" stroke-width="1.5" style="margin:0 auto 8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div style="font-size:13px;color:#86868b">Haz clic para subir imagen</div>`;
+  document.getElementById('annFormTitle').textContent='Nuevo anuncio';
+}
+
+async function saveAnn(){
+  const fd=new FormData();
+  fd.append('title',document.getElementById('annTitle').value.trim());
+  fd.append('link',document.getElementById('annLink').value.trim());
+  fd.append('sort_order',document.getElementById('annOrder').value);
+  fd.append('logo_height',document.getElementById('annLogoHeight').value||64);
+  const imgFile=document.getElementById('annImgFile');
+  if(imgFile.files&&imgFile.files[0]) fd.append('image',imgFile.files[0]);
+  else fd.append('image_url',document.getElementById('annImgUrl').value.trim());
+  const id=document.getElementById('annId').value;
+  const url=id?'/api/announcements/'+id:'/api/announcements';
+  const method=id?'PUT':'POST';
+  const res=await fetch(url,{method,headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+  if(res.ok){flash('Guardado ✓');setTimeout(()=>location.reload(),800);}
+  else{const d=await res.json();flash(d.error||'Error','error');}
+}
+
+async function toggleAnn(id){
+  const res=await fetch('/api/announcements/'+id+'/toggle',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN}});
+  if(res.ok) location.reload();
+  else flash('Error','error');
+}
+
+async function deleteAnn(id,rowId){
+  if(!confirm('¿Eliminar este anuncio?')) return;
+  const res=await fetch('/api/announcements/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}});
+  if(res.ok){document.getElementById(rowId)?.remove();flash('Eliminado');}
+  else flash('Error','error');
+}
+
+function flash(msg,type='ok'){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)`;
+  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2800);
+}
+</script>
+</body></html>

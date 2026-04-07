@@ -1,0 +1,54 @@
+<%- include('partials/header', {title:'Catálogo', description:'Todos los productos Apple disponibles'}) %>
+<div style="padding:44px 22px 80px">
+  <div style="max-width:1024px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:40px">
+      <h2 style="font-size:clamp(28px,4vw,48px);font-weight:700;letter-spacing:-.045em;margin-bottom:8px">Catálogo completo</h2>
+      <p style="font-size:17px;color:#86868b">Todo el ecosistema Apple</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:36px">
+      <a href="/productos" style="background:#1d1d1f;color:#fff;padding:9px 20px;border-radius:980px;font-size:14px;font-weight:500">Todo</a>
+      <% (categories||[]).forEach(c=>{ %>
+        <a href="/categoria/<%=c.slug%>" style="background:transparent;color:#0071e3;border:1px solid #0071e3;padding:8px 18px;border-radius:980px;font-size:14px;transition:all .2s" onmouseover="this.style.background='#0071e3';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#0071e3'"><%=c.name%></a>
+      <% }) %>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
+      <% (products||[]).forEach(p=>{ %>
+      <a href="/producto/<%=p.slug%>" class="ms-card" style="text-decoration:none;color:inherit">
+        <% const firstCatalogColor = (p.color_variants&&p.color_variants.length)?p.color_variants[0]:null; %>
+        <div class="ms-card-img" style="--img-scale:<%=firstCatalogColor&&firstCatalogColor.img_scale ? firstCatalogColor.img_scale : (p.img_scale||1)%>">
+          <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
+          <div class="ms-card-glow"></div>
+          <img src="<%=firstCatalogColor&&firstCatalogColor.image_url ? firstCatalogColor.image_url : (p.image_url||'')%>" alt="<%=p.name%>" loading="lazy" style="object-fit:<%=firstCatalogColor&&firstCatalogColor.img_fit ? firstCatalogColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstCatalogColor&&firstCatalogColor.img_pos ? firstCatalogColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstCatalogColor&&firstCatalogColor.img_scale ? firstCatalogColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
+        </div>
+        <div style="padding:16px 18px 20px;flex:1;display:flex;flex-direction:column">
+          <p style="font-size:11px;color:#86868b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px"><%=p.category||''%></p>
+          <h3 style="font-size:16px;font-weight:600;letter-spacing:-.025em;line-height:1.2;margin-bottom:8px"><%=p.name%></h3>
+          <% const enabledCatalogColors = (p.color_variants||[]).filter(c=>c && c.enabled !== false); if(enabledCatalogColors.length){ %>
+          <div class="ms-card-swatches" style="margin-bottom:10px" onclick="event.preventDefault()">
+            <% enabledCatalogColors.slice(0,5).forEach((c,ci)=>{ const sw=c.swatch_url||''; const img=c.image_url||''; if(sw||img){ %>
+            <span class="ms-card-swatch <%=ci===0?'active':''%>"
+              style="background-image:url('<%=sw||img%>')"
+              title="<%=c.name||''%>"
+              data-img="<%=img%>"
+              data-scale="<%=c.img_scale||p.img_scale||1%>"
+              data-fit="<%=c.img_fit||p.img_fit||'contain'%>"
+              data-pos="<%=c.img_pos||p.img_pos||'center'%>"
+              onclick="cardSwatchClick(this,event)"></span>
+            <% } }) %>
+          </div>
+          <% } %>
+          <% if((p.price||0) > 150 && p.enable_installments !== false){ %><div style="margin-bottom:12px">
+            <div style="font-size:13px;color:#86868b;margin-bottom:3px">10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong></div>
+            <div style="font-size:13px;color:#86868b">6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong></div>
+          </div><% } %>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:17px;font-weight:700"><%=formatPrice(p.price)%></span>
+            <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+          </div>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

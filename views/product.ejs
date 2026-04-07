@@ -1,0 +1,349 @@
+<%- include('partials/header', {title:product.name, description:product.description}) %>
+
+<div style="padding:44px 22px 80px;max-width:900px;margin:0 auto">
+  <div style="display:flex;gap:5px;font-size:13px;color:#86868b;margin-bottom:24px;flex-wrap:wrap;align-items:center">
+    <a href="/" style="color:#86868b;transition:color .2s" onmouseover="this.style.color='#1d1d1f'" onmouseout="this.style.color='#86868b'">MacStore</a>
+    <span style="margin:0 3px">/</span>
+    <% if(product.category){ %>
+    <% const _cat = (categories||[]).find(c=>c.slug===product.category); %>
+    <a href="/categoria/<%=product.category%>" style="color:#86868b;transition:color .2s" onmouseover="this.style.color='#1d1d1f'" onmouseout="this.style.color='#86868b'"><%=_cat?_cat.name:product.category%></a><span style="margin:0 3px">/</span>
+    <% } %>
+    <span style="color:#1d1d1f"><%=product.name%></span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start">
+
+    <!-- IMAGEN -->
+    <div style="position:sticky;top:90px">
+      <!-- CONTENEDOR CON GLOW -->
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;padding:48px 40px;aspect-ratio:1;overflow:hidden">
+        <!-- GLOW ANIMADO -->
+        <div id="productGlow" style="
+          position:absolute;inset:18%;border-radius:50%;
+          background:radial-gradient(ellipse at center, rgba(120,120,200,.22) 0%, rgba(100,180,255,.12) 40%, transparent 70%);
+          filter:blur(28px);pointer-events:none;z-index:0;
+          animation:productGlowPulse 3s ease-in-out infinite;
+        "></div>
+        <!-- COLORES -->
+      <% const colors = (product.color_variants || []).filter(c => c); %>
+      <% const activeColors = colors.filter(c => c.enabled !== false); %>
+      <% const initialColor = activeColors.length ? activeColors[0] : (colors.length ? colors[0] : null); %>
+      <% const initialCaps = initialColor && Array.isArray(initialColor.available_caps) && initialColor.available_caps.length ? initialColor.available_caps : (product.variants||[]).map(v=>v.label); %>
+      <!-- IMAGEN PRINCIPAL -->
+      <img id="mainImg" src="<%=initialColor&&initialColor.image_url ? initialColor.image_url : (product.image_url||'')%>" alt="<%=product.name%>"
+        style="position:relative;z-index:1;width:100%;height:100%;max-height:340px;object-fit:<%=initialColor&&initialColor.img_fit ? initialColor.img_fit : (product.img_fit||'contain')%>;object-position:<%=initialColor&&initialColor.img_pos ? initialColor.img_pos : (product.img_pos||'center')%>;transition:opacity .4s ease,transform .4s ease;transform:scale(<%=initialColor&&initialColor.img_scale ? initialColor.img_scale : (product.img_scale||1)%>);transform-origin:center center;display:block"
+        onerror="this.style.display='none'">
+      </div>
+
+      <% const colorVariants = product.variants || []; %>
+      <% if(colors.length){ %>
+      <div style="text-align:center;margin-top:8px">
+        <p id="colorLabel" style="font-size:14px;color:#1d1d1f;font-weight:500;margin-bottom:14px;min-height:20px;letter-spacing:-.01em"><%=colors[0]&&colors[0].name?colors[0].name:''%></p>
+        <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;padding:2px 4px">
+          <% colors.forEach((c,i)=>{ %>
+          <% const swatchSrc = c.swatch_url||c.image_url||''; %>
+          <% const cImg = c.image_url||c.swatch_url||''; %>
+          <% const cName = c.name||''; %>
+          <% const cFit = c.img_fit||'contain'; %>
+          <% const cPos = c.img_pos||'center'; %>
+          <% const cScale = c.img_scale||product.img_scale||1; %>
+          <% const cCapsArr = (Array.isArray(c.available_caps)&&c.available_caps.length) ? c.available_caps : colorVariants.map(v=>v.label); %>
+          <% if(c.enabled === false){ %>
+          <button
+            title="<%=cName%> — No disponible"
+            disabled
+            style="width:48px;height:48px;border-radius:50%;border:none;padding:0;cursor:not-allowed;background:transparent;position:relative;flex-shrink:0;opacity:.5"
+          >
+            <% if(swatchSrc){ %>
+            <img src="<%=swatchSrc%>" alt="<%=cName%>" style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block;filter:grayscale(60%)">
+            <% } else { %>
+            <span style="width:48px;height:48px;border-radius:50%;background:#e8e8ed;display:block"></span>
+            <% } %>
+            <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:#cf2020;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.3)">✕</span>
+          </button>
+          <% } else { %>
+          <button
+            onclick="selectColor(this,this.dataset.img,this.dataset.name,this.dataset.fit,this.dataset.pos,this.dataset.scale,JSON.parse(decodeURIComponent(this.dataset.caps||'%5B%5D')))"
+            data-img="<%=cImg%>"
+            data-name="<%=cName%>"
+            data-fit="<%=cFit%>"
+            data-pos="<%=cPos%>"
+            data-scale="<%=cScale%>"
+            data-caps="<%=encodeURIComponent(JSON.stringify(cCapsArr))%>"
+            title="<%=cName%>"
+            class="color-swatch <%=i===0?'active':''%>"
+            style="width:48px;height:48px;border-radius:50%;border:none;padding:0;cursor:pointer;background:transparent;transition:transform .2s, box-shadow .2s;box-shadow:<%=i===0?'0 0 0 3px rgba(0,113,227,.22)':'0 0 0 1px rgba(0,0,0,.08)'%>;position:relative;flex-shrink:0"
+            onmouseover="if(!this.classList.contains('active')){this.style.boxShadow='0 0 0 1px rgba(0,0,0,.18)';this.style.transform='scale(1.08)'}"
+            onmouseout="if(!this.classList.contains('active')){this.style.boxShadow='0 0 0 1px rgba(0,0,0,.08)';this.style.transform='scale(1)'}"
+          >
+            <% if(swatchSrc){ %>
+            <img src="<%=swatchSrc%>" alt="<%=cName%>" style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block" onerror="this.style.display='none'">
+            <% } else { %>
+            <span style="width:48px;height:48px;border-radius:50%;background:#e8e8ed;display:block"></span>
+            <% } %>
+          </button>
+          <% } %>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- INFO -->
+    <div>
+      <% if(product.category){ %><% const _catLabel = (categories||[]).find(c=>c.slug===product.category); %><p style="font-size:12px;color:#86868b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;font-weight:500"><%=_catLabel?_catLabel.name:product.category%></p><% } %>
+      <% if(product.badge){ %><span style="display:inline-block;background:#1d1d1f;color:#fff;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px"><%=product.badge%></span><% } %>
+      <h1 style="font-size:clamp(28px,3.8vw,44px);font-weight:700;letter-spacing:-.048em;line-height:1.03;margin-bottom:10px"><%=product.name%></h1>
+      <p style="font-size:17px;color:#86868b;line-height:1.5;margin-bottom:22px"><%=product.description%></p>
+
+      <div style="font-size:28px;font-weight:700;letter-spacing:-.04em;margin-bottom:4px" id="mainPrice"><%=formatPrice(product.price)%></div>
+      <% if(product.original_price){ %><div style="font-size:14px;color:#86868b;text-decoration:line-through;margin-bottom:4px"><%=formatPrice(product.original_price)%></div><% } %>
+
+      <!-- VARIANTES DE ALMACENAMIENTO -->
+      <% const variants = product.variants || []; %>
+      <% if(variants.length){ %>
+      <div style="margin:18px 0">
+        <div style="font-size:12px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Almacenamiento</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <% variants.forEach((v,i)=>{ %>
+          <% const vAvail = initialCaps.length===0 || initialCaps.includes(v.label); %>
+          <% const vFirst = variants.find(vv => initialCaps.length===0 || initialCaps.includes(vv.label)); %>
+          <% const vIsFirst = vFirst && v.label === vFirst.label; %>
+          <button onclick="selectVariant(this,'<%=v.label%>',<%=v.price||0%>)"
+            class="variant-btn <%=vIsFirst?'variant-active':''%>"
+            <%=!vAvail ? 'disabled' : ''%>
+            style="padding:10px 20px;border-radius:12px;border:<%=vIsFirst?'2px solid #1d1d1f':'1.5px solid #d2d2d7'%>;background:<%=vIsFirst?'#1d1d1f':'#fff'%>;color:<%=vIsFirst?'#fff':'#1d1d1f'%>;font-size:14px;font-weight:600;cursor:<%=vAvail?'pointer':'default'%>;transition:all .2s;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:80px;opacity:<%=vAvail?'1':'0.35'%>;text-decoration:<%=vAvail?'none':'line-through'%>">
+            <span><%=v.label%></span>
+            <% if(v.price){ %><span style="font-size:11px;opacity:.7"><%=formatPrice(v.price)%></span><% } %>
+          </button>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+
+      <% if(product.stock>0){ %>
+      <div style="font-size:13px;color:#1a7f37;font-weight:500;margin:12px 0;display:flex;align-items:center;gap:6px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#1a7f37;display:inline-block"></span>
+        En stock — <%=product.stock%> disponibles
+      </div>
+      <% } %>
+
+      <!-- CUOTAS -->
+      <% if(product.price > 150 && product.enable_installments !== false){ %>
+      <div style="background:#f5f5f7;border-radius:14px;padding:16px;margin:16px 0">
+        <div style="font-size:12px;color:#86868b;font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Cuotas sin intereses</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:#fff;border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:#86868b;margin-bottom:3px">6 cuotas</div>
+            <div style="font-size:20px;font-weight:700;letter-spacing:-.03em" id="cuota6">$<%=(product.price/6).toFixed(2)%></div>
+            <div style="font-size:10px;color:#86868b">por mes</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:11px;color:#86868b;margin-bottom:3px">10 cuotas</div>
+            <div style="font-size:20px;font-weight:700;letter-spacing:-.03em" id="cuota10">$<%=(product.price/10).toFixed(2)%></div>
+            <div style="font-size:10px;color:#86868b">por mes</div>
+          </div>
+        </div>
+      </div>
+      <% } %>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 28px">
+        <% if(settings.store_whatsapp){ %>
+        <a id="buyBtn" href="https://wa.me/<%=settings.store_whatsapp%>?text=Hola%2C%20quiero%20comprar%20<%=encodeURIComponent(product.name)%>%20(<%=encodeURIComponent(formatPrice(product.price))%>)"
+           target="_blank"
+           style="background:#25D366;color:#fff;padding:13px 28px;border-radius:980px;font-size:16px;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:background .2s;text-decoration:none;box-shadow:0 4px 16px rgba(37,211,102,.3)"
+           onmouseover="this.style.background='#1ebe5d'" onmouseout="this.style.background='#25D366'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Comprar
+        </a>
+        <% } %>
+        <% if(settings.store_phone){ %>
+        <a href="tel:<%=settings.store_phone%>"
+           style="background:transparent;color:#0071e3;border:1.5px solid #0071e3;padding:12px 22px;border-radius:980px;font-size:15px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;text-decoration:none;font-weight:500"
+           onmouseover="this.style.background='#0071e3';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#0071e3'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.08 6.08l.97-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Llamar <%=settings.store_phone%>
+        </a>
+        <% } %>
+      </div>
+
+      <!-- SPECS -->
+      <% const sk = Object.keys(product.specs||{}); %>
+      <% if(sk.length){ %>
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px">Especificaciones</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px">
+        <% sk.forEach(k=>{ %>
+        <div style="background:#f5f5f7;border-radius:12px;padding:12px 14px;transition:background .2s" onmouseover="this.style.background='#e8e8ed'" onmouseout="this.style.background='#f5f5f7'">
+          <div style="font-size:10px;color:#86868b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;font-weight:500"><%=k%></div>
+          <div style="font-size:14px;font-weight:600"><%=product.specs[k]%></div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+
+      <!-- LOGOS / BADGES DEL PRODUCTO -->
+      <% const logos = product.logos || []; %>
+      <% if(logos.length){ %>
+      <div style="border-top:1px solid #e8e8ed;padding-top:20px;margin-top:4px">
+        <div style="font-size:12px;color:#86868b;margin-bottom:12px;font-weight:500;text-transform:uppercase;letter-spacing:.04em">Compatibilidades y certificaciones</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+          <% logos.forEach(l=>{ %>
+          <% if(l.link){ %><a href="<%=l.link%>" target="_blank" style="display:block"><% } %>
+          <% if(l.image_url){ %>
+          <img src="<%=l.image_url%>" alt="<%=l.label||''%>" title="<%=l.label||''%>"
+            style="height:32px;width:auto;object-fit:contain;filter:grayscale(20%);transition:filter .2s;opacity:.85"
+            onmouseover="this.style.filter='none';this.style.opacity='1'" onmouseout="this.style.filter='grayscale(20%)';this.style.opacity='.85'"
+            onerror="this.style.display='none'">
+          <% } else if(l.label){ %>
+          <span style="font-size:12px;color:#515154;background:#f5f5f7;padding:5px 12px;border-radius:20px;font-weight:500"><%=l.label%></span>
+          <% } %>
+          <% if(l.link){ %></a><% } %>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- ANUNCIOS / PROMOCIONES -->
+  <% if(announcements && announcements.length){ %>
+  <div style="margin-top:40px;border-top:1px solid #e8e8ed;padding-top:32px">
+    <div style="font-size:12px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:20px;text-align:center">Financiamiento y promociones</div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:center">
+      <% announcements.forEach(a=>{ %>
+      <% if(a.link){ %><a href="<%=a.link%>" target="_blank" style="display:block;transition:transform .2s;text-decoration:none" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><% } else { %><div><% } %>
+        <% if(a.image_url){ %>
+        <img src="<%=a.image_url%>" alt="<%=a.title||''%>"
+          style="max-height:<%=a.logo_height||64%>px;max-width:200px;object-fit:contain;display:block"
+          onerror="this.style.display='none'">
+        <% } %>
+        <% if(a.title&&!a.image_url){ %>
+        <div style="font-size:13px;font-weight:500;color:#515154;text-align:center"><%=a.title%></div>
+        <% } %>
+      <% if(a.link){ %></a><% } else { %></div><% } %>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- PRODUCTOS RELACIONADOS -->
+  <% if(related&&related.length){ %>
+  <div style="margin-top:64px">
+    <h2 style="font-size:24px;font-weight:700;letter-spacing:-.045em;margin-bottom:24px">También te puede interesar</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px">
+      <% related.forEach(r=>{ %>
+      <a href="/producto/<%=r.slug%>" style="background:#f5f5f7;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform .3s,box-shadow .3s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:20px;background:#fff;overflow:hidden">
+          <img src="<%=r.image_url||''%>" alt="<%=r.name%>" loading="lazy" style="width:100%;height:100%;object-fit:<%=r.img_fit||'contain'%>;object-position:<%=r.img_pos||'center'%>;transform:scale(<%=r.img_scale||1%>);transform-origin:center center" onerror="this.style.display='none'">
+        </div>
+        <div style="padding:14px 16px 18px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px"><%=r.name%></div>
+          <div style="font-size:15px;font-weight:700"><%=formatPrice(r.price)%></div>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+</div>
+
+<script>
+function selectVariant(btn, label, price){
+  document.querySelectorAll('.variant-btn').forEach(b=>{
+    b.style.background='#fff';b.style.color='#1d1d1f';
+    b.style.border='1px solid #d2d2d7';
+    b.classList.remove('variant-active');
+  });
+  btn.style.background='#1d1d1f';btn.style.color='#fff';
+  btn.style.border='2px solid #1d1d1f';
+  btn.classList.add('variant-active');
+  if(price){
+    document.getElementById('mainPrice').textContent='$'+parseFloat(price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    // Update cuotas
+    const c6 = document.getElementById('cuota6');
+    const c10 = document.getElementById('cuota10');
+    if(c6) c6.textContent = '$'+(price/6).toFixed(2);
+    if(c10) c10.textContent = '$'+(price/10).toFixed(2);
+    window._selectedPrice = price;
+    window._selectedVariant = label;
+  }
+}
+
+const PRODUCT_DATA = <%- JSON.stringify({
+  name: product.name,
+  description: product.description||'',
+  price: product.price,
+  original_price: product.original_price||null,
+  badge: product.badge||null,
+  image_url: product.image_url||'',
+  specs: product.specs||{},
+  ficha: product.ficha||{}
+}) %>;
+const SETTINGS_DATA = <%- JSON.stringify({
+  store_name: settings.store_name||'MacStore',
+  store_phone: settings.store_phone||'',
+  store_email: settings.store_email||'',
+  store_address: settings.store_address||'El Salvador',
+  store_tagline: settings.store_tagline||'Distribuidor Autorizado Apple'
+}) %>;
+
+function downloadQuotation(){
+  const prod = {...PRODUCT_DATA};
+  if(window._selectedPrice) prod.selectedPrice = window._selectedPrice;
+  if(window._selectedVariant) prod.selectedVariant = window._selectedVariant;
+  generateQuotation(prod, SETTINGS_DATA);
+}
+
+function selectColor(btn, imageUrl, colorName, imgFit, imgPos, imgScale, availCaps) {
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.style.boxShadow    = '0 0 0 1px rgba(0,0,0,.08)';
+    s.style.transform    = 'scale(1)';
+    s.classList.remove('active');
+  });
+  btn.style.boxShadow    = '0 0 0 3px rgba(0,113,227,.22)';
+  btn.style.transform    = 'scale(1.08)';
+  btn.classList.add('active');
+  if(document.getElementById('colorLabel')) document.getElementById('colorLabel').textContent = colorName||'';
+  window._selectedColor = colorName;
+
+  // Update variant buttons visibility based on available caps
+  const caps = Array.isArray(availCaps) ? availCaps : [];
+  document.querySelectorAll('.variant-btn').forEach(vb => {
+    const label = vb.querySelector('span') ? vb.querySelector('span').textContent.trim() : '';
+    const ok = caps.length===0 || caps.includes(label);
+    vb.style.opacity        = ok ? '1' : '0.35';
+    vb.style.textDecoration = ok ? 'none' : 'line-through';
+    vb.style.cursor         = ok ? 'pointer' : 'default';
+    vb.disabled             = !ok;
+    if(!ok && vb.classList.contains('variant-active')) {
+      // Move selection to first available
+      const first = [...document.querySelectorAll('.variant-btn')].find(b=>!b.disabled);
+      if(first) first.click();
+    }
+  });
+
+  if(imageUrl) {
+    const img  = document.getElementById('mainImg');
+    const glow = document.getElementById('productGlow');
+    if(!img) return;
+    const targetScale = parseFloat(imgScale || '1') || 1;
+    img.style.opacity   = '0';
+    img.style.transform = 'scale(0.93)';
+    if(glow){ glow.style.opacity='0'; glow.style.transform='scale(.8)'; }
+    setTimeout(() => {
+      img.src = imageUrl;
+      img.style.objectFit      = imgFit||'contain';
+      img.style.objectPosition = imgPos||'center';
+      const restore = () => {
+        img.style.opacity   = '1';
+        img.style.transform = 'scale('+targetScale+')';
+        if(glow){ glow.style.opacity='1'; glow.style.transform='scale(1)'; }
+      };
+      img.onload  = restore;
+      img.onerror = restore;
+    }, 200);
+  }
+}
+</script>
+
+<%- include('partials/footer') %>

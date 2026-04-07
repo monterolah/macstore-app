@@ -1,0 +1,105 @@
+<%- include('../partials/admin-layout', {pageTitle:'Notificaciones', activePage:'notifications'}) %>
+
+<div class="adm-ph">
+  <div><h1>Notificaciones de ingreso</h1><p><%= entries.length %> registros recientes</p></div>
+</div>
+
+<div style="display:grid;gap:16px">
+  <% if(!entries.length){ %>
+    <div class="adm-card" style="padding:22px;color:#6e6e73">Aún no hay ingresos importados.</div>
+  <% } %>
+
+  <% entries.forEach(entry => { const totals = entry.totals || {}; %>
+    <div class="adm-card" style="padding:18px 18px 10px">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">
+        <div>
+          <div style="font-size:18px;font-weight:700"><%= entry.title || ('Ingreso ' + entry.id) %></div>
+          <div style="font-size:13px;color:#6e6e73;margin-top:4px">
+            <%= entry.sourceFileName || 'Archivo importado' %> ·
+            <%= entry.createdAt && entry.createdAt.toDate ? entry.createdAt.toDate().toLocaleString('es-SV') : '' %>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <span style="background:#f5f5f7;border-radius:999px;padding:6px 10px;font-size:12px">Líneas: <b><%= totals.lines || 0 %></b></span>
+            <span style="background:#f5f5f7;border-radius:999px;padding:6px 10px;font-size:12px">Unidades: <b><%= totals.units || 0 %></b></span>
+            <span style="background:#f5f5f7;border-radius:999px;padding:6px 10px;font-size:12px">Creados: <b><%= totals.created || 0 %></b></span>
+            <span style="background:#f5f5f7;border-radius:999px;padding:6px 10px;font-size:12px">Actualizados: <b><%= totals.updated || 0 %></b></span>
+            <span style="background:<%= entry.status==='cancelled' ? '#fff3f2' : '#edf8ef' %>;color:<%= entry.status==='cancelled' ? '#9f1c1c' : '#14532d' %>;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700">
+              <%= entry.status==='cancelled' ? 'Anulado' : 'Activo' %>
+            </span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <% if(entry.status !== 'cancelled'){ %>
+            <button class="adm-btn-s cancel-entry-btn" data-id="<%= entry.id %>" data-token="<%= token %>">Anular ingreso</button>
+          <% } %>
+        </div>
+      </div>
+
+      <div style="overflow:auto;margin-bottom:8px">
+        <table class="adm-tbl" style="min-width:780px">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>Cantidad</th>
+              <th>Stock anterior</th>
+              <th>Stock nuevo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% (entry.items || []).forEach(item => { %>
+              <tr>
+                <td><%= item.sku || '' %></td>
+                <td>
+                  <div style="font-weight:600"><%= item.name || '' %></div>
+                  <% if(item.partNumber){ %><div style="font-size:12px;color:#6e6e73">Parte: <%= item.partNumber %></div><% } %>
+                </td>
+                <td><%= item.category || '' %></td>
+                <td>+<%= item.qtyAdded || 0 %></td>
+                <td><%= item.previousStock || 0 %></td>
+                <td><%= item.newStock || 0 %></td>
+                <td>
+                  <% if(item.productId){ %>
+                    <a href="/admin/productos/<%= item.productId %>/editar" class="adm-btn-s" style="padding:7px 10px;font-size:12px">Modificar</a>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% if(entry.note){ %><div style="font-size:12px;color:#6e6e73;padding:4px 2px 8px"><%= entry.note %></div><% } %>
+    </div>
+  <% }) %>
+</div>
+
+</div></div>
+<script>
+function flash(msg,type='ok'){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:10000;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap`;
+  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3200);
+}
+
+document.querySelectorAll('.cancel-entry-btn').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    const id=btn.dataset.id;
+    const token=btn.dataset.token;
+    if(!confirm('¿Seguro que deseas anular este ingreso? Esto restaurará el stock anterior de los productos afectados.')) return;
+    btn.disabled=true;
+    try{
+      const res=await fetch(`/api/inventory-entries/${id}/cancel`,{method:'POST',headers:{Authorization:'Bearer '+token}});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error||'No se pudo anular');
+      flash('Ingreso anulado correctamente');
+      setTimeout(()=>location.reload(),900);
+    }catch(e){
+      btn.disabled=false;
+      flash(e.message||'Error al anular','error');
+    }
+  });
+});
+</script>
+</body></html>

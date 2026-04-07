@@ -1,0 +1,348 @@
+<%- include('../partials/admin-layout', {pageTitle:'Cotizaciones', activePage:'quotations'}) %>
+
+<div class="adm-ph">
+  <div><h1>Historial de cotizaciones</h1><p id="quotCount">Cargando...</p></div>
+  <button class="adm-btn-s" onclick="clearFilters()">Limpiar filtros</button>
+</div>
+
+<!-- FILTROS -->
+<div class="adm-fc" style="margin-bottom:16px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+    <div class="adm-f" style="margin:0">
+      <label>Cliente</label>
+      <div style="position:relative">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="fClient" placeholder="Nombre del cliente..." oninput="applyFilters()" style="padding-left:30px;width:100%;border:1.5px solid #e8e8ed;border-radius:9px;padding-top:8px;padding-bottom:8px;padding-left:30px;padding-right:10px;font-size:13px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#e8e8ed'">
+      </div>
+    </div>
+    <div class="adm-f" style="margin:0">
+      <label>Empresa</label>
+      <div style="position:relative">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <input id="fCompany" placeholder="Empresa u organización..." oninput="applyFilters()" style="padding-left:30px;width:100%;border:1.5px solid #e8e8ed;border-radius:9px;padding-top:8px;padding-bottom:8px;padding-left:30px;padding-right:10px;font-size:13px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#e8e8ed'">
+      </div>
+    </div>
+    <div class="adm-f" style="margin:0">
+      <label>Vendedor</label>
+      <div style="position:relative">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <input id="fSeller" placeholder="Nombre del vendedor..." oninput="applyFilters()" style="padding-left:30px;width:100%;border:1.5px solid #e8e8ed;border-radius:9px;padding-top:8px;padding-bottom:8px;padding-left:30px;padding-right:10px;font-size:13px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#e8e8ed'">
+      </div>
+    </div>
+    <div class="adm-f" style="margin:0">
+      <label>Producto</label>
+      <div style="position:relative">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#86868b" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <input id="fProduct" placeholder="Nombre del producto..." oninput="applyFilters()" style="padding-left:30px;width:100%;border:1.5px solid #e8e8ed;border-radius:9px;padding-top:8px;padding-bottom:8px;padding-left:30px;padding-right:10px;font-size:13px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#e8e8ed'">
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end">
+    <div class="adm-f" style="margin:0">
+      <label>Desde</label>
+      <input type="date" id="fFrom" onchange="applyFilters()" style="width:100%;border:1.5px solid #e8e8ed;border-radius:9px;padding:8px 11px;font-size:13px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#e8e8ed'">
+    </div>
+    <div class="adm-f" style="margin:0">
+      <label>Hasta</label>
+      <input type="date" id="fTo" onchange="applyFilters()" style="width:100%;border:1.5px solid #e8e8ed;border-radius:9px;padding:8px 11px;font-size:13px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#e8e8ed'">
+    </div>
+    <div class="adm-f" style="margin:0">
+      <label>IVA</label>
+      <select id="fIva" onchange="applyFilters()" style="width:100%;border:1.5px solid #e8e8ed;border-radius:9px;padding:8px 11px;font-size:13px;outline:none;font-family:inherit;background:#fff">
+        <option value="">Todos</option>
+        <option value="con">Con IVA incluido</option>
+        <option value="desglosado">IVA desglosado</option>
+        <option value="exento">Exento de IVA</option>
+      </select>
+    </div>
+    <button class="adm-btn-s" onclick="clearFilters()" style="white-space:nowrap;padding:9px 16px">Limpiar todo</button>
+  </div>
+</div>
+
+<!-- STATS RÁPIDAS -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px" id="quotStats"></div>
+
+<!-- TABLA -->
+<div class="adm-card" style="overflow:hidden">
+  <div style="overflow-x:auto">
+    <table class="adm-tbl">
+      <thead>
+        <tr>
+          <th style="cursor:pointer" onclick="sortBy('qNum')">Número ↕</th>
+          <th style="cursor:pointer" onclick="sortBy('client')">Cliente ↕</th>
+          <th>Empresa</th>
+          <th>Teléfono</th>
+          <th>Vendedor</th>
+          <th>Productos</th>
+          <th style="cursor:pointer" onclick="sortBy('total')">Total ↕</th>
+          <th>IVA</th>
+          <th style="cursor:pointer" onclick="sortBy('createdAt')">Fecha ↕</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="quotBody">
+        <tr><td colspan="10" style="text-align:center;padding:32px;color:#86868b">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL VER COTIZACIÓN -->
+<div id="quotViewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px)">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:920px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 32px 100px rgba(0,0,0,.3)">
+    <div style="padding:16px 22px;border-bottom:1px solid #e8e8ed;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <div>
+        <div style="font-size:16px;font-weight:700" id="quotViewTitle">Cotización</div>
+        <div style="font-size:12px;color:#86868b" id="quotViewSub"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="adm-btn-p" onclick="downloadCurrentQuot()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar PDF
+        </button>
+        <button class="adm-btn-s" onclick="closeQuotModal()">Cerrar</button>
+      </div>
+    </div>
+    <iframe id="quotFrame" style="flex:1;border:none;min-height:520px"></iframe>
+  </div>
+</div>
+
+  </div></div>
+<script>
+const TOKEN='<%=token%>';
+let _allQuotes=[], _filtered=[], _sortField='createdAt', _sortDir=-1;
+let _currentHTML='', _currentNum='';
+
+async function loadQuotes(){
+  try{
+    const res=await fetch('/api/quotations',{headers:{'Authorization':'Bearer '+TOKEN}});
+    _allQuotes=await res.json();
+    applyFilters();
+  }catch(e){
+    document.getElementById('quotBody').innerHTML=`<tr><td colspan="9" style="text-align:center;padding:32px;color:#c0392b">Error al cargar: ${e.message}</td></tr>`;
+  }
+}
+
+function applyFilters(){
+  const fc=(document.getElementById('fClient')?.value||'').toLowerCase().trim();
+  const fco=(document.getElementById('fCompany')?.value||'').toLowerCase().trim();
+  const fs=(document.getElementById('fSeller')?.value||'').toLowerCase().trim();
+  const fp=(document.getElementById('fProduct')?.value||'').toLowerCase().trim();
+  const ff=document.getElementById('fFrom')?.value;
+  const ft=document.getElementById('fTo')?.value;
+  const fi=document.getElementById('fIva')?.value||'';
+
+  _filtered=_allQuotes.filter(q=>{
+    if(fc&&!(q.client||'').toLowerCase().includes(fc)) return false;
+    if(fco&&!(q.company||'').toLowerCase().includes(fco)) return false;
+    if(fs&&!(q.seller||'').toLowerCase().includes(fs)) return false;
+    if(fp&&!(q.items||[]).some(i=>(i.name||'').toLowerCase().includes(fp))) return false;
+    if(fi&&q.ivaMode!==fi) return false;
+    if(ff){const d=q.createdAt?new Date(q.createdAt._seconds*1000):null;if(!d||d<new Date(ff)) return false;}
+    if(ft){const d=q.createdAt?new Date(q.createdAt._seconds*1000):null;const to=new Date(ft);to.setHours(23,59,59);if(!d||d>to) return false;}
+    return true;
+  });
+
+  sortAndRender();
+}
+
+function sortBy(field){
+  if(_sortField===field) _sortDir*=-1;
+  else{_sortField=field;_sortDir=-1;}
+  sortAndRender();
+}
+
+function sortAndRender(){
+  _filtered.sort((a,b)=>{
+    let av,bv;
+    if(_sortField==='createdAt'){
+      av=a.createdAt?a.createdAt._seconds:0;
+      bv=b.createdAt?b.createdAt._seconds:0;
+    } else if(_sortField==='total'){
+      av=parseFloat(a.total)||0; bv=parseFloat(b.total)||0;
+    } else {
+      av=(a[_sortField]||'').toLowerCase(); bv=(b[_sortField]||'').toLowerCase();
+    }
+    return av>bv?_sortDir:av<bv?-_sortDir:0;
+  });
+  renderStats();
+  renderTable();
+}
+
+function renderStats(){
+  const total=_filtered.reduce((s,q)=>s+parseFloat(q.total||0),0);
+  const clients=new Set(_filtered.map(q=>q.client||'').filter(Boolean));
+  const sellers=new Set(_filtered.map(q=>q.seller||'').filter(Boolean));
+  document.getElementById('quotCount').textContent=`${_filtered.length} cotización${_filtered.length!==1?'es':''} encontrada${_filtered.length!==1?'s':''}`;
+  document.getElementById('quotStats').innerHTML=`
+    <div class="adm-stat"><div class="adm-stat-n">${_filtered.length}</div><div class="adm-stat-l">Cotizaciones</div></div>
+    <div class="adm-stat"><div class="adm-stat-n" style="font-size:20px">$${total.toFixed(2)}</div><div class="adm-stat-l">Total cotizado</div></div>
+    <div class="adm-stat"><div class="adm-stat-n">${clients.size}</div><div class="adm-stat-l">Clientes únicos</div></div>
+    <div class="adm-stat"><div class="adm-stat-n">${sellers.size}</div><div class="adm-stat-l">Vendedores</div></div>`;
+}
+
+function renderTable(){
+  const tbody=document.getElementById('quotBody');
+  if(!_filtered.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#86868b">No hay cotizaciones con esos filtros</td></tr>';
+    return;
+  }
+  tbody.innerHTML=_filtered.map(q=>{
+    const d=q.createdAt?new Date(q.createdAt._seconds*1000):null;
+    const date=d?d.toLocaleDateString('es-SV',{year:'numeric',month:'short',day:'numeric'}):'—';
+    const time=d?d.toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'}):'';
+    const items=(q.items||[]).map(i=>i.name).join(', ')||'—';
+    const ivaColors={con:['#f5f5f7','#515154'],desglosado:['#e8f0fe','#0071e3'],exento:['#e8f4e8','#1a7f37']};
+    const ivaLabels={con:'Con IVA',desglosado:'Desglosado',exento:'Exento'};
+    const [ibg,ifc]=ivaColors[q.ivaMode]||['#f5f5f7','#515154'];
+    return `<tr style="cursor:pointer" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+      <td onclick="viewQuot('${q.id}')" style="font-size:12px;font-weight:700;color:#0071e3;font-family:monospace">${q.qNum||q.id.slice(-6).toUpperCase()}</td>
+      <td onclick="viewQuot('${q.id}')" style="font-weight:600">${q.client||'—'}</td>
+      <td onclick="viewQuot('${q.id}')" style="color:#515154;font-size:13px">${q.company||'—'}</td>
+      <td onclick="viewQuot('${q.id}')" style="color:#515154;font-size:12px">${q.client_phone||'—'}</td>
+      <td onclick="viewQuot('${q.id}')" style="color:#515154;font-size:13px">${q.seller||'—'}</td>
+      <td onclick="viewQuot('${q.id}')" style="font-size:12px;color:#515154;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${items}">${items}</td>
+      <td onclick="viewQuot('${q.id}')" style="font-weight:700;white-space:nowrap">$${parseFloat(q.total||0).toFixed(2)}</td>
+      <td onclick="viewQuot('${q.id}')"><span style="font-size:11px;background:${ibg};color:${ifc};padding:3px 8px;border-radius:20px;font-weight:500;white-space:nowrap">${ivaLabels[q.ivaMode]||'—'}</span></td>
+      <td onclick="viewQuot('${q.id}')" style="font-size:12px;color:#86868b;white-space:nowrap">
+        <div>${date}</div><div style="font-size:10px">${time}</div>
+      </td>
+      <td>
+        <button class="adm-btn-danger" onclick="deleteQuot('${q.id}')" title="Eliminar">×</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function clearFilters(){
+  ['fClient','fCompany','fSeller','fProduct','fFrom','fTo'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('fIva').value='';
+  applyFilters();
+}
+
+function viewQuot(id){
+  const q=_allQuotes.find(x=>x.id===id); if(!q) return;
+  _currentNum=q.qNum||'COT-'+id.slice(-6).toUpperCase();
+  const d=q.createdAt?new Date(q.createdAt._seconds*1000):null;
+  document.getElementById('quotViewTitle').textContent=`${_currentNum} — ${q.client||''}`;
+  document.getElementById('quotViewSub').textContent=`${q.company?q.company+' · ':''}${q.client_phone?'📞 '+q.client_phone+' · ':''}${q.seller?'Vendedor: '+q.seller+' · ':''}${d?d.toLocaleDateString('es-SV',{year:'numeric',month:'long',day:'numeric'}):''}`;
+  _currentHTML=buildPDFHTML(q);
+  const modal=document.getElementById('quotViewModal');
+  modal.style.display='flex';
+  const blob=new Blob([_currentHTML],{type:'text/html'});
+  document.getElementById('quotFrame').src=URL.createObjectURL(blob);
+}
+
+async function downloadCurrentQuot(){
+  const q=_allQuotes.find(x => (x.qNum || 'COT-'+x.id.slice(-6).toUpperCase()) === _currentNum);
+  if(!q) return;
+  const res=await fetch('/api/quotations/'+q.id+'/pdf',{
+    headers:{'Authorization':'Bearer '+TOKEN}
+  });
+  if(!res.ok){
+    flash('No se pudo descargar el PDF','error');
+    return;
+  }
+  const blob=await res.blob();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(_currentNum||'cotizacion')+'.pdf';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),15000);
+}
+
+function closeQuotModal(){
+  document.getElementById('quotViewModal').style.display='none';
+  document.getElementById('quotFrame').src='';
+}
+
+async function deleteQuot(id){
+  if(!confirm('¿Eliminar esta cotización del historial?')) return;
+  const res=await fetch('/api/quotations/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}});
+  if(res.ok){
+    _allQuotes=_allQuotes.filter(q=>q.id!==id);
+    applyFilters();
+    flash('Eliminada');
+  } else flash('Error al eliminar','error');
+}
+
+function buildPDFHTML(q){
+  const items=q.items||[];
+  const ivaMode=q.ivaMode||'con';
+  let sub=0,iva=0,total=0;
+  items.forEach(item=>{
+    const price=parseFloat(item.price)||0,qty=parseInt(item.qty)||1,disc=parseFloat(item.discount)||0;
+    const gross=price*qty,discAmt=gross*(disc/100),net=gross-discAmt;
+    if(ivaMode==='exento'){sub+=net/1.13;}
+    else if(ivaMode==='desglosado'){const s=net/1.13;sub+=s;iva+=net-s;}
+    else{sub+=net;}
+  });
+  total=sub+iva;
+  const d=q.createdAt?new Date(q.createdAt._seconds*1000):new Date();
+  const date=d.toLocaleDateString('es-SV',{year:'numeric',month:'long',day:'numeric'});
+  const validText=q.validity==='0'?'Sin vencimiento':`Válida por ${q.validity||7} días`;
+  const ivaHeader=ivaMode==='exento'?'Precio s/IVA':ivaMode==='desglosado'?'Precio s/IVA':'Precio c/IVA';
+  const div1=parseInt(q.div1)||6,div2=parseInt(q.div2)||10;
+
+  const rows=items.map(item=>{
+    const price=parseFloat(item.price)||0,qty=parseInt(item.qty)||1,disc=parseFloat(item.discount)||0;
+    const gross=price*qty,discAmt=gross*(disc/100),net=gross-discAmt;
+    const unitShow=ivaMode==='exento'?price/1.13:price;
+    const lineTotal=ivaMode==='exento'?net/1.13:net;
+    const specs=Object.entries(item.specs||{});
+    return `<tr>
+      <td style="padding:14px 16px;border-bottom:1px solid #f0f0f2;vertical-align:top">
+        <div style="display:flex;gap:14px">
+          ${item.image_url?`<img src="${item.image_url}" style="width:70px;height:70px;object-fit:contain;border-radius:10px;background:#f5f5f7;flex-shrink:0" onerror="this.style.display='none'">`:'<div style="width:70px;height:70px;background:#f5f5f7;border-radius:10px;flex-shrink:0"></div>'}
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px;margin-bottom:6px">${item.name}${item.variant?' — '+item.variant:''}</div>
+            ${specs.length?`<table style="width:100%;border-collapse:collapse;margin-top:4px">${specs.map(([k,v],si)=>`<tr style="background:${si%2===0?'#f9f9f9':'#fff'}"><td style="padding:3px 8px;font-size:11px;font-weight:600;color:#515154;width:38%;border:1px solid #ebebeb">${k}</td><td style="padding:3px 8px;font-size:11px;border:1px solid #ebebeb">${v}</td></tr>`).join('')}</table>`:''}
+            ${disc>0?`<div style="margin-top:5px;font-size:11px;color:#1a7f37">Descuento ${disc}% aplicado (−$${discAmt.toFixed(2)})</div>`:''}
+          </div>
+        </div>
+      </td>
+      <td style="padding:14px 16px;border-bottom:1px solid #f0f0f2;text-align:center;vertical-align:middle">${qty}</td>
+      <td style="padding:14px 16px;border-bottom:1px solid #f0f0f2;text-align:right;vertical-align:middle">$${unitShow.toFixed(2)}</td>
+      <td style="padding:14px 16px;border-bottom:1px solid #f0f0f2;text-align:right;vertical-align:middle;font-weight:700">$${lineTotal.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${q.qNum||''}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;color:#1d1d1f;background:#fff}.page{max-width:820px;margin:0 auto;padding:48px 44px}.hdr{display:flex;justify-content:space-between;padding-bottom:22px;border-bottom:3px solid #1d1d1f;margin-bottom:28px}.brand{font-size:30px;font-weight:800;letter-spacing:-.07em}.tag{font-size:12px;color:#86868b;margin-top:3px}.ct{text-align:right;font-size:12px;color:#515154;line-height:2}.meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px}.mc{background:#f5f5f7;border-radius:12px;padding:14px 16px}.ml{font-size:9px;font-weight:700;color:#86868b;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}.mv{font-size:15px;font-weight:700}.ms{font-size:12px;color:#515154;margin-top:2px}table.main{width:100%;border-collapse:collapse;margin-bottom:6px}.th th{background:#1d1d1f;color:#fff;padding:10px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left}.th th:nth-child(2){text-align:center}.th th:nth-child(3),.th th:nth-child(4){text-align:right}.tots{display:flex;justify-content:flex-end;margin:16px 0 24px}.tb{min-width:270px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#515154}.tr.grand{font-size:20px;font-weight:800;color:#1d1d1f;border-top:2px solid #1d1d1f;padding-top:10px;margin-top:5px}.cuotas{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}.cc{border:2px solid #e8e8ed;border-radius:12px;padding:14px;text-align:center}.cn{font-size:11px;color:#86868b;margin-bottom:4px}.cp{font-size:22px;font-weight:800;letter-spacing:-.04em}.cs{font-size:10px;color:#86868b;margin-top:3px}.seller-badge{display:inline-block;background:#e8f0fe;color:#0071e3;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:4px}.exento-badge{display:inline-block;background:#e8f4e8;color:#1a7f37;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}.foot{margin-top:24px;padding-top:16px;border-top:1px solid #e8e8ed;display:flex;justify-content:space-between}.note{background:#f5f5f7;border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:#515154;line-height:1.6}@media print{.page{padding:24px}}</style>
+</head><body><div class="page">
+<div class="hdr"><div><div class="brand">MacStore</div><div class="tag">Distribuidor Autorizado Apple</div></div><div class="ct"></div></div>
+<div class="meta">
+  <div class="mc"><div class="ml">Cotización para</div><div class="mv">${q.client||''}</div>${q.company?`<div class="ms">${q.company}</div>`:''}</div>
+  <div class="mc"><div class="ml">Información</div><div class="mv">${q.qNum||''}</div><div class="ms">Emitida: ${date}</div><div class="ms">${validText}</div>${q.seller?`<div><span class="seller-badge">Vendedor: ${q.seller}</span></div>`:''}</div>
+</div>
+<table class="main"><thead class="th"><tr><th>Producto y especificaciones</th><th style="text-align:center">Cant.</th><th style="text-align:right">${ivaHeader}</th><th style="text-align:right">Total</th></tr></thead><tbody>${rows}</tbody></table>
+<div class="tots"><div class="tb">
+  ${ivaMode!=='con'?`<div class="tr"><span>Subtotal sin IVA</span><span>$${sub.toFixed(2)}</span></div>`:''}
+  ${ivaMode==='desglosado'?`<div class="tr"><span>IVA (13%)</span><span>$${iva.toFixed(2)}</span></div>`:''}
+  ${ivaMode==='exento'?`<div class="tr"><span>IVA</span><span class="exento-badge">EXENTO</span></div>`:''}
+  <div class="tr grand"><span>Total</span><span>$${total.toFixed(2)}</span></div>
+</div></div>
+<div style="font-size:11px;font-weight:700;color:#515154;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Opciones de financiamiento</div>
+<div class="cuotas">
+  <div class="cc"><div class="cn">${q.lbl1||'6 cuotas sin intereses'}</div><div class="cp">$${(total/div1).toFixed(2)}</div><div class="cs">por mes</div></div>
+  <div class="cc"><div class="cn">${q.lbl2||'10 cuotas sin intereses'}</div><div class="cp">$${(total/div2).toFixed(2)}</div><div class="cs">por mes</div></div>
+</div>
+${q.notes?`<div class="note"><strong>Notas:</strong><br>${q.notes}</div>`:''}
+<div class="foot"><div style="font-size:11px;color:#86868b;line-height:1.8">• Precios en USD<br>• Cuotas con tarjetas participantes<br>• ${validText} a partir de emisión</div><div style="font-size:11px;color:#86868b">${q.qNum||''}</div></div>
+</div><script>window.onload=()=>{}<\/script></body></html>`;
+}
+
+function flash(msg,type='ok'){
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)`;
+  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2800);
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape') closeQuotModal();});
+document.getElementById('quotViewModal').addEventListener('click',e=>{if(e.target===document.getElementById('quotViewModal')) closeQuotModal();});
+
+loadQuotes();
+</script>
+</body></html>

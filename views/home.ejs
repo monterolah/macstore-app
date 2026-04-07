@@ -1,0 +1,257 @@
+<%- include('partials/header', {title: settings.store_name || 'MacStore'}) %>
+
+<%
+const heroBanners = banners && banners.length ? banners : [];
+const heroProduct = featured && featured[0];
+%>
+
+<!-- ══ HERO — full screen con imagen de fondo ══ -->
+<section class="ms-hero-wrap">
+  <% if(heroBanners.length){ %>
+    <% heroBanners.forEach((b,i)=>{ %>
+    <div class="ms-slide <%=i===0?'active':''%>" style="background:<%=b.bg_color||'#000'%>">
+      <% if(b.image_url){ %>
+      <img class="ms-hero-bg" src="<%=b.image_url%>" alt="<%=b.title%>" loading="<%=i===0?'eager':'lazy'%>">
+      <% } %>
+      <div class="ms-hero-overlay"></div>
+      <div class="ms-hero-content">
+        <% if(b.subtitle){ %><p class="ms-eyebrow" style="color:<%=b.text_color||'#fff'%>;opacity:.75"><%=b.subtitle%></p><% } %>
+        <% if(b.title){ %><h1 class="ms-hero-title" style="color:<%=b.text_color||'#fff'%>"><%=b.title%></h1><% } %>
+        <div class="ms-hero-btns">
+          <% if(b.cta_url){ %><a href="<%=b.cta_url%>" class="ms-btn-primary"><%=b.cta_text||'Más información'%></a><% } %>
+          <a href="/productos" class="ms-btn-ghost">Ver catálogo</a>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+    <% if(heroBanners.length > 1){ %>
+    <div class="ms-dots">
+      <% heroBanners.forEach((_,i)=>{ %><button class="ms-dot" aria-label="Slide <%=i+1%>"></button><% }) %>
+    </div>
+    <% } %>
+  <% } else if(heroProduct){ %>
+    <div class="ms-slide active" style="background:#1d1d1f">
+      <% if(heroProduct.image_url){ %>
+      <img class="ms-hero-bg" src="<%=heroProduct.image_url%>" alt="<%=heroProduct.name%>" loading="eager">
+      <% } %>
+      <div class="ms-hero-overlay"></div>
+      <div class="ms-hero-content">
+        <p class="ms-eyebrow" style="color:rgba(255,255,255,.7)">Disponible ahora</p>
+        <h1 class="ms-hero-title" style="color:#fff"><%=heroProduct.name%></h1>
+        <p class="ms-hero-sub" style="color:rgba(255,255,255,.85)"><%=heroProduct.description%></p>
+        <div class="ms-hero-btns">
+          <a href="/producto/<%=heroProduct.slug%>" class="ms-btn-primary">Más información</a>
+          <a href="/productos" class="ms-btn-ghost">Ver catálogo</a>
+        </div>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="ms-slide active" style="background:#1d1d1f">
+      <div class="ms-hero-overlay" style="background:rgba(0,0,0,.3)"></div>
+      <div class="ms-hero-content">
+        <p class="ms-eyebrow" style="color:rgba(255,255,255,.7)">Distribuidor Autorizado Apple</p>
+        <h1 class="ms-hero-title" style="color:#fff">MacStore</h1>
+        <p class="ms-hero-sub" style="color:rgba(255,255,255,.8)">Tecnología Apple original en El Salvador</p>
+        <div class="ms-hero-btns">
+          <a href="/productos" class="ms-btn-primary">Ver productos</a>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</section>
+
+<!-- ══ SHOWCASES ══ -->
+<%
+const slugOrder = ['mac','iphone','ipad','apple-watch','airpods'];
+const catMap = {};
+(categories||[]).forEach(c => catMap[c.slug] = c);
+const prodByCat = {};
+(featured||[]).forEach(p => { if(!prodByCat[p.cat_slug||p.category]) prodByCat[p.cat_slug||p.category] = p; });
+%>
+
+<% slugOrder.forEach((slug,i)=>{
+  const cat  = catMap[slug];
+  const prod = prodByCat[slug];
+  if(!cat && !prod) return;
+  const dark    = i % 2 !== 0;
+  const reverse = i % 2 !== 0;
+  const showcaseImg = (prod && prod.image_url) ? prod.image_url : (cat && cat.image_url) ? cat.image_url : null;
+%>
+<section class="ms-showcase <%=dark?'ms-dark':'ms-light'%>" data-reveal data-delay="<%=i*60%>" style="<%=cat&&cat.bg_color&&!dark?'background:'+cat.bg_color:''%>">
+  <div class="ms-showcase-inner ms-showcase-horiz <%=reverse?'ms-showcase-reverse':''%>">
+
+    <!-- TEXTO -->
+    <div class="ms-showcase-text">
+      <% if(prod){ %><p class="ms-eyebrow" style="color:<%=dark?'rgba(255,255,255,.45)':'#86868b'%>"><%=cat?cat.name:''%></p><% } %>
+      <h2 class="ms-showcase-title" style="color:<%=dark?'#fff':'#1d1d1f'%>"><%=prod?prod.name:(cat?cat.name:'')%></h2>
+      <p class="ms-showcase-desc" style="color:<%=dark?'rgba(255,255,255,.65)':'#515154'%>"><%=prod?prod.description:''%></p>
+      <div class="ms-showcase-btns" style="justify-content:flex-start">
+        <% if(prod){ %>
+        <a href="/producto/<%=prod.slug%>" class="ms-btn-primary" style="<%=dark?'background:#fff;color:#1d1d1f':''%>">Más información</a>
+        <a href="/categoria/<%=slug%>" class="ms-btn-outline" style="<%=dark?'border-color:rgba(255,255,255,.4);color:#fff':''%>">Ver modelos</a>
+        <% } else { %>
+        <a href="/categoria/<%=slug%>" class="ms-btn-primary" style="<%=dark?'background:#fff;color:#1d1d1f':''%>">Ver <%=cat?cat.name:slug%></a>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- IMAGEN -->
+    <% if(showcaseImg){ %>
+    <div class="ms-showcase-img">
+      <img src="<%=showcaseImg%>" alt="<%=prod?prod.name:(cat?cat.name:'')%>" loading="lazy" onerror="this.parentNode.style.display='none'">
+    </div>
+    <% } %>
+
+  </div>
+</section>
+<% }) %>
+
+<!-- ══ CATÁLOGO ══ -->
+<section class="ms-catalog-section" id="catalogo">
+  <div class="ms-inner">
+    <div class="ms-section-head" data-reveal>
+      <h2>Catálogo MacStore</h2>
+      <p>Productos Apple originales con garantía oficial</p>
+    </div>
+    <div class="ms-catalog-grid">
+      <% (featured||[]).forEach((p,i)=>{ %>
+      <a href="/producto/<%=p.slug%>" class="ms-card" data-reveal data-delay="<%=i*80%>">
+        <% const cardColors = Array.isArray(p.color_variants) ? p.color_variants.filter(c=>c && c.enabled !== false) : []; %>
+        <% const firstCardColor = cardColors.length ? cardColors[0] : null; %>
+        <div class="ms-card-img" style="--img-scale:<%=firstCardColor&&firstCardColor.img_scale ? firstCardColor.img_scale : (p.img_scale||1)%>">
+          <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
+          <div class="ms-card-glow"></div>
+          <% const hpid = (p.id||p.slug||'').replace(/[^a-z0-9]/gi,''); %>
+          <img id="cardimg_<%=hpid%>" src="<%=firstCardColor&&firstCardColor.image_url ? firstCardColor.image_url : (p.image_url||'')%>" alt="<%=p.name%>" loading="lazy" style="object-fit:<%=firstCardColor&&firstCardColor.img_fit ? firstCardColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstCardColor&&firstCardColor.img_pos ? firstCardColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstCardColor&&firstCardColor.img_scale ? firstCardColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
+        </div>
+        <div class="ms-card-body">
+          <p class="ms-card-cat"><%=p.cat_name||p.category||''%></p>
+          <h3 class="ms-card-name"><%=p.name%></h3>
+          <% const cardAllCaps = Array.isArray(p.variants) ? p.variants.map(v=>v.label).filter(Boolean) : []; %>
+          <% if(cardColors.length){ %>
+          <div class="ms-card-swatches">
+            <% cardColors.slice(0,5).forEach((c,ci)=>{
+              const sw = c.swatch_url||c.image_url||'';
+              const img = c.image_url||p.image_url||'';
+              const caps = Array.isArray(c.available_caps)&&c.available_caps.length ? c.available_caps : cardAllCaps;
+              if(!sw) return;
+            %>
+            <span class="ms-card-swatch <%=ci===0?'active':''%>"
+              style="background-image:url('<%=sw%>')"
+              title="<%=c.name||''%>"
+              onclick="(function(el,e){e.preventDefault();e.stopPropagation();swatchClick(el,'<%=hpid%>','<%=img%>',<%=JSON.stringify(caps)%>,'<%=c.img_fit||p.img_fit||'contain'%>','<%=c.img_pos||p.img_pos||'center'%>','<%=c.img_scale||p.img_scale||1%>')})(this,event)"
+            ></span>
+            <% }) %>
+            <% if(cardColors.length>5){ %><span class="ms-card-swatch-more">+<%=cardColors.length-5%></span><% } %>
+          </div>
+          <% } %>
+          <% if(cardAllCaps.length){ %>
+          <div id="caps_<%=hpid%>" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+            <% const hFirstCaps = cardColors.length&&Array.isArray(cardColors[0].available_caps)&&cardColors[0].available_caps.length ? cardColors[0].available_caps : cardAllCaps; %>
+            <% cardAllCaps.forEach(cap=>{ const active=hFirstCaps.includes(cap); %>
+            <span data-cap="<%=cap%>" style="font-size:10px;border:1px solid <%=active?'#d2d2d7':'#e8e8ed'%>;border-radius:5px;padding:1px 6px;color:<%=active?'#515154':'#c0c0c0'%>;text-decoration:<%=active?'none':'line-through'%>"><%=cap%></span>
+            <% }) %>
+          </div>
+          <% } %>
+          <% if((p.price||0) > 150 && p.enable_installments !== false){ %>
+          <div style="margin:8px 0 4px">
+            <div style="font-size:12px;color:#86868b">10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong></div>
+            <div style="font-size:12px;color:#86868b">6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong></div>
+          </div>
+          <% } %>
+          <div class="ms-card-foot">
+            <span class="ms-card-price"><%=formatPrice(p.price)%></span>
+            <% if(p.original_price){ %><span class="ms-card-orig"><%=formatPrice(p.original_price)%></span><% } %>
+          </div>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <div style="text-align:center;margin-top:48px" data-reveal>
+      <a href="/productos" class="ms-btn-primary">Ver catálogo completo</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ DISTRIBUIDOR AUTORIZADO ══ -->
+<% if(settings.auth_section_active!==false){ %>
+<section class="ms-auth-section" data-reveal>
+  <div class="ms-inner ms-auth-inner">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 814 1000" class="ms-auth-apple"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.3-150.3-109.2c-49.1-72.4-92.7-187.5-92.7-278.8 0-167.5 108.9-256.2 215.7-256.2 65.3 0 120 43.5 162.1 43.5 40.3 0 103.1-45.8 174.4-45.8zm-169.3-126.8c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/></svg>
+    <div>
+      <h2><%=settings.auth_title||'Distribuidor Autorizado Apple'%></h2>
+      <p><%=settings.auth_desc||'Productos 100% originales con garantía oficial Apple. Servicio certificado en El Salvador.'%></p>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ══ SOPORTE ══ -->
+<% if(settings.support_section_active!==false){ %>
+<section class="ms-catalog-section" id="soporte" style="background:#fff">
+  <div class="ms-inner">
+    <div class="ms-section-head" data-reveal>
+      <h2><%=settings.support_title||'Soporte'%></h2>
+      <p><%=settings.support_subtitle||'Asistencia y acompañamiento para tus dispositivos Apple'%></p>
+    </div>
+    <div class="ms-support-grid">
+      <% const supCards = settings.support_cards || [{icon:'⚙️',title:'Configuración inicial',desc:'Te ayudamos a poner en marcha tu equipo.'},{icon:'📦',title:'Migración de datos',desc:'Pasamos tu información al ecosistema Apple.'},{icon:'💬',title:'Asesoría personalizada',desc:'Resolvemos dudas sobre compatibilidad y uso.'}]; %>
+      <% supCards.forEach((s,i)=>{ %>
+      <div class="ms-support-card" data-reveal data-delay="<%=i*100%>">
+        <div class="ms-support-icon"><%=s.icon%></div>
+        <h3><%=s.title%></h3>
+        <p><%=s.desc%></p>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ══ ANUNCIOS / PROMOCIONES ══ -->
+<% if(announcements && announcements.length){ %>
+<section style="background:#fff;padding:60px 24px">
+  <div class="ms-inner">
+    <div class="ms-section-head" data-reveal>
+      <h2>Promociones y financiamiento</h2>
+      <p>Facilidades de pago y ofertas exclusivas</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:center;align-items:center;margin-top:32px" data-stagger>
+      <% announcements.forEach(a=>{ %>
+      <% if(a.link){ %><a href="<%=a.link%>" style="display:block;transition:transform .2s" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''"<% } else { %><div<% } %>
+        data-reveal
+        style="text-align:center">
+        <% if(a.image_url){ %>
+        <img src="<%=a.image_url%>" alt="<%=a.title||'Anuncio'%>"
+          style="max-height:80px;max-width:240px;object-fit:contain;display:block;margin:0 auto"
+          onerror="this.style.display='none'">
+        <% } %>
+        <% if(a.title){ %><div style="font-size:13px;color:#515154;margin-top:8px;font-weight:500"><%=a.title%></div><% } %>
+      <% if(a.link){ %></a><% } else { %></div><% } %>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<%- include('partials/footer') %>
+
+<% if(settings && settings.cuotas_active !== false && settings.cuota_logos && settings.cuota_logos.length){ %>
+<section style="background:#f5f5f7;padding:32px 24px;border-top:1px solid #e8e8ed">
+  <div class="ms-inner">
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:13px;font-weight:700;color:#515154;text-transform:uppercase;letter-spacing:.08em">Cuotas sin intereses con</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:center">
+      <% settings.cuota_logos.forEach(l=>{ %>
+      <div style="background:#fff;border-radius:12px;padding:10px 18px;border:1px solid #e8e8ed;display:flex;align-items:center;gap:8px;min-width:100px;justify-content:center">
+        <% if(l.logo_url){ %>
+        <img src="<%=l.logo_url%>" alt="<%=l.name||''%>" style="height:28px;max-width:72px;object-fit:contain" onerror="this.style.display='none'">
+        <% } %>
+        <% if(l.name){ %><span style="font-size:12px;font-weight:600;color:#1d1d1f"><%=l.name%></span><% } %>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
