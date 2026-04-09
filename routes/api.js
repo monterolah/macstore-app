@@ -1165,13 +1165,46 @@ module.exports = router;
 // ── GEMINI ASSISTANT ──────────────────────────────────────────────────────
 const crypto = require('crypto');
 const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-const GEMINI_FALLBACK_MODELS = [
-  GEMINI_MODEL,
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-latest'
-].filter((m, i, arr) => m && arr.indexOf(m) === i);
+const GEMINI_MODEL = process.env.GEMINI_MODEL || '';
+const GEMINI_MODEL_CACHE_TTL_MS = 10 * 60 * 1000;
+const geminiModelCache = { models: null, loadedAt: 0 };
+
+async function fetchGeminiCandidateModels() {
+  const now = Date.now();
+  if (Array.isArray(geminiModelCache.models) && geminiModelCache.models.length && now - geminiModelCache.loadedAt < GEMINI_MODEL_CACHE_TTL_MS) {
+    return geminiModelCache.models;
+  }
+
+  const https = require('https');
+  const discovered = await new Promise((resolve, reject) => {
+    const url = new URL(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
+    const req = https.request({ hostname: url.hostname, path: url.pathname + url.search, method: 'GET' }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error?.message) return reject(new Error(parsed.error.message));
+          const models = (parsed.models || [])
+            .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+            .map(m => String(m.name || '').replace(/^models\//, ''))
+            .filter(Boolean);
+          resolve(models);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+
+  const defaults = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const merged = [GEMINI_MODEL, ...discovered, ...defaults].filter((m, i, arr) => m && arr.indexOf(m) === i);
+  geminiModelCache.models = merged;
+  geminiModelCache.loadedAt = now;
+  return merged;
+}
 
 const FRONT_ALLOWED_FILES = [
   'views/home.ejs',
@@ -1237,8 +1270,16 @@ async function callGemini(prompt) {
     generationConfig: { temperature: 0.2, maxOutputTokens: 4096 }
   });
 
+  let candidateModels = [];
+  try {
+    candidateModels = await fetchGeminiCandidateModels();
+  } catch {
+    candidateModels = [GEMINI_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+      .filter((m, i, arr) => m && arr.indexOf(m) === i);
+  }
+
   let lastError = null;
-  for (const model of GEMINI_FALLBACK_MODELS) {
+  for (const model of candidateModels) {
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
     try {
       const text = await new Promise((resolve, reject) => {
