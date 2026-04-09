@@ -674,6 +674,7 @@ router.put('/products/:id', requireAdminAPI, upload.single('image'), async (req,
       color_variants: req.body.color_variants !== undefined ? parseJsonField(req.body.color_variants, []) : (ex.color_variants || []),
       variants: req.body.variants !== undefined ? parseJsonField(req.body.variants, []) : (ex.variants || []),
       logos: req.body.logos !== undefined ? parseJsonField(req.body.logos, []) : (ex.logos || []),
+      specs: req.body.specs !== undefined ? parseJsonField(req.body.specs, {}) : (ex.specs || {}),
       ficha_tecnica: req.body.ficha_tecnica !== undefined ? cleanText(req.body.ficha_tecnica, 12000) : (ex.ficha_tecnica || ''),
       ficha: req.body.ficha !== undefined ? parseJsonField(req.body.ficha, {}) : (ex.ficha || {}),
       updatedAt: new Date()
