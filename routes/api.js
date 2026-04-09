@@ -869,6 +869,7 @@ router.put('/settings', requireAdminAPI, upload.single('logo'), async (req, res)
     if (req.file) updates.logo_url = await uploadToStorage(req.file.buffer, req.file.originalname, 'logos');
     if (updates.promo_bar_active !== undefined) updates.promo_bar_active = updates.promo_bar_active === '1';
     if (updates.auth_section_active !== undefined) updates.auth_section_active = updates.auth_section_active === '1';
+    if (updates.auth_hero_badge_active !== undefined) updates.auth_hero_badge_active = updates.auth_hero_badge_active === '1';
     if (updates.support_section_active !== undefined) updates.support_section_active = updates.support_section_active === '1';
     if (updates.show_ramiro !== undefined) updates.show_ramiro = updates.show_ramiro === '1';
     if (updates.show_admin_icon !== undefined) updates.show_admin_icon = updates.show_admin_icon === '1';

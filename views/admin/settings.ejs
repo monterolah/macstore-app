@@ -82,6 +82,7 @@
     <div class="adm-fc" style="margin-bottom:14px">
       <div class="adm-fct">Sección "Distribuidor Autorizado"</div>
       <div class="tog-r"><span>Mostrar sección</span><label class="tog"><input type="checkbox" id="s_auth_on" <%=settings.auth_section_active!==false?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label></div>
+      <div class="tog-r"><span>Mostrar texto en hero</span><label class="tog"><input type="checkbox" id="s_auth_hero_on" <%=settings.auth_hero_badge_active!==false?'checked':''%>><div class="tog-t"><div class="tog-th"></div></div></label></div>
       <div class="adm-f"><label>Título</label><input id="s_auth_title" value="<%=settings.auth_title||'Distribuidor Autorizado Apple'%>"></div>
       <div class="adm-f"><label>Descripción</label><textarea id="s_auth_desc" style="min-height:60px"><%=settings.auth_desc||'Productos 100% originales con garantía oficial Apple. Servicio certificado en El Salvador.'%></textarea></div>
     </div>
@@ -280,6 +281,7 @@ async function saveAllSettings(){
   fd.append('promo_bar_color',   document.getElementById('s_promo_color').value);
   fd.append('promo_bar_active',  document.getElementById('s_promo_on').checked?'1':'0');
   fd.append('auth_section_active', document.getElementById('s_auth_on').checked?'1':'0');
+  fd.append('auth_hero_badge_active', document.getElementById('s_auth_hero_on').checked?'1':'0');
   fd.append('auth_title',        document.getElementById('s_auth_title').value);
   fd.append('auth_desc',         document.getElementById('s_auth_desc').value);
   fd.append('show_admin_icon', document.getElementById('s_admin_icon')?document.getElementById('s_admin_icon').checked?'1':'0':'1');
