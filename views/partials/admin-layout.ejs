@@ -294,7 +294,8 @@ function handleRamiroResponse(data) {
         delete: '🗑️ Producto eliminado permanentemente',
         bulk: `✅ ${ar.affected} productos afectados`,
         memory: '🧠 Lo recordaré para la próxima vez',
-        create: '✅ Producto creado correctamente'
+        create: '✅ Producto creado correctamente',
+        sync: `🔄 Sincronización completa (${ar.updated || 0} actualizados, ${ar.created || 0} nuevos)`
       };
       addRamiroMsg(msgs[ar.type] || '✅ Acción completada', 'action');
     } else {

@@ -1467,6 +1467,65 @@ router.post('/gemini/front-apply', requireAdminAPI, async (req, res) => {
 // RAMIRO — Asistente IA completo de MacStore
 // ══════════════════════════════════════════════
 
+function isBlockedPrivateHost(hostname) {
+  const h = String(hostname || '').toLowerCase();
+  return /^(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|::1|0\.0\.0\.0|169\.254\.)/.test(h);
+}
+
+async function fetchExternalUrlText(url) {
+  if (!url) throw new Error('Falta URL');
+
+  let parsed;
+  try { parsed = new URL(url); }
+  catch { throw new Error('URL inválida'); }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('Protocolo no permitido');
+  }
+  if (isBlockedPrivateHost(parsed.hostname)) {
+    throw new Error('URL no permitida');
+  }
+
+  const https = require('https');
+  const http = require('http');
+  const lib = parsed.protocol === 'https:' ? https : http;
+
+  const content = await new Promise((resolve, reject) => {
+    const request = lib.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (resp) => {
+      if (resp.statusCode === 301 || resp.statusCode === 302) {
+        return resolve(`REDIRECT:${resp.headers.location || ''}`);
+      }
+      let data = '';
+      resp.on('data', chunk => data += chunk);
+      resp.on('end', () => resolve(data));
+    });
+    request.on('error', reject);
+    request.setTimeout(12000, () => { request.destroy(); reject(new Error('Timeout')); });
+  });
+
+  return String(content || '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s{3,}/g, '\n')
+    .slice(0, 12000);
+}
+
+async function appendRamiroTranscript(db, payload) {
+  await db.collection('ramiro_transcripts').add({
+    ...payload,
+    createdAt: new Date()
+  });
+}
+
+function buildStyleHintsFromMessages(messages) {
+  const msgs = (messages || []).slice(-20).map(m => String(m || '').trim()).filter(Boolean);
+  if (!msgs.length) return '';
+  return msgs
+    .map(t => `- ${t.slice(0, 220)}`)
+    .join('\n');
+}
+
 // Obtener configuración y memoria de Ramiro
 router.get('/ramiro/config', requireAdminAPI, async (req, res) => {
   try {
@@ -1477,6 +1536,7 @@ router.get('/ramiro/config', requireAdminAPI, async (req, res) => {
       personality: 'Soy Ramiro, tu asistente personal de MacStore. Conozco tu tienda, tus productos y estoy aquí para facilitarte el trabajo.',
       greeting: '¡Hola! Soy Ramiro, tu asistente de MacStore. ¿En qué te ayudo hoy?',
       avatar_color: '#0071e3',
+      autonomous_mode: true,
       memory: [],
       notes: ''
     };
@@ -1487,9 +1547,17 @@ router.get('/ramiro/config', requireAdminAPI, async (req, res) => {
 // Guardar configuración de Ramiro
 router.put('/ramiro/config', requireAdminAPI, async (req, res) => {
   try {
-    const { name, personality, greeting, avatar_color, notes } = req.body;
+    const { name, personality, greeting, avatar_color, notes, autonomous_mode } = req.body;
     await getFirestore().collection('settings').doc('ramiro').set(
-      { name, personality, greeting, avatar_color, notes, updatedAt: new Date() },
+      {
+        name,
+        personality,
+        greeting,
+        avatar_color,
+        notes,
+        autonomous_mode: autonomous_mode !== false,
+        updatedAt: new Date()
+      },
       { merge: true }
     );
     res.json({ ok: true });
@@ -1530,38 +1598,7 @@ router.delete('/ramiro/memory/:index', requireAdminAPI, async (req, res) => {
 router.post('/ramiro/fetch-url', requireAdminAPI, async (req, res) => {
   try {
     const { url } = req.body;
-    if (!url) return res.status(400).json({ error: 'Falta URL' });
-
-    // Validar que sea una URL pública — bloquear IPs internas (SSRF)
-    let parsed;
-    try { parsed = new URL(url); } catch { return res.status(400).json({ error: 'URL inválida' }); }
-    if (!['http:', 'https:'].includes(parsed.protocol)) return res.status(400).json({ error: 'Protocolo no permitido' });
-    const hostname = parsed.hostname.toLowerCase();
-    const blocked = /^(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|::1|0\.0\.0\.0|169\.254\.)/.test(hostname);
-    if (blocked) return res.status(403).json({ error: 'URL no permitida' });
-
-    const https = require('https');
-    const http = require('http');
-    const lib = parsed.protocol === 'https:' ? https : http;
-    const content = await new Promise((resolve, reject) => {
-      const request = lib.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (resp) => {
-        if (resp.statusCode === 301 || resp.statusCode === 302) {
-          return resolve(`REDIRECT:${resp.headers.location}`);
-        }
-        let data = '';
-        resp.on('data', chunk => data += chunk);
-        resp.on('end', () => resolve(data));
-      });
-      request.on('error', reject);
-      request.setTimeout(10000, () => { request.destroy(); reject(new Error('Timeout')); });
-    });
-    // Limpiar HTML básico
-    const text = content
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s{3,}/g, '\n')
-      .slice(0, 8000);
+    const text = await fetchExternalUrlText(url);
     res.json({ ok: true, text });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1580,14 +1617,29 @@ router.post('/ramiro/chat', requireAdminAPI, async (req, res) => {
     const ramiroName = ramiro.name || 'Ramiro';
     const ramiroPersonality = ramiro.personality || 'Soy el asistente de MacStore.';
     const ramiroMemory = (ramiro.memory || []).slice(0, 20);
+    const autonomousMode = ramiro.autonomous_mode !== false;
+
+    // Historial persistente del chat (últimos 80 turnos)
+    const transcriptSnap = await db.collection('ramiro_transcripts')
+      .orderBy('createdAt', 'desc')
+      .limit(80)
+      .get();
+    const transcriptRows = transcriptSnap.docs.map(d => d.data()).reverse();
+    const persistentConversation = transcriptRows
+      .map(m => `${m.role === 'assistant' ? 'Ramiro' : 'Admin'}: ${String(m.text || '').slice(0, 350)}`)
+      .join('\n');
+    const styleHints = buildStyleHintsFromMessages(
+      transcriptRows.filter(m => m.role === 'user').map(m => m.text)
+    );
 
     // Cargar productos reales
     const prodSnap = await db.collection('products').get();
     const allProducts = prodSnap.docs.map(d => ({
       id: d.id, name: d.data().name, category: d.data().category,
+      slug: d.data().slug,
       price: d.data().price, active: d.data().active !== false,
       image_url: d.data().image_url || '', stock: d.data().stock || 0,
-      specs_table: d.data().specs_table || [], color_variants: d.data().color_variants || [],
+      specs: d.data().specs || {}, color_variants: d.data().color_variants || [],
       variants: d.data().variants || []
     }));
 
@@ -1618,6 +1670,12 @@ ${recentQuotations.map(q => `- ${q.client} | $${q.total} | ${q.createdAt}`).join
 ${ramiroMemory.length ? `LO QUE RECUERDO DE CONVERSACIONES ANTERIORES:
 ${ramiroMemory.map(m => `• ${m.text} (${new Date(m.date).toLocaleDateString('es-SV')})`).join('\n')}` : ''}
 
+HISTORIAL REAL PERSISTENTE DEL CHAT (reciente):
+${persistentConversation || 'Sin historial aún.'}
+
+ESTILO DEL ADMIN (cómo escribe normalmente):
+${styleHints || '- Directo y práctico'}
+
 PÁGINA ACTUAL DEL ADMIN: ${pageContext || 'Panel de administración'}
 
 CAPACIDADES — Puedes ejecutar estas acciones respondiendo con JSON cuando sea necesario:
@@ -1629,12 +1687,13 @@ CAPACIDADES — Puedes ejecutar estas acciones respondiendo con JSON cuando sea 
 6. REMEMBER: guardar algo importante en tu memoria
 7. FETCH_URL: pedir que se lea una URL externa
 8. PRODUCT_CREATE: crear un producto nuevo
+9. SYNC_FROM_URL: leer una URL y actualizar/crear productos según su contenido
 
 FORMATO DE RESPUESTA:
 Siempre responde en JSON con esta estructura:
 {
   "message": "Tu respuesta en español, conversacional y útil",
-  "action": null | "PRODUCT_UPDATE" | "BULK_ACTION" | "NAVIGATE" | "REMEMBER" | "FETCH_URL" | "PRODUCT_DELETE" | "PRODUCT_CREATE",
+  "action": null | "PRODUCT_UPDATE" | "BULK_ACTION" | "NAVIGATE" | "REMEMBER" | "FETCH_URL" | "PRODUCT_DELETE" | "PRODUCT_CREATE" | "SYNC_FROM_URL",
   "data": {} // datos específicos de la acción si aplica
 }
 
@@ -1645,9 +1704,11 @@ Para NAVIGATE: data = { url: "/admin/ruta" }
 Para REMEMBER: data = { entry: "texto a recordar" }
 Para FETCH_URL: data = { url: "https://..." }
 Para PRODUCT_CREATE: data = { product: {...campos del producto} }
+Para SYNC_FROM_URL: data = { url: "https://...", mode: "upsert" }
 
 IMPORTANTE:
 - Antes de acciones destructivas masivas, pide confirmación
+- Si autonomous_mode está activo, puedes ejecutar PRODUCT_UPDATE/PRODUCT_CREATE/SYNC_FROM_URL sin pedir confirmación extra
 - Si no estás seguro de qué producto, pregunta antes de actuar
 - Sé conversacional, útil y conciso — eres el Jarvis de esta tienda
 - Responde SOLO con el JSON, sin markdown ni bloques de código`;
@@ -1736,6 +1797,105 @@ IMPORTANTE:
         actionResult = { ok: true, type: 'create', id: ref.id };
       } catch(e) { actionResult = { ok: false, error: e.message }; }
     }
+
+    else if (response.action === 'SYNC_FROM_URL' && response.data?.url) {
+      try {
+        const url = cleanText(response.data.url, 2000);
+        const text = await fetchExternalUrlText(url);
+        const existingBySlug = new Map(allProducts.map(p => [p.slug, p]));
+
+        const syncPrompt = `Extrae productos de este texto de catálogo y devuelve SOLO JSON válido.
+Formato estricto:
+{
+  "products": [
+    {
+      "name": "Nombre",
+      "category": "mac|iphone|ipad|airpods",
+      "price": 0,
+      "description": "texto corto",
+      "variants": [{"label":"...","price":0}],
+      "specs": {"clave":"valor"}
+    }
+  ]
+}
+Reglas:
+- No inventes campos si no aparecen.
+- price siempre número.
+- category solo mac|iphone|ipad|airpods.
+- Si no detectas un dato, omítelo.
+
+TEXTO FUENTE:\n${text}`;
+
+        const syncRaw = await callGemini(syncPrompt);
+        let parsedSync;
+        try {
+          parsedSync = JSON.parse(cleanGeminiJson(syncRaw));
+        } catch {
+          throw new Error('No se pudo interpretar JSON de sincronización');
+        }
+
+        const productsToSync = Array.isArray(parsedSync.products) ? parsedSync.products : [];
+        let created = 0;
+        let updated = 0;
+
+        for (const p of productsToSync) {
+          const name = cleanText(p.name, 160);
+          if (!name) continue;
+          const slug = slugify(name);
+          const category = ['mac', 'iphone', 'ipad', 'airpods'].includes(String(p.category || '').toLowerCase())
+            ? String(p.category).toLowerCase()
+            : 'mac';
+          const price = Number(p.price);
+          const payload = {
+            name,
+            slug,
+            category,
+            description: cleanText(p.description || `${name} disponible en MacStore.`, 2000),
+            price: Number.isFinite(price) && price > 0 ? price : 1,
+            variants: Array.isArray(p.variants) ? p.variants : [],
+            specs: p.specs && typeof p.specs === 'object' ? p.specs : {},
+            ficha: {
+              modelo: name,
+              marca: 'Apple',
+              capacidad: 'Consultar disponibilidad',
+              colores: 'Consultar disponibilidad',
+              garantia: 'Consultar garantía',
+              notas: `Sincronizado desde URL: ${url}`
+            },
+            active: true,
+            updatedAt: new Date()
+          };
+
+          const existing = existingBySlug.get(slug);
+          if (existing) {
+            await db.collection('products').doc(existing.id).update(payload);
+            updated += 1;
+          } else {
+            await db.collection('products').add({ ...payload, createdAt: new Date(), stock: 0, sort_order: 0 });
+            created += 1;
+          }
+        }
+
+        actionResult = { ok: true, type: 'sync', created, updated, source: url, total: productsToSync.length };
+      } catch(e) {
+        actionResult = { ok: false, error: e.message };
+      }
+    }
+
+    // Persistir toda la conversación (usuario y asistente)
+    await appendRamiroTranscript(db, {
+      role: 'user',
+      text: String(message || ''),
+      pageContext: pageContext || '',
+      adminEmail: req.admin?.email || ''
+    });
+    await appendRamiroTranscript(db, {
+      role: 'assistant',
+      text: String(response.message || ''),
+      action: response.action || null,
+      actionResult: actionResult || null,
+      adminEmail: req.admin?.email || ''
+    });
 
     res.json({ message: response.message, action: response.action, data: response.data, actionResult });
 
