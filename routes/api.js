@@ -624,6 +624,7 @@ router.post('/products', requireAdminAPI, upload.single('image'), async (req, re
       img_fit: cleanText(req.body.img_fit || 'contain', 30),
       img_pos: cleanText(req.body.img_pos || 'center', 30),
       img_scale: Math.max(0.2, Math.min(3, toNumber(req.body.img_scale, 1))),
+      detail_img_scale: Math.max(0.2, Math.min(3, toNumber(req.body.detail_img_scale, toNumber(req.body.img_scale, 1)))),
       color_variants: parseJsonField(req.body.color_variants, []),
       variants: parseJsonField(req.body.variants, []),
       logos: parseJsonField(req.body.logos, []),
@@ -667,6 +668,9 @@ router.put('/products/:id', requireAdminAPI, upload.single('image'), async (req,
       img_fit: req.body.img_fit !== undefined ? cleanText(req.body.img_fit, 30) : (ex.img_fit || 'contain'),
       img_pos: req.body.img_pos !== undefined ? cleanText(req.body.img_pos, 30) : (ex.img_pos || 'center'),
       img_scale: req.body.img_scale !== undefined ? Math.max(0.2, Math.min(3, toNumber(req.body.img_scale, ex.img_scale || 1))) : (ex.img_scale || 1),
+      detail_img_scale: req.body.detail_img_scale !== undefined
+        ? Math.max(0.2, Math.min(3, toNumber(req.body.detail_img_scale, ex.detail_img_scale || ex.img_scale || 1)))
+        : (ex.detail_img_scale || ex.img_scale || 1),
       color_variants: req.body.color_variants !== undefined ? parseJsonField(req.body.color_variants, []) : (ex.color_variants || []),
       variants: req.body.variants !== undefined ? parseJsonField(req.body.variants, []) : (ex.variants || []),
       logos: req.body.logos !== undefined ? parseJsonField(req.body.logos, []) : (ex.logos || []),

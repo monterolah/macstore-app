@@ -150,10 +150,17 @@
               </div>
               <div style="grid-column:1 / -1">
                 <label style="font-size:10px;color:#86868b;display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-                  <span>Tamaño</span>
+                  <span>Tamaño en categorías/tarjetas</span>
                   <span class="color-scale-val" style="font-weight:700;color:#1d1d1f"><%= c.img_scale ? Math.round(c.img_scale*100) : 100 %>%</span>
                 </label>
                 <input class="color-scale" type="range" min="50" max="150" step="5" value="<%= c.img_scale ? Math.round(c.img_scale*100) : 100 %>" style="width:100%;accent-color:#1d1d1f" oninput="this.closest('.color-variant-row').querySelector('.color-scale-val').textContent=this.value+'%';updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')">
+              </div>
+              <div style="grid-column:1 / -1">
+                <label style="font-size:10px;color:#86868b;display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                  <span>Tamaño en página de producto</span>
+                  <span class="color-detail-scale-val" style="font-weight:700;color:#1d1d1f"><%= c.detail_img_scale ? Math.round(c.detail_img_scale*100) : (c.img_scale ? Math.round(c.img_scale*100) : 100) %>%</span>
+                </label>
+                <input class="color-detail-scale" type="range" min="50" max="150" step="5" value="<%= c.detail_img_scale ? Math.round(c.detail_img_scale*100) : (c.img_scale ? Math.round(c.img_scale*100) : 100) %>" style="width:100%;accent-color:#1d1d1f" oninput="this.closest('.color-variant-row').querySelector('.color-detail-scale-val').textContent=this.value+'%'">
               </div>
             </div>
           </div>
@@ -300,7 +307,7 @@
           </div>
         </div>
         <div class="adm-f" style="margin-top:8px">
-          <label>Tamaño — <span id="imgScaleVal" style="font-weight:700;color:#1d1d1f"><%= product&&product.img_scale ? Math.round(product.img_scale*100) : 100 %>%</span></label>
+          <label>Tamaño en categorías/tarjetas — <span id="imgScaleVal" style="font-weight:700;color:#1d1d1f"><%= product&&product.img_scale ? Math.round(product.img_scale*100) : 100 %>%</span></label>
           <div style="display:flex;align-items:center;gap:10px">
             <span style="font-size:11px;color:#86868b">50%</span>
             <input type="range" id="fImgScale" min="50" max="150" step="5" value="<%= product&&product.img_scale ? Math.round(product.img_scale*100) : 100 %>"
@@ -308,6 +315,17 @@
               style="flex:1;accent-color:#1d1d1f;height:4px">
             <span style="font-size:11px;color:#86868b">150%</span>
           </div>
+        </div>
+        <div class="adm-f" style="margin-top:12px">
+          <label>Tamaño en página de producto — <span id="detailImgScaleVal" style="font-weight:700;color:#1d1d1f"><%= product&&product.detail_img_scale ? Math.round(product.detail_img_scale*100) : (product&&product.img_scale ? Math.round(product.img_scale*100) : 100) %>%</span></label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:#86868b">50%</span>
+            <input type="range" id="fDetailImgScale" min="50" max="150" step="5" value="<%= product&&product.detail_img_scale ? Math.round(product.detail_img_scale*100) : (product&&product.img_scale ? Math.round(product.img_scale*100) : 100) %>"
+              oninput="document.getElementById('detailImgScaleVal').textContent=this.value+'%'"
+              style="flex:1;accent-color:#1d1d1f;height:4px">
+            <span style="font-size:11px;color:#86868b">150%</span>
+          </div>
+          <div style="font-size:11px;color:#86868b;margin-top:5px">Este valor solo afecta la vista interna del producto.</div>
         </div>
       </div>
     </div>
@@ -499,8 +517,12 @@ function addColor(){
               <select class="si color-pos" style="font-size:12px;padding:4px 8px;width:100%" onchange="updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')"><option value="center">Centro</option><option value="top">Arriba</option><option value="bottom">Abajo</option><option value="left">Izquierda</option><option value="right">Derecha</option></select>
             </div>
             <div style="grid-column:1 / -1">
-              <label style="font-size:10px;color:#86868b;display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><span>Tamaño</span><span class="color-scale-val" style="font-weight:700;color:#1d1d1f">100%</span></label>
+              <label style="font-size:10px;color:#86868b;display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><span>Tamaño en categorías/tarjetas</span><span class="color-scale-val" style="font-weight:700;color:#1d1d1f">100%</span></label>
               <input class="color-scale" type="range" min="50" max="150" step="5" value="100" style="width:100%;accent-color:#1d1d1f" oninput="this.closest('.color-variant-row').querySelector('.color-scale-val').textContent=this.value+'%';updateColorImgPreview(this.closest('.color-variant-row'), this.closest('.color-variant-row').querySelector('.color-img-url')?.value||'')">
+            </div>
+            <div style="grid-column:1 / -1">
+              <label style="font-size:10px;color:#86868b;display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><span>Tamaño en página de producto</span><span class="color-detail-scale-val" style="font-weight:700;color:#1d1d1f">100%</span></label>
+              <input class="color-detail-scale" type="range" min="50" max="150" step="5" value="100" style="width:100%;accent-color:#1d1d1f" oninput="this.closest('.color-variant-row').querySelector('.color-detail-scale-val').textContent=this.value+'%'">
             </div>
           </div>
         </div>
@@ -613,6 +635,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const scaleInput=row.querySelector('.color-scale');
     const scaleVal=row.querySelector('.color-scale-val');
     if(scaleInput && scaleVal) scaleVal.textContent = scaleInput.value + '%';
+    const detailScaleInput=row.querySelector('.color-detail-scale');
+    const detailScaleVal=row.querySelector('.color-detail-scale-val');
+    if(detailScaleInput && detailScaleVal) detailScaleVal.textContent = detailScaleInput.value + '%';
     updateColorImgPreview(row, row.querySelector('.color-img-url')?.value||'');
   });
 });
@@ -654,9 +679,10 @@ async function saveProduct(){
     const fit=row.querySelector('.color-fit')?.value||'contain';
     const pos=row.querySelector('.color-pos')?.value||'center';
     const scale=(parseInt(row.querySelector('.color-scale')?.value)||100)/100;
+    const detailScale=(parseInt(row.querySelector('.color-detail-scale')?.value)||100)/100;
     const caps=[...row.querySelectorAll('.color-cap-check:checked')].map(cb=>cb.value);
     const enabled=row.querySelector('.color-enabled') ? row.querySelector('.color-enabled').checked : true;
-    if(name||img) colors.push({name:name||'',image_url:img||swatch||'',swatch_url:swatch||img||'',img_fit:fit,img_pos:pos,img_scale:scale,available_caps:caps,enabled});
+    if(name||img) colors.push({name:name||'',image_url:img||swatch||'',swatch_url:swatch||img||'',img_fit:fit,img_pos:pos,img_scale:scale,detail_img_scale:detailScale,available_caps:caps,enabled});
   });
 
   const fd=new FormData();
@@ -700,6 +726,7 @@ async function saveProduct(){
   fd.append('img_fit',document.getElementById('fImgFit').value);
   fd.append('img_pos',document.getElementById('fImgPos').value);
   fd.append('img_scale',(parseInt(document.getElementById('fImgScale')?.value)||100)/100);
+  fd.append('detail_img_scale',(parseInt(document.getElementById('fDetailImgScale')?.value)||100)/100);
 
   const imgFile=document.getElementById('imgFile');
   if(imgFile.files&&imgFile.files[0]) fd.append('image',imgFile.files[0]);

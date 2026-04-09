@@ -31,7 +31,7 @@
       <% const initialCaps = initialColor && Array.isArray(initialColor.available_caps) && initialColor.available_caps.length ? initialColor.available_caps : (product.variants||[]).map(v=>v.label); %>
       <!-- IMAGEN PRINCIPAL -->
       <img id="mainImg" src="<%=initialColor&&initialColor.image_url ? initialColor.image_url : (product.image_url||'')%>" alt="<%=product.name%>"
-        style="position:relative;z-index:1;width:100%;height:100%;max-height:340px;object-fit:<%=initialColor&&initialColor.img_fit ? initialColor.img_fit : (product.img_fit||'contain')%>;object-position:<%=initialColor&&initialColor.img_pos ? initialColor.img_pos : (product.img_pos||'center')%>;transition:opacity .4s ease,transform .4s ease;transform:scale(<%=initialColor&&initialColor.img_scale ? initialColor.img_scale : (product.img_scale||1)%>);transform-origin:center center;display:block"
+        style="position:relative;z-index:1;width:100%;height:100%;max-height:340px;object-fit:<%=initialColor&&initialColor.img_fit ? initialColor.img_fit : (product.img_fit||'contain')%>;object-position:<%=initialColor&&initialColor.img_pos ? initialColor.img_pos : (product.img_pos||'center')%>;transition:opacity .4s ease,transform .4s ease;transform:scale(<%=initialColor&&initialColor.detail_img_scale ? initialColor.detail_img_scale : (initialColor&&initialColor.img_scale ? initialColor.img_scale : (product.detail_img_scale||product.img_scale||1))%>);transform-origin:center center;display:block"
         onerror="this.style.display='none'">
       </div>
 
@@ -46,7 +46,7 @@
           <% const cName = c.name||''; %>
           <% const cFit = c.img_fit||'contain'; %>
           <% const cPos = c.img_pos||'center'; %>
-          <% const cScale = c.img_scale||product.img_scale||1; %>
+          <% const cScale = c.detail_img_scale || c.img_scale || product.detail_img_scale || product.img_scale || 1; %>
           <% const cCapsArr = (Array.isArray(c.available_caps)&&c.available_caps.length) ? c.available_caps : colorVariants.map(v=>v.label); %>
           <% if(c.enabled === false){ %>
           <button
