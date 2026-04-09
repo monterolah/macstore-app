@@ -1713,39 +1713,30 @@ IMPORTANTE:
 - Sé conversacional, útil y conciso — eres el Jarvis de esta tienda
 - Responde SOLO con el JSON, sin markdown ni bloques de código`;
 
-    // Historial de conversación
-    const conversationHistory = (history || []).slice(-10).map(m => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.role === 'user' ? m.text : JSON.stringify({ message: m.text, action: null, data: null }) }]
-    }));
+    // Construir historial de conversación como texto para incluir en el prompt
+    const recentHistory = (history || []).slice(-10)
+      .map(m => `${m.role === 'user' ? 'Admin' : 'Ramiro'}: ${String(m.text || '').slice(0, 300)}`)
+      .join('\n');
 
-    // Llamar a Gemini con historial
-    const https = require('https');
-    const geminiBody = JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [
-        ...conversationHistory,
-        { role: 'user', parts: [{ text: message }] }
-      ],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
-    });
+    // Prompt completo para callGemini (función probada)
+    const fullPrompt = `${systemPrompt}
 
-    const geminiResp = await new Promise((resolve, reject) => {
-      const url = new URL(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`);
-      const opts = { hostname: url.hostname, path: url.pathname + url.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(geminiBody) } };
-      const r = https.request(opts, resp => {
-        let d = ''; resp.on('data', c => d += c); resp.on('end', () => resolve(d));
-      });
-      r.on('error', reject); r.write(geminiBody); r.end();
-    });
+CONVERSACIÓN ACTUAL:
+${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
 
-    const parsed = JSON.parse(geminiResp);
-    let rawText = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || '{"message":"No pude responder.","action":null,"data":null}';
-    rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+    let rawText;
+    try {
+      rawText = await callGemini(fullPrompt);
+    } catch(geminiErr) {
+      console.error('[Ramiro] Error Gemini:', geminiErr.message);
+      return res.status(500).json({ error: geminiErr.message, message: 'Error al llamar a la IA.' });
+    }
+
+    rawText = cleanGeminiJson(rawText);
 
     let response;
     try { response = JSON.parse(rawText); }
-    catch(e) { response = { message: rawText, action: null, data: null }; }
+    catch(e) { response = { message: rawText || 'No pude responder.', action: null, data: null }; }
 
     // Ejecutar acción si viene
     let actionResult = null;
