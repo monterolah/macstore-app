@@ -527,9 +527,9 @@ router.post('/auth/login', async (req, res) => {
     const valid = admin && bcrypt.compareSync(password, admin.password);
     if (!valid) return res.status(401).json({ error: 'Credenciales incorrectas' });
     const token = jwt.sign({ id: snap.docs[0].id, email: admin.email, name: admin.name }, process.env.JWT_SECRET, { expiresIn: '8h' });
-    req.session.adminToken = token;
+    if (req.session) req.session.adminToken = token;
     res.json({ token, admin: { email: admin.email, name: admin.name } });
-  } catch(e) { console.error('API login error:', e.message); res.status(500).json({ error: 'Error al iniciar sesión' }); }
+  } catch(e) { console.error('API login error:', e.message, e.stack); res.status(500).json({ error: 'Error al iniciar sesión', detail: process.env.NODE_ENV !== 'production' ? e.message : undefined }); }
 });
 
 router.post('/auth/logout', (req, res) => { req.session.adminToken = null; res.json({ ok:true }); });
