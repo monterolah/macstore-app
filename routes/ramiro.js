@@ -286,22 +286,6 @@ function getQuickConversationalReply(message = '', admin = {}) {
     return 'Te guío rápido para editar un producto: 1) abre Admin > Productos, 2) entra al producto, 3) toca Editar, 4) cambia lo que necesites (precio, imagen, colores, stock) y 5) guarda. Si quieres, también puedes pedírmelo por chat con una frase directa, por ejemplo: "precio de iPhone 15 a $999" o "cambia imagen de MacBook Air a https://...".';
   }
 
-  if (n.includes('argentina') && (n.includes('campeon') || n.includes('mundial') || n.includes('opinas'))) {
-    return 'Argentina tiene argumentos fuertes: plantilla de calidad, experiencia en torneos y una dinámica probada. Pero en un Mundial los cruces y la forma del momento pesan mucho, así que siempre hay incertidumbre. ¿Qué opinás vos?';
-  }
-
-  if (hasAnyStem(n, ['que opinas', 'opinas']) && !isLikelyOperationalIntent(msg)) {
-    return 'Depende del tema. Dime sobre qué quieres mi opinión y te doy una respuesta directa.';
-  }
-
-  if ((n.includes('paises') || n.includes('selecciones')) && n.includes('mundial')) {
-    return 'Depende del año porque los clasificados cambian. Si me dices si hablas del 2022, 2026 u otro, te digo la lista puntual o cómo se reparten los cupos.';
-  }
-
-  if (n.includes('mundial') || n.includes('futbol')) {
-    return 'Sí, conversemos de fútbol. Si me dices el torneo o año exacto, te respondo con más detalle.';
-  }
-
   return null;
 }
 
