@@ -2122,7 +2122,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       // Fallback final: si después de todo no hay acción ni mensaje útil, preguntar
       if (!response.action && !String(response.message || '').trim()) {
         response = {
-          message: 'Te leo. Si quieres, dime exactamente qué necesitas y lo resolvemos paso a paso (por ejemplo: "editar precio", "quitar color", "crear producto" o "mandar cotización").',
+          message: 'No salió una respuesta útil esta vez y prefiero no devolverte relleno. Vuelve a escribirme lo mismo o reformúlalo en una sola frase, y lo rehago de forma directa.',
           action: null,
           data: null
         };

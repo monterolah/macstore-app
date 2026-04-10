@@ -111,7 +111,7 @@ function buildFallbackDecision(userMessage, question = null, rawResponse = null)
       fallbackText = 'Para crear el producto necesito al menos nombre, categoría y precio. Si quieres, te lo voy pidiendo paso a paso.';
     } else if (!isOperational || isLikelyGeneralConversation(userMessage)) {
       fallbackText = buildOfflineGeneralConversationText(userMessage)
-        || buildHumanFallbackReply(userMessage);
+        || 'No te voy a responder con relleno. En este momento no salió una respuesta útil de la IA; vuelve a enviarme la pregunta y la rehago de forma directa.';
     } else {
       fallbackText = 'Entendí que quieres hacer un cambio, pero me faltó contexto para ejecutarlo. Dime qué producto quieres tocar y qué campo quieres cambiar.';
     }
@@ -355,7 +355,7 @@ function hasOperationalSignals(text = '') {
 function buildHumanFallbackReply(userMessage = '') {
   const topic = String(userMessage || '').replace(/\s+/g, ' ').trim().slice(0, 140);
   const n = normalizeForIntent(topic);
-  if (!topic) return 'Aquí estoy. Dime el tema o el cambio que quieres y te respondo directo.';
+  if (!topic) return '';
 
   if (/^(si|sí|ok|dale|va|aja|aj[aá]|correcto|claro)\s*[.!?]*$/i.test(topic)) {
     return 'Sí. Dime qué quieres que haga o de qué tema quieres que te hable, y te respondo directo.';
@@ -366,10 +366,11 @@ function buildHumanFallbackReply(userMessage = '') {
   }
 
   if (/habla(?:me)?\s+de|cuentame\s+de|explica(?:me)?\s+/i.test(n)) {
-    return `Claro. Si quieres, te hablo de ${topic.replace(/^(habla(?:me)?\s+de|cuentame\s+de|explica(?:me)?\s+)/i, '').trim()} en corto y directo.`;
+    const subject = topic.replace(/^(habla(?:me)?\s+de|cuentame\s+de|explica(?:me)?\s+)/i, '').trim();
+    return subject ? `Puedo hablarte de ${subject}, pero si la IA no devuelve contenido útil prefiero intentarlo de nuevo antes que responderte con relleno.` : '';
   }
 
-  return `Aquí estoy. Si quieres, te respondo directo sobre "${topic}" o lo aterrizamos a algo concreto.`;
+  return '';
 }
 
 function isLikelyGeneralConversation(text = '') {
@@ -425,11 +426,6 @@ function buildOfflineGeneralConversationText(userMessage = '') {
     return 'Aquí estoy para ayudarte de verdad. Dime qué necesitas: conversación libre, productos, precios, imágenes, colores, stock o cotizaciones.';
   }
 
-  const topic = String(userMessage || '').replace(/\s+/g, ' ').trim().slice(0, 120);
-  if (topic) {
-    return buildHumanFallbackReply(topic);
-  }
-
   return '';
 }
 
@@ -467,10 +463,24 @@ ${recentHistory ? `Contexto reciente:\n${recentHistory}\n` : ''}
 
 Usuario: ${msg}`;
 
+  const retryPrompt = `Eres Ramiro, asistente conversacional de ${storeName}.
+Tu respuesta anterior fue descartada por genérica o vacía.
+Ahora responde SOLO con contenido útil y específico, sin introducciones tipo "entiendo tu punto", "buen tema" o "vamos al grano".
+Empieza respondiendo el contenido del mensaje en la primera línea.
+Si el usuario pide explicación, explícale de verdad.
+Si el usuario dice "sí" o algo corto, continúa la conversación usando el contexto reciente.
+
+${recentHistory ? `Contexto reciente:\n${recentHistory}\n` : ''}
+Usuario: ${msg}`;
+
   try {
     const text = await callGeminiBrain(prompt);
     const out = String(text || '').trim();
-    return isLowValueConversationText(out) ? '' : out;
+    if (!isLowValueConversationText(out)) return out;
+
+    const retryText = await callGeminiBrain(retryPrompt, 0.85);
+    const retryOut = String(retryText || '').trim();
+    return isLowValueConversationText(retryOut) ? '' : retryOut;
   } catch {
     return '';
   }
