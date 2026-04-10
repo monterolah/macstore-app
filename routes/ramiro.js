@@ -1643,7 +1643,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
       // -2) Saludo o mensaje genérico sin contexto de acción
       if (!response.action) {
-        const greetIntent = /^(ayuda(me)?|me ayudas?|hola+|hey+y*( ramiro)?|buenas?|qu[eé] puedes?|para qu[eé] sirves?|qu[eé] haces?)\s*[.!?]*$/i.test(msg.trim());
+        const greetIntent = /^(ayuda(me)?|me ayudas?|hola+|holi|hey+y*( ramiro)?|buenas?|buen dia|buenos dias|buenas tardes|buenas noches|que tal|q tal|como estas|como andas|como vas|todo bien|qu[eé] puedes?|para qu[eé] sirves?|qu[eé] haces?)\s*[.!?]*$/i.test(msg.trim());
         if (greetIntent || isTemplatePlaceholder) {
           response = {
             message: 'Aquí estoy. Puedo: 1) buscar productos, 2) editar precio, imagen, colores o stock, 3) activar/desactivar productos, 4) crear o eliminar con confirmación, y 5) ayudarte con cotizaciones. Dime una sola cosa y la hacemos de una vez.',
