@@ -13,7 +13,12 @@ const CANDIDATE_MODELS = [
 ];
 
 function getGeminiApiKey() {
-  return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || '';
+  return process.env.GOOGLE_AI_API_KEY
+    || process.env.GEMINI_API_KEY
+    || process.env.CLAVE_API_IA_GOOGLE
+    || process.env.CLAVE_API_GEMINIS
+    || process.env['CLAVE_API_GÉMINIS']
+    || '';
 }
 
 /**

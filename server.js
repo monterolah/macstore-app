@@ -1,5 +1,29 @@
 require('dotenv').config();
 
+function adoptEnvAlias(canonicalKey, aliasKeys = []) {
+  if (process.env[canonicalKey]) return;
+  for (const alias of aliasKeys) {
+    if (Object.prototype.hasOwnProperty.call(process.env, alias) && process.env[alias]) {
+      process.env[canonicalKey] = process.env[alias];
+      return;
+    }
+  }
+}
+
+// Soporta variables legacy/espanol para evitar fallas por nombres distintos en hosting.
+adoptEnvAlias('ADMIN_EMAIL', ['CORREO_ELECTRONICO_DEL_ADMINISTRADOR', 'CORREO ELECTRONICO DEL ADMINISTRADOR', 'CORREO ELECTRÓNICO DEL ADMINISTRADOR']);
+adoptEnvAlias('ADMIN_PASSWORD', ['ADMIN_CONTRASENA', 'ADMIN_CONTRASEÑA', 'ADMIN_PASSWORD']);
+adoptEnvAlias('CLOUDINARY_API_KEY', ['CLAVE_API_CLOUDINARIA', 'CLOUDINARY_API_KEY']);
+adoptEnvAlias('CLOUDINARY_API_SECRET', ['CLOUDINARY_API_SECRET']);
+adoptEnvAlias('CLOUDINARY_CLOUD_NAME', ['CLOUDINARY_NOMBRE_NUBE', 'CLOUDINARY_CLOUD_NAME']);
+adoptEnvAlias('FIREBASE_SERVICE_ACCOUNT', ['CUENTA_SERVICIO_FIREBASE', 'FIREBASE_SERVICE_ACCOUNT']);
+adoptEnvAlias('FIREBASE_STORAGE_BUCKET', ['FIREBASE_STORAGE_BUCKET']);
+adoptEnvAlias('GOOGLE_AI_API_KEY', ['CLAVE_API_IA_GOOGLE', 'GOOGLE_AI_API_KEY']);
+adoptEnvAlias('GEMINI_API_KEY', ['CLAVE_API_GEMINIS', 'CLAVE_API_GÉMINIS', 'GEMINI_API_KEY']);
+adoptEnvAlias('JWT_SECRET', ['JWT_SECRETO', 'JWT_SECRET']);
+adoptEnvAlias('NODE_ENV', ['NODO_ENV', 'NODE_ENV']);
+adoptEnvAlias('SESSION_SECRET', ['SESION_SECRETO', 'SESIÓN_SECRETO', 'SESSION_SECRET']);
+
 const express      = require('express');
 const session      = require('express-session');
 const { RedisStore } = require('connect-redis');
