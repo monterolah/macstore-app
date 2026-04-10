@@ -23,6 +23,8 @@ const ramiroPendingProductDraft = new Map();
 const RAMIRO_DRAFT_TTL_MS = 10 * 60 * 1000;
 const ramiroPendingImageUpdate = new Map();
 const RAMIRO_IMAGE_TTL_MS = 30 * 60 * 1000; // 30 minutos útil para encontrar URL
+const ramiroPendingCatalogReview = new Map();
+const RAMIRO_CATALOG_REVIEW_TTL_MS = 20 * 60 * 1000;
 const ramiroSessionContext = new Map();
 const RAMIRO_SESSION_CTX_TTL_MS = 20 * 60 * 1000;
 
@@ -263,6 +265,29 @@ function stripTrailingPriceFromName(text) {
     .trim();
 }
 
+function normalizeProductCreateName(name = '') {
+  const raw = cleanText(name, 160).replace(/\s+/g, ' ').trim();
+  if (!raw) return raw;
+  const n = normalizeForMatch(raw);
+
+  if (/^apple\s+watch\s+se\b/.test(n)) {
+    return 'Apple Watch SE';
+  }
+
+  // Título simple para evitar nombres totalmente en minúsculas al crear por chat.
+  return raw
+    .split(' ')
+    .map(token => {
+      const t = String(token || '').trim();
+      if (!t) return '';
+      if (/^[A-Z0-9-]{2,}$/.test(t)) return t;
+      return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+    })
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function isGenericAssistantPrompt(text = '') {
   const n = normalizeForMatch(text);
   if (!n) return true;
@@ -323,11 +348,11 @@ function buildOrderedHowToReply(message = '') {
   const n = normalizeForMatch(raw);
   if (!n) return null;
 
-  const asksHow = /(no\s+se|no\s+s[eé]|como\s+hago|c[oó]mo\s+hago|como\s+se\s+|c[oó]mo\s+se\s+|explica(?:me)?|gui(?:a|ame|ame)|gu[ií]a(?:me)?|ayuda(?:me)?\s+con)/i.test(n);
+  const asksHow = /(no\s+se|no\s+s[eé]|como\s+hago|c[oó]mo\s+hago|como\s+se\s+|c[oó]mo\s+se\s+|explica(?:me)?|gui(?:a|ame|ame)|gu[ií]a(?:me)?|ayuda(?:me)?\s+con|donde\s+lo\s+hago|d[oó]nde\s+lo\s+hago|donde\s+se\s+hace|d[oó]nde\s+se\s+hace)/i.test(n);
   if (!asksHow) return null;
 
   if (/(imagen|foto)/i.test(n)) {
-    return 'Claro. Para cambiar imagen: 1) dime el producto (ej: "AirPods 4 ANC"), 2) pásame la URL directa de la imagen (https://...), 3) yo la aplico y te confirmo. Ejemplo completo: "cambia imagen de AirPods 4 ANC a https://...".';
+    return 'Claro. Para cambiar imagen: 1) ve a Admin > Productos > Editar (o me lo pides por chat), 2) dime el producto (ej: "AirPods 4 ANC"), 3) pásame la URL directa de la imagen (https://...), 4) yo la aplico y te confirmo. Ejemplo completo: "cambia imagen de AirPods 4 ANC a https://...".';
   }
 
   if (/(precio|costo|valor)/i.test(n)) {
@@ -351,10 +376,10 @@ function buildOrderedHowToReply(message = '') {
   }
 
   if (/(crear|agregar|anad|añad|subir|nuevo|producto|iphone|ipad|mac|airpods)/i.test(n)) {
-    return 'Claro. Para crear un producto: 1) nombre + categoría + precio, 2) opcional: imagen, colores, variantes, descripción, 3) yo lo creo y te confirmo. Ejemplo: "crea iPhone 17 Air en $1299".';
+    return 'Claro. Para crear un producto: 1) hazlo en Admin > Productos > Nuevo (o por chat), 2) nombre + categoría + precio, 3) opcional: imagen, colores, variantes, descripción, 4) yo lo creo y te confirmo. Ejemplo: "crea iPhone 17 Air en $1299".';
   }
 
-  return 'Te lo explico ordenado. Dime qué quieres hacer con este formato: 1) acción, 2) producto, 3) dato nuevo. Ejemplos: "cambiar precio de iPhone 15 a $999", "poner imagen de AirPods 4 a https://...", "desactivar MacBook Air M2".';
+  return 'Te lo explico ordenado. Puedes hacerlo en Admin > Productos o pedírmelo por chat. Usa este formato: 1) acción, 2) producto, 3) dato nuevo. Ejemplos: "cambiar precio de iPhone 15 a $999", "poner imagen de AirPods 4 a https://...", "desactivar MacBook Air M2".';
 }
 
 const BLOCKED_ALIAS_TERMS = new Set([
@@ -982,6 +1007,10 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     if (pendingConfirmation && pendingConfirmation.expiresAt < Date.now()) {
       ramiroPendingConfirmations.delete(adminKey);
     }
+    const pendingCatalogReview = ramiroPendingCatalogReview.get(adminKey);
+    if (pendingCatalogReview && pendingCatalogReview.expiresAt < Date.now()) {
+      ramiroPendingCatalogReview.delete(adminKey);
+    }
     const sessionCtx = getRamiroSessionContext(adminKey);
 
     // Cargar config y memoria de Ramiro
@@ -1433,6 +1462,22 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         if (orderedHowTo) {
           response = {
             message: orderedHowTo,
+            action: null,
+            data: null
+          };
+        }
+      }
+
+      if (!response.action) {
+        const asksOpinion = /(que\s+te\s+parece|que\s+opinas|q\s+te\s+parece|como\s+ves\s+eso|c[oó]mo\s+ves\s+eso)/i.test(msgNorm);
+        const pending = ramiroPendingCatalogReview.get(adminKey);
+        if (asksOpinion && pending && pending.expiresAt >= Date.now()) {
+          const created = Number(pending.created) || 0;
+          const updated = Number(pending.updated) || 0;
+          const total = Number(pending.total) || (created + updated);
+          const sourceHost = String(pending.sourceHost || 'esa URL');
+          response = {
+            message: `Va bien. De ${sourceHost} procesé ${total} productos: ${created} nuevos y ${updated} actualizados. Si quieres, ahora te ayudo a revisar duplicados, productos sin imagen o precios fuera de rango.`,
             action: null,
             data: null
           };
@@ -2072,14 +2117,15 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
           } else {
           const rawName = cleanText(createCmd[1], 160).replace(/[.,;]+$/, '').trim();
           const cleanName = stripTrailingPriceFromName(rawName.replace(/^(unos?|unas?)\s+/i, '').trim());
-          if (!cleanName) {
+          const normalizedName = normalizeProductCreateName(cleanName);
+          if (!normalizedName) {
             response = {
               message: 'Puedo crearlo, pero necesito un nombre claro para el producto.',
               action: null,
               data: null
             };
           } else {
-          const slug = slugify(cleanName);
+          const slug = slugify(normalizedName);
           const existing = allProducts.find(p => p.slug === slug);
           if (existing) {
             response = {
@@ -2091,30 +2137,30 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
             const price = parsePriceFromText(msg);
             if (!price) {
               ramiroPendingProductDraft.set(adminKey, {
-                name: cleanName,
+                name: normalizedName,
                 slug,
-                category: inferCategoryFromName(cleanName),
+                category: inferCategoryFromName(normalizedName),
                 expiresAt: Date.now() + RAMIRO_DRAFT_TTL_MS
               });
                 setRamiroSessionContext(adminKey, {
-                  pendingProductName: cleanName,
+                  pendingProductName: normalizedName,
                   pendingProductSlug: slug,
-                  pendingProductCategory: inferCategoryFromName(cleanName),
+                  pendingProductCategory: inferCategoryFromName(normalizedName),
                 });
               response = {
-                message: `Listo, puedo crearlo como "${cleanName}". Solo dime el precio (ej: $249) y lo agrego.`,
+                message: `Listo, puedo crearlo como "${normalizedName}". Solo dime el precio (ej: $249) y lo agrego.`,
                 action: null,
                 data: null
               };
             } else {
               response = {
-                message: `✅ creado ${cleanName} por $${price}`,
+                message: `✅ creado ${normalizedName} por $${price}`,
                 action: 'PRODUCT_CREATE',
                 data: {
                   product: {
-                    name: cleanName,
+                    name: normalizedName,
                     slug,
-                    category: inferCategoryFromName(cleanName),
+                    category: inferCategoryFromName(normalizedName),
                     price
                   }
                 }
@@ -2691,6 +2737,16 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
           throw new Error('URL processing requires external API call - not implemented in this scope');
         }
         actionResult = { ok: true, type: 'sync', ...syncResult };
+        let host = '';
+        try { host = new URL(url).hostname || ''; } catch {}
+        ramiroPendingCatalogReview.set(adminKey, {
+          sourceUrl: url,
+          sourceHost: host,
+          created: Number(syncResult?.created) || 0,
+          updated: Number(syncResult?.updated) || 0,
+          total: Number(syncResult?.total) || 0,
+          expiresAt: Date.now() + RAMIRO_CATALOG_REVIEW_TTL_MS,
+        });
       } catch(e) {
         actionResult = { ok: false, error: e.message };
       }
