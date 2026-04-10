@@ -2176,7 +2176,7 @@ ${implicitTargetProduct ? `${implicitTargetProduct.id} | ${implicitTargetProduct
     const shouldForceDeterministic = !response.action || response.action === 'INFO' || invalidUpdateAction || invalidCreateAction || hasCapacityEnableCommand || isTemplatePlaceholder;
 
     if (shouldForceDeterministic) {
-      response = { message: response.message || 'Entendido.', action: null, data: null };
+      response = { message: response.message || '', action: null, data: null };
       const msg = String(message || '').trim();
       const msgNorm = normalizeForMatch(msg);
       const targetFromRef = (ref) => resolveTargetProduct(allProducts, ref, implicitTargetProduct);
@@ -2190,15 +2190,12 @@ ${implicitTargetProduct ? `${implicitTargetProduct.id} | ${implicitTargetProduct
         };
       }
 
-      // -2) Mensaje de ayuda genérico: "ayúdame", "me ayudas", "qué puedes hacer", saludos sin contexto
+      // -2) Saludo o mensaje genérico sin contexto de acción
       if (!response.action) {
-        const helpIntent = /^(ayuda(me)?|me ayudas?|hola|hey ramiro|buenas?|qu[eé] puedes?|para qu[eé] sirves?|.{0,20})$/i.test(msg.trim());
-        if (helpIntent || isTemplatePlaceholder) {
-          const catCount = [...new Set(allProducts.map(p => p.category))].length;
-          const activeCount = allProducts.filter(p => p.active).length;
-          const cats = [...new Set(allProducts.map(p => p.category))].join(', ');
+        const greetIntent = /^(ayuda(me)?|me ayudas?|hola|hey( ramiro)?|buenas?|qu[eé] puedes?|para qu[eé] sirves?|qu[eé] haces?)\s*[.!?]*$/i.test(msg.trim());
+        if (greetIntent || isTemplatePlaceholder) {
           response = {
-            message: `¡Hola! Soy Ramiro. Tenés ${allProducts.length} productos en catálogo (${activeCount} activos) en ${catCount} categorías: ${cats}.\n\nPuedo ayudarte a:\n• Administrar productos (crear, editar, ocultar, eliminar)\n• Cambiar precios, imágenes, colores o variantes\n• Importar catálogos desde un link\n• Responder dudas del sistema y explicar cómo funciona todo\n• Consultar cotizaciones y datos de la tienda\n\n¿En qué arrancamos?`,
+            message: '¿En qué te puedo ayudar?',
             action: null,
             data: null
           };
@@ -2765,6 +2762,15 @@ ${implicitTargetProduct ? `${implicitTargetProduct.id} | ${implicitTargetProduct
             data: null
           };
         }
+      }
+
+      // Fallback final: si después de todo no hay acción ni mensaje útil, preguntar
+      if (!response.action && !String(response.message || '').trim()) {
+        response = {
+          message: '¿En qué te puedo ayudar?',
+          action: null,
+          data: null
+        };
       }
     }
 
