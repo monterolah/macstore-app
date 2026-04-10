@@ -280,7 +280,8 @@ function getQuickConversationalReply(message = '', admin = {}) {
   const helpIntent = /^(?:me\s+)?(?:puedes\s+)?ayuda(?:r|s|rme|me)?\s*[.!?]*$/i.test(n)
     || /^(?:si\s+)?(?:por\s+favor\s+)?(?:me\s+)?puedes\s+ayudar\s*[.!?]*$/i.test(n)
     || /^(?:ayuda|ayudame|ay[úu]dame|me\s+ayudas?)\s*[.!?]*$/i.test(n)
-    || hasAnyStem(n, ['ayud']) && hasAnyStem(n, ['me', 'puedes', 'ayudas', 'ayudar']);
+    || /(echas\s+la\s+mano|dame\s+una\s+mano|ocupo\s+ayuda|necesito\s+ayuda)/i.test(n)
+    || (hasAnyStem(n, ['ayud']) && hasAnyStem(n, ['me', 'puedes', 'ayudas', 'ayudar']));
   if (helpIntent) {
     return 'Aquí estoy para ayudarte de verdad. Puedo: 1) buscar productos, 2) cambiar precio, imagen, colores o stock, 3) activar/desactivar, 4) crear o borrar con confirmación y 5) apoyarte con cotizaciones. Dime qué quieres hacer y lo ejecuto ya.';
   }
@@ -1407,7 +1408,9 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         const createHelpIntent = hasAnyStem(msgNorm, ['como', 'ayuda', 'explica', 'dime'])
           && hasAnyStem(msgNorm, ['anad', 'anadir', 'agreg', 'cre', 'sub'])
           && hasAnyStem(msgNorm, ['producto', 'catalogo', 'articulo', 'iphone', 'ipad', 'mac', 'airpods']);
-        if (createHelpIntent) {
+        const createHelpAltIntent = /(como|cómo).*(anad|añad|agreg|cre|sub|meter).*(iphone|producto|catalogo|catálogo|articulo|artículo)/i.test(msgNorm)
+          || /(quiero\s+meter\s+un\s+iphone\s+nuevo|crear\s+un\s+iphone\s+nuevo)/i.test(msgNorm);
+        if (createHelpIntent || createHelpAltIntent) {
           response = {
             message: 'Para agregar un producto, escribime el nombre y el precio en una sola frase. Ejemplos: "añade iPhone Air a 1349", "crea MacBook Air M2 por 999" o "agrega iPad Mini $699". Si quieres, también puedes darme imagen, colores, variantes o descripción en el mismo mensaje o después.',
             action: null,
@@ -1462,7 +1465,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       }
 
       if (!response.action) {
-        const materialIntent = /(de\s+que\s+material|de\s+qué\s+material|que\s+material|qué\s+material|material\s+(?:es|tiene|del))/i.test(msgNorm);
+        const materialIntent = /(de\s+que\s+material|de\s+qué\s+material|que\s+material|qué\s+material|material\s+(?:es|tiene|del)|de\s+que\s+esta\s+hecho|de\s+qué\s+está\s+hecho|esta\s+hecho\s+de)/i.test(msgNorm);
         if (materialIntent) {
           const targetProd = findProductMentionInText(allProducts, msg) || implicitTargetProduct;
           if (targetProd) {
@@ -1523,7 +1526,10 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         const urlMatch = msg.match(/https?:\/\/\S+/i);
         const importIntent = /(agreg|import|carg|sub|sincroniz|mete|trae).*(todo|catalogo|catálogo|productos?)/i.test(msgNorm)
           || /(todo).*(enlace|link|url)/i.test(msgNorm)
-          || /(desde|de).*(enlace|link|url)/i.test(msgNorm);
+          || /(desde|de).*(enlace|link|url)/i.test(msgNorm)
+          || /(te\s+paso).*(link|url|enlace).*(catalogo|catálogo|productos?)/i.test(msgNorm)
+          || /(importas?).*(catalogo|catálogo|productos?)/i.test(msgNorm)
+          || /(revisa|mirar|mira).*(catalogo|catálogo).*(enlace|link|url)/i.test(msgNorm);
         if (urlMatch && importIntent) {
           const sourceUrl = urlMatch[0].replace(/[),.;]+$/, '');
           response = {
@@ -1785,8 +1791,9 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
       // 2.5) Imagen sobre producto mencionado o implícito: "ponle imagen a los airpods 4"
       if (!response.action) {
-        const isImageCmd = /(?:ponle|cambiale|actualizale|pon|cambia|agrega|agregale|anade|anadele|añade|añadele|añadir|sube|subele).*(?:imagen|foto)/i.test(msg)
-          || /(?:imagen|foto).*(?:ponle|cambiale|actualizale|pon|cambia|agrega)/i.test(msg);
+        const isImageCmd = /(?:ponle|cambiale|actualizale|pon|cambia|cambiar|actualizar|agrega|agregale|anade|anadele|añade|añadele|añadir|sube|subele).*(?:imagen|foto)/i.test(msg)
+          || /(?:imagen|foto).*(?:ponle|cambiale|actualizale|pon|cambia|cambiar|actualizar|agrega)/i.test(msg)
+          || /(quiero\s+cambiar\s+la\s+imagen|cambiar\s+imagen\s+de|actualizar\s+imagen\s+de)/i.test(msgNorm);
         if (isImageCmd) {
           // Prioridad 1: producto mencionado explícitamente en el mensaje actual
           const explicitProd = findProductMentionInText(allProducts, msg);
