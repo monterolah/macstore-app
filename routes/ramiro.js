@@ -1619,7 +1619,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         }
       }
 
-      // 2.6) Seguimiento de imagen pendiente con solo URL - más tolerante
+      // 2.6) Seguimiento de imagen pendiente con solo URL
       if (!response.action) {
         const onlyUrl = msg.match(/^\s*(https?:\/\/\S+)\s*$/i);
         const imagePending = ramiroPendingImageUpdate.get(adminKey);
@@ -1627,35 +1627,35 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
           ? resolveProductByIdOrSlug(allProducts, imagePending.productId)
           : null;
 
-        // Estrategia de fallback: si llegó solo un URL y no hay estado claro,
-        // busca en conversación reciente qué producto se mencionaba
-        let targetProd = fallbackPendingProduct || implicitTargetProduct;
-        
-        if (onlyUrl && !targetProd && conversationRows && conversationRows.length > 0) {
-          // Escanea últimos 5 mensajes de usuario para encontrar mención de producto
-          for (let i = conversationRows.length - 1; i >= 0 && i >= conversationRows.length - 5; i--) {
-            const row = conversationRows[i];
-            if (row.role === 'user') {
-              const inferred = inferProductFromConversationRows([row], allProducts);
-              if (inferred) {
-                targetProd = inferred;
-                break;
+        if (onlyUrl && (imagePending || implicitTargetProduct || fallbackPendingProduct)) {
+          let targetProd = fallbackPendingProduct || implicitTargetProduct;
+          
+          // Si no hay targetProd claro, busca en conversación reciente
+          if (!targetProd && conversationRows && conversationRows.length > 0) {
+            for (let i = conversationRows.length - 1; i >= 0 && i >= conversationRows.length - 5; i--) {
+              const row = conversationRows[i];
+              if (row.role === 'user') {
+                const inferred = inferProductFromConversationRows([row], allProducts);
+                if (inferred) {
+                  targetProd = inferred;
+                  break;
+                }
               }
             }
           }
-        }
-
-        if (onlyUrl && targetProd) {
-          const imageUrl = await resolveImageUrlFromInput(onlyUrl[1]);
-          response = {
-            message: `✅ imagen actualizada para ${targetProd.name}`,
-            action: 'PRODUCT_UPDATE',
-            data: {
-              productId: targetProd.id,
-              updates: { image_url: imageUrl }
-            }
-          };
-          ramiroPendingImageUpdate.delete(adminKey);
+          
+          if (targetProd) {
+            const imageUrl = await resolveImageUrlFromInput(onlyUrl[1]);
+            response = {
+              message: `✅ imagen actualizada para ${targetProd.name}`,
+              action: 'PRODUCT_UPDATE',
+              data: {
+                productId: targetProd.id,
+                updates: { image_url: imageUrl }
+              }
+            };
+            ramiroPendingImageUpdate.delete(adminKey);
+          }
         }
       }
 
