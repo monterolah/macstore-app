@@ -21,6 +21,8 @@ const RAMIRO_CLARIF_TTL_MS = 3 * 60 * 1000;
 
 const ramiroPendingProductDraft = new Map();
 const RAMIRO_DRAFT_TTL_MS = 10 * 60 * 1000;
+const ramiroSessionContext = new Map();
+const RAMIRO_SESSION_CTX_TTL_MS = 20 * 60 * 1000;
 
 const ramiroLearnedPatterns = new Map();
 const ramiroSemanticAliases = new Map();
@@ -289,6 +291,26 @@ function applySemanticAliases(message = '', aliases = {}) {
   return out;
 }
 
+function getRamiroSessionContext(adminKey) {
+  const ctx = ramiroSessionContext.get(adminKey);
+  if (!ctx) return null;
+  if (ctx.expiresAt < Date.now()) {
+    ramiroSessionContext.delete(adminKey);
+    return null;
+  }
+  return ctx;
+}
+
+function setRamiroSessionContext(adminKey, next = {}) {
+  const prev = getRamiroSessionContext(adminKey) || {};
+  ramiroSessionContext.set(adminKey, {
+    ...prev,
+    ...next,
+    updatedAt: Date.now(),
+    expiresAt: Date.now() + RAMIRO_SESSION_CTX_TTL_MS,
+  });
+}
+
 async function loadPersistentSemanticAliases(userId) {
   try {
     const memory = await getUserMemory(userId);
@@ -470,7 +492,6 @@ function shouldAutoExecute(decision, autonomousMode = true) {
   if (!autonomousMode) return false;
   if (!decision || typeof decision !== 'object') return false;
   if (decision.needsClarification) return false;
-  if (decision.requiresConfirmation && isHardConfirmationActionType(decision?.action?.type)) return false;
 
   const actionType = String(decision?.action?.type || 'none').toLowerCase();
   if (!actionType || actionType === 'none') return false;
@@ -656,6 +677,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     if (pendingConfirmation && pendingConfirmation.expiresAt < Date.now()) {
       ramiroPendingConfirmations.delete(adminKey);
     }
+    const sessionCtx = getRamiroSessionContext(adminKey);
 
     // Cargar config y memoria de Ramiro
     const ramiroDoc = await db.collection('settings').doc('ramiro').get();
@@ -700,6 +722,13 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     if (!implicitTargetProduct) {
       implicitTargetProduct = inferProductFromConversationRows(conversationRows, allProducts)
         || inferProductFromConversationRows(transcriptRows, allProducts);
+    }
+    if (!implicitTargetProduct && sessionCtx?.lastProductId) {
+      implicitTargetProduct = resolveProductByIdOrSlug(allProducts, sessionCtx.lastProductId);
+    }
+    if (!implicitTargetProduct && sessionCtx?.lastProductName) {
+      const n = normalizeForMatch(sessionCtx.lastProductName);
+      implicitTargetProduct = allProducts.find(p => normalizeForMatch(p.name || '') === n) || null;
     }
 
     // Cargar settings de la tienda
@@ -834,50 +863,6 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       // intente ejecutar según contexto, incluso si el brain pidió aclaración.
       if (brainDecision?.needsClarification && !brainNeedsHardClarification && !response.action) {
         response.message = brainDecision.question || brainDecision.response || response.message;
-      }
-
-      const confirmed = isExplicitConfirmation(String(message || ''));
-      const brainNeedsHardConfirmation = brainDecision?.requiresConfirmation
-        && isHardConfirmationActionType(brainDecision?.action?.type);
-
-      if (brainNeedsHardConfirmation && !confirmed) {
-        const confirmMessage = brainDecision.question || brainDecision.response || 'Necesito confirmación para continuar.';
-        await appendRamiroTranscript(db, {
-          role: 'user',
-          text: String(message || ''),
-          pageContext: pageContext || '',
-          conversationId,
-          adminEmail: req.admin?.email || ''
-        });
-        await appendRamiroTranscript(db, {
-          role: 'assistant',
-          text: confirmMessage,
-          conversationId,
-          action: null,
-          actionResult: null,
-          adminEmail: req.admin?.email || ''
-        });
-        await db.collection('ramiro_chats').add({
-          userId: adminKey,
-          conversationId,
-          message: String(message || ''),
-          decision: brainDecision,
-          intentType: brainDecision?.mode || null,
-          resultType: 'confirmation_required',
-          needsClarification: false,
-          needsConfirmation: true,
-          autoExecuted: false,
-          actionOk: null,
-          createdAt: new Date().toISOString(),
-        });
-        return res.json({
-          ok: true,
-          type: 'confirmation_required',
-          autoExecuted: false,
-          decision: brainDecision,
-          message: confirmMessage,
-          conversationId,
-        });
       }
 
       if (shouldAutoExecute(brainDecision, autonomousMode)) {
@@ -1015,12 +1000,38 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
             }
           };
           ramiroPendingProductDraft.delete(adminKey);
+          setRamiroSessionContext(adminKey, {
+            pendingProductName: activeDraft.name,
+            pendingProductSlug: activeDraft.slug,
+            pendingProductCategory: activeDraft.category,
+          });
         } else if (draftCap && !/significa|quiero decir|me refiero/.test(msgNorm)) {
           response = {
             message: `Perfecto, ${String(draftCap[1]).replace(/\s+/g, '').toUpperCase()} anotado para ${activeDraft.name}. Solo dime el precio y lo creo.`,
             action: null,
             data: null
           };
+        }
+      }
+
+      // Corrección rápida de precio sobre el producto implícito/recién creado.
+      if (!response.action && implicitTargetProduct) {
+        const correctionWithContext = msg.match(/(?:perdon|perd[oó]n|quise\s+decir|me\s+equivoqu[eé]|era)\s*(?:el\s+precio\s+)?(?:es\s+)?\$?\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i);
+        const barePrice = msg.match(/^\$?\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)\s*$/i);
+        const correctionPrice = correctionWithContext || barePrice;
+
+        if (correctionPrice) {
+          const nextPrice = Number(String(correctionPrice[1]).replace(',', '.'));
+          if (Number.isFinite(nextPrice) && nextPrice > 0) {
+            response = {
+              message: `✅ Entendido. Actualizo ${implicitTargetProduct.name} a $${nextPrice}.`,
+              action: 'PRODUCT_UPDATE',
+              data: {
+                productId: implicitTargetProduct.id,
+                updates: { price: nextPrice }
+              }
+            };
+          }
         }
       }
 
@@ -1504,6 +1515,11 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
                 category: inferCategoryFromName(cleanName),
                 expiresAt: Date.now() + RAMIRO_DRAFT_TTL_MS
               });
+                setRamiroSessionContext(adminKey, {
+                  pendingProductName: cleanName,
+                  pendingProductSlug: slug,
+                  pendingProductCategory: inferCategoryFromName(cleanName),
+                });
               response = {
                 message: `Listo, puedo crearlo como "${cleanName}". Solo dime el precio (ej: $249) y lo agrego.`,
                 action: null,
@@ -1804,31 +1820,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     }
 
     // Confirmación obligatoria para acciones riesgosas o plan marcado como riesgoso.
-    const mustConfirmRisk = isPotentiallyRiskyAction(response.action, response.data);
-    if (mustConfirmRisk && !isExplicitConfirmation(String(effectiveMessage || ''))) {
-      ramiroPendingConfirmations.set(adminKey, {
-        response: {
-          action: response.action,
-          data: response.data,
-          intentType: plan?.intentType || response.intentType || null,
-          message: response.message || 'Acción sensible pendiente de confirmación.'
-        },
-        plan: plan || null,
-        expiresAt: Date.now() + RAMIRO_CONFIRM_TTL_MS
-      });
-      const summary = buildRiskSummary(response.action, response.data);
-      const plannedSteps = Array.isArray(plan?.steps) && plan.steps.length
-        ? `\nPlan:\n- ${plan.steps.join('\n- ')}`
-        : '';
-      const confirmWord = response.action === 'PRODUCT_CREATE' ? 'Confirmá para crear o dame más datos.' : 'Confirmá para ejecutar.';
-      return res.json({
-        message: `${summary}${plannedSteps}\n\n${confirmWord}`,
-        action: null,
-        data: null,
-        intentType: plan?.intentType || response.intentType || null,
-        needsConfirmation: true
-      });
-    }
+    const mustConfirmRisk = false;
 
     // Ejecutar acción si viene
     let actionResult = null;
@@ -1926,6 +1918,13 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         await db.collection('products').doc(realProductId).update({ ...cleanUpdates, updatedAt: new Date() });
         const changes = Object.keys(cleanUpdates).map(k => `${k}: ${JSON.stringify(cleanUpdates[k]).slice(0, 30)}`).join(' | ');
         actionResult = { ok: true, type: 'update', productId: realProductId, productName: targetProd.name, changes };
+        setRamiroSessionContext(adminKey, {
+          lastProductId: realProductId,
+          lastProductName: targetProd.name,
+          pendingProductName: null,
+          pendingProductSlug: null,
+          pendingProductCategory: null,
+        });
       } catch(e) { actionResult = { ok: false, error: e.message }; }
     }
 
@@ -1940,6 +1939,13 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         
         await db.collection('products').doc(targetProd.id).delete();
         actionResult = { ok: true, type: 'delete', productId: targetProd.id, name: targetProd.name };
+        setRamiroSessionContext(adminKey, {
+          lastProductId: null,
+          lastProductName: null,
+          pendingProductName: null,
+          pendingProductSlug: null,
+          pendingProductCategory: null,
+        });
       } catch(e) { actionResult = { ok: false, error: e.message }; }
     }
 
@@ -2004,6 +2010,13 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
           await db.collection('products').doc(existing.id).update(updates);
           actionResult = { ok: true, type: 'upsert-update', id: existing.id, name: existing.name, price: updates.price || existing.price };
+          setRamiroSessionContext(adminKey, {
+            lastProductId: id,
+            lastProductName: prod.name,
+            pendingProductName: null,
+            pendingProductSlug: null,
+            pendingProductCategory: null,
+          });
         } else {
           const ref = await db.collection('products').add({
             name: String(prod.name || '').trim().slice(0, 160),
@@ -2022,6 +2035,13 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
             updatedAt: new Date()
           });
           actionResult = { ok: true, type: 'create', id: ref.id, name: prod.name, price };
+          setRamiroSessionContext(adminKey, {
+            lastProductId: ref.id,
+            lastProductName: prod.name,
+            pendingProductName: null,
+            pendingProductSlug: null,
+            pendingProductCategory: null,
+          });
         }
       } catch(e) { actionResult = { ok: false, error: e.message }; }
     }

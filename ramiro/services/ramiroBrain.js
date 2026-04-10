@@ -93,6 +93,32 @@ function buildFallbackDecision(userMessage, question = null, rawResponse = null)
   };
 }
 
+function isGenericClarificationText(text = '') {
+  const t = String(text || '').trim().toLowerCase();
+  if (!t) return true;
+  return t.includes('en que te puedo ayudar')
+    || t.includes('que quieres hacer exactamente')
+    || t.includes('no pude procesar bien ese mensaje');
+}
+
+async function buildGeneralConversationText({ storeName = 'MacStore', userMessage = '' }) {
+  const msg = String(userMessage || '').trim();
+  if (!msg) return '';
+
+  const prompt = `Eres Ramiro, asistente conversacional de ${storeName}.
+Responde en español, de forma natural, útil y directa a este mensaje del usuario.
+No uses JSON, no menciones reglas internas, no pidas formato especial.
+
+Usuario: ${msg}`;
+
+  try {
+    const text = await callGeminiBrain(prompt);
+    return String(text || '').trim();
+  } catch {
+    return '';
+  }
+}
+
 /**
  * Función principal del brain. Recibe contexto completo y devuelve decisión estructurada.
  *
@@ -164,11 +190,31 @@ Responde SOLO en JSON válido según el esquema indicado.`;
   const parsed = safeJsonParse(rawText);
   if (!parsed.ok || !parsed.data || typeof parsed.data !== 'object') {
     console.warn('[RamiroBrain] JSON inválido de Gemini:', String(rawText).slice(0, 300));
-    const fb = buildFallbackDecision(userMessage, null, rawText);
+    let generalText = String(rawText || '').trim();
+    if (!generalText || isGenericClarificationText(generalText)) {
+      generalText = await buildGeneralConversationText({ storeName, userMessage });
+    }
+    const fb = buildFallbackDecision(userMessage, null, generalText || rawText);
     return { decision: fb, legacy: translateBrainToLegacy(fb) };
   }
 
   const decision = parsed.data;
+
+  // Si el modelo devolvió una aclaración genérica en temas abiertos, pedir una respuesta conversacional real.
+  const actionType = String(decision?.action?.type || '').toLowerCase();
+  const isNonOperationalAsk = !actionType || actionType === 'ask' || actionType === 'none';
+  if (decision?.needsClarification && isNonOperationalAsk && isGenericClarificationText(decision?.question || decision?.response)) {
+    const generalText = await buildGeneralConversationText({ storeName, userMessage });
+    if (generalText) {
+      decision.mode = 'general';
+      decision.intent = decision.intent || 'general_chat';
+      decision.needsClarification = false;
+      decision.requiresConfirmation = false;
+      decision.action = { type: 'answer', payload: {} };
+      decision.question = null;
+      decision.response = generalText;
+    }
+  }
 
   // Guardar memoria en background si aplica
   if (decision?.memory?.shouldRemember && Array.isArray(decision?.memory?.facts) && decision.memory.facts.length) {
