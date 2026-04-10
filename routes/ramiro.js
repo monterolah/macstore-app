@@ -841,7 +841,26 @@ function formatAgentToolMessage(agentResult, decision) {
     return `Importación completada. Creados: ${created}, actualizados: ${updated}.`;
   }
   if (agentResult?.type === 'action_done') {
-    return decision?.response || 'Acción ejecutada correctamente.';
+    const actionType = String(decision?.action?.type || '').toLowerCase();
+    const result = agentResult?.result || {};
+    // Mensajes basados en resultado REAL de Firestore
+    if (actionType === 'create' && result.id) {
+      return `✅ Producto "${result.name || decision?.entity?.name || 'nuevo'}" creado correctamente (ID: ${result.id}).`;
+    }
+    if (actionType === 'update' && result.productId) {
+      return `✅ Producto actualizado correctamente.`;
+    }
+    if (actionType === 'delete' && result.productId) {
+      return `🗑️ Producto eliminado permanentemente.`;
+    }
+    if (actionType === 'hide') {
+      return `✅ Producto ocultado (desactivado).`;
+    }
+    if (actionType === 'show') {
+      return `✅ Producto activado.`;
+    }
+    // Fallback: usar la respuesta de Gemini solo si la acción se confirmó
+    return decision?.response || '✅ Acción ejecutada correctamente en Firestore.';
   }
   return decision?.response || agentResult?.response || 'Listo.';
 }
@@ -1240,13 +1259,8 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         response.message = brainDecision.question || brainDecision.response || response.message;
       }
 
-      const forceDeterministicEarly =
-        /(?:habilita|habilitar|activa|activar)\s+[0-9]{2,4}\s?gb\s+para\s+/i.test(String(effectiveMessage || ''))
-        || /(?:pon|poner|ponle|cambia|actualiza|sube|baja)\s+(?:el\s+)?precio/i.test(String(effectiveMessage || ''))
-        || /precio\s+(?:de|del)\s+.+\s+(?:a|en)\s*\$?\s*[0-9]{2,6}/i.test(String(effectiveMessage || ''))
-        || (/(?:imagen|foto)/i.test(String(effectiveMessage || '')) && /https?:\/\//i.test(String(effectiveMessage || '')));
-
-      if (!forceDeterministicEarly && shouldAutoExecute(brainDecision, autonomousMode)) {
+      // Gemini siempre tiene prioridad — no forzar parser determinista
+      if (shouldAutoExecute(brainDecision, autonomousMode)) {
         try {
           const agentResult = await runRamiroTool(brainDecision, { userId: adminKey });
           if (agentResult?.ok) {
