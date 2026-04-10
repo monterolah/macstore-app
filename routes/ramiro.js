@@ -286,6 +286,22 @@ function getQuickConversationalReply(message = '', admin = {}) {
     return 'Te guío rápido para editar un producto: 1) abre Admin > Productos, 2) entra al producto, 3) toca Editar, 4) cambia lo que necesites (precio, imagen, colores, stock) y 5) guarda. Si quieres, también puedes pedírmelo por chat con una frase directa, por ejemplo: "precio de iPhone 15 a $999" o "cambia imagen de MacBook Air a https://...".';
   }
 
+  if (n.includes('argentina') && (n.includes('campeon') || n.includes('mundial') || n.includes('opinas'))) {
+    return 'Argentina tiene argumentos fuertes: plantilla de calidad, experiencia en torneos y una dinámica probada. Pero en un Mundial los cruces y la forma del momento pesan mucho, así que siempre hay incertidumbre. ¿Qué opinás vos?';
+  }
+
+  if (hasAnyStem(n, ['que opinas', 'opinas']) && !isLikelyOperationalIntent(msg)) {
+    return 'Depende del tema. Dime sobre qué quieres mi opinión y te doy una respuesta directa.';
+  }
+
+  if ((n.includes('paises') || n.includes('selecciones')) && n.includes('mundial')) {
+    return 'Depende del año porque los clasificados cambian. Si me dices si hablas del 2022, 2026 u otro, te digo la lista puntual o cómo se reparten los cupos.';
+  }
+
+  if (n.includes('mundial') || n.includes('futbol')) {
+    return 'Sí, conversemos de fútbol. Si me dices el torneo o año exacto, te respondo con más detalle.';
+  }
+
   return null;
 }
 
@@ -505,6 +521,34 @@ function resolveTargetProduct(products, rawRef, fallbackProduct) {
   const direct = findProductByRef(products, rawRef);
   if (direct) return direct;
   return fallbackProduct || null;
+}
+
+function findProductMentionInText(products, text) {
+  const messageNorm = normalizeForMatch(text);
+  if (!messageNorm || !Array.isArray(products) || !products.length) return null;
+
+  let best = null;
+  let bestScore = 0;
+
+  for (const p of products) {
+    const name = String(p?.name || '').trim();
+    if (!name) continue;
+
+    const nameNorm = normalizeForMatch(name);
+    const slugNorm = normalizeForMatch(String(p?.slug || ''));
+    let score = 0;
+
+    if (nameNorm && messageNorm.includes(nameNorm)) score += 4;
+    if (slugNorm && messageNorm.includes(slugNorm)) score += 3;
+    score += countTokenOverlap(messageNorm, nameNorm);
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = p;
+    }
+  }
+
+  return bestScore >= 2 ? best : null;
 }
 
 function normalizeColorLabel(value) {
@@ -1161,6 +1205,15 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     const hasCapacityEnableCommand = /(?:habilita|habilitar|activa|activar)\s+[0-9]{2,4}\s?gb\s+para\s+/i.test(String(effectiveMessage || ''));
     const isBrainFallbackMessage = /no pude procesar bien ese mensaje/i.test(String(response.message || ''))
       || String(response.intentType || '') === 'fallback_no_parse';
+
+    // Si el brain falló y el mensaje parece conversacional, intenta respuesta rápida
+    if (isBrainFallbackMessage && !isLikelyOperationalIntent(effectiveMessage || '')) {
+      const quickOnFallback = getQuickConversationalReply(effectiveMessage || '', req.admin);
+      if (quickOnFallback) {
+        response = { message: quickOnFallback, action: null, data: null };
+      }
+    }
+
     const hasNaturalBrainResponse = Boolean(String(response.message || '').trim())
       && !isTemplatePlaceholder
       && !isGenericAssistantPrompt(response.message)
@@ -1591,31 +1644,40 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         }
       }
 
-      // 2.5) Imagen ultracorta sobre producto implícito: "ponle esta imagen https://..."
-      if (!response.action && implicitTargetProduct) {
-        const shortImageCmd = msg.match(/(?:ponle|cambiale|actualizale|pon|cambia).*(?:imagen|foto).*(https?:\/\/\S+)/i);
-        if (shortImageCmd) {
-          const imageUrl = await resolveImageUrlFromInput(shortImageCmd[1]);
-          response = {
-            message: `✅ imagen actualizada para ${implicitTargetProduct.name}`,
-            action: 'PRODUCT_UPDATE',
-            data: {
-              productId: implicitTargetProduct.id,
-              updates: { image_url: imageUrl }
+      // 2.5) Imagen sobre producto mencionado o implícito: "ponle imagen a los airpods 4"
+      if (!response.action) {
+        const isImageCmd = /(?:ponle|cambiale|actualizale|pon|cambia|agrega|agregale|añade|añadir|sube|subele).*(?:imagen|foto)/i.test(msg)
+          || /(?:imagen|foto).*(?:ponle|cambiale|actualizale|pon|cambia|agrega)/i.test(msg);
+        if (isImageCmd) {
+          // Prioridad 1: producto mencionado explícitamente en el mensaje actual
+          const explicitProd = findProductMentionInText(allProducts, msg);
+          const imageTarget = explicitProd || implicitTargetProduct;
+          if (imageTarget) {
+            const shortImageCmd = msg.match(/(?:https?:\/\/\S+)/i);
+            if (shortImageCmd) {
+              const imageUrl = await resolveImageUrlFromInput(shortImageCmd[0]);
+              response = {
+                message: `✅ imagen actualizada para ${imageTarget.name}`,
+                action: 'PRODUCT_UPDATE',
+                data: {
+                  productId: imageTarget.id,
+                  updates: { image_url: imageUrl }
+                }
+              };
+              ramiroPendingImageUpdate.delete(adminKey);
+            } else {
+              ramiroPendingImageUpdate.set(adminKey, {
+                productId: imageTarget.id,
+                productName: imageTarget.name,
+                expiresAt: Date.now() + RAMIRO_IMAGE_TTL_MS,
+              });
+              response = {
+                message: `¿Cuál es la URL de la imagen que quieres agregar a **${imageTarget.name}**?`,
+                action: null,
+                data: null,
+              };
             }
-          };
-          ramiroPendingImageUpdate.delete(adminKey);
-        } else if (/(?:ponle|cambiale|actualizale|pon|cambia|agrega|agregale).*(?:imagen|foto)/i.test(msg)) {
-          ramiroPendingImageUpdate.set(adminKey, {
-            productId: implicitTargetProduct.id,
-            productName: implicitTargetProduct.name,
-            expiresAt: Date.now() + RAMIRO_IMAGE_TTL_MS,
-          });
-          response = {
-            message: `¿Cuál es la URL de la imagen que quieres agregar a ${implicitTargetProduct.name}?`,
-            action: null,
-            data: null,
-          };
+          }
         }
       }
 
@@ -1627,35 +1689,20 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
           ? resolveProductByIdOrSlug(allProducts, imagePending.productId)
           : null;
 
-        if (onlyUrl && (imagePending || implicitTargetProduct || fallbackPendingProduct)) {
-          let targetProd = fallbackPendingProduct || implicitTargetProduct;
-          
-          // Si no hay targetProd claro, busca en conversación reciente
-          if (!targetProd && conversationRows && conversationRows.length > 0) {
-            for (let i = conversationRows.length - 1; i >= 0 && i >= conversationRows.length - 5; i--) {
-              const row = conversationRows[i];
-              if (row.role === 'user') {
-                const inferred = inferProductFromConversationRows([row], allProducts);
-                if (inferred) {
-                  targetProd = inferred;
-                  break;
-                }
-              }
+        if (onlyUrl && fallbackPendingProduct) {
+          const imageUrl = await resolveImageUrlFromInput(onlyUrl[1]);
+          response = {
+            message: `✅ imagen actualizada para ${fallbackPendingProduct.name}`,
+            action: 'PRODUCT_UPDATE',
+            data: {
+              productId: fallbackPendingProduct.id,
+              updates: { image_url: imageUrl }
             }
-          }
-          
-          if (targetProd) {
-            const imageUrl = await resolveImageUrlFromInput(onlyUrl[1]);
-            response = {
-              message: `✅ imagen actualizada para ${targetProd.name}`,
-              action: 'PRODUCT_UPDATE',
-              data: {
-                productId: targetProd.id,
-                updates: { image_url: imageUrl }
-              }
-            };
-            ramiroPendingImageUpdate.delete(adminKey);
-          }
+          };
+          ramiroPendingImageUpdate.delete(adminKey);
+        } else if (onlyUrl && !fallbackPendingProduct) {
+          // URL enviada sin contexto de imagen pendiente — ignorar silenciosamente o preguntar
+          // No sobreescribir si ya hay respuesta de otra rama
         }
       }
 
