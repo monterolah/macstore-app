@@ -1242,7 +1242,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     const hasCapacityEnableCommand = /(?:habilita|habilitar|activa|activar)\s+[0-9]{2,4}\s?gb\s+para\s+/i.test(String(effectiveMessage || ''));
     const onlyUrlInput = /^\s*https?:\/\/\S+\s*$/i.test(String(effectiveMessage || ''));
     const hasPendingImageContext = Boolean(ramiroPendingImageUpdate.get(adminKey));
-    const hasImageCommandHint = /(?:imagen|foto|ponle|pon|cambia|actualiza|agrega|agregale|anade|anadele|añade|añadele|sube|subele)/i.test(String(effectiveMessage || ''));
+    const hasImageCommandHint = /(?:imagen|foto|ponle|pon|cambia|cambiar|actualiza|actualizar|edita|editar|modifica|modificar|agrega|agregale|anade|anadele|añade|añadele|sube|subele)/i.test(String(effectiveMessage || ''));
     const shouldPrioritizeImageDeterministic = (hasPendingImageContext && onlyUrlInput)
       || (hasImageCommandHint && isLikelyOperationalIntent(effectiveMessage || ''));
     const isBrainFallbackMessage = /no pude procesar bien ese mensaje/i.test(String(response.message || ''))
@@ -1817,8 +1817,8 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
       // 2.5) Imagen sobre producto mencionado o implícito: "ponle imagen a los airpods 4"
       if (!response.action) {
-        const isImageCmd = /(?:ponle|cambiale|actualizale|pon|cambia|cambiar|actualizar|agrega|agregale|anade|anadele|añade|añadele|añadir|sube|subele).*(?:imagen|foto)/i.test(msg)
-          || /(?:imagen|foto).*(?:ponle|cambiale|actualizale|pon|cambia|cambiar|actualizar|agrega)/i.test(msg)
+        const isImageCmd = /(?:ponle|cambiale|actualizale|pon|cambia|cambiar|actualizar|actualiza|edita|editar|modifica|modificar|agrega|agregale|anade|anadele|añade|añadele|añadir|sube|subele).*(?:imagen|foto)/i.test(msg)
+          || /(?:imagen|foto).*(?:ponle|cambiale|actualizale|pon|cambia|cambiar|actualizar|actualiza|edita|editar|modifica|modificar|agrega)/i.test(msg)
           || /(quiero\s+cambiar\s+la\s+imagen|cambiar\s+imagen\s+de|actualizar\s+imagen\s+de)/i.test(msgNorm);
         if (isImageCmd) {
           // Prioridad 1: producto mencionado explícitamente en el mensaje actual
