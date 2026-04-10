@@ -1592,9 +1592,9 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       }
 
       // 2.5) Imagen ultracorta sobre producto implícito: "ponle esta imagen https://..."
-      if (!response.action) {
+      if (!response.action && implicitTargetProduct) {
         const shortImageCmd = msg.match(/(?:ponle|cambiale|actualizale|pon|cambia).*(?:imagen|foto).*(https?:\/\/\S+)/i);
-        if (shortImageCmd && implicitTargetProduct) {
+        if (shortImageCmd) {
           const imageUrl = await resolveImageUrlFromInput(shortImageCmd[1]);
           response = {
             message: `✅ imagen actualizada para ${implicitTargetProduct.name}`,
@@ -1605,44 +1605,17 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
             }
           };
           ramiroPendingImageUpdate.delete(adminKey);
-        } else if (/(?:ponle|cambiale|actualizale|pon|cambia|agrega|agregale|añade|anadir).*(?:imagen|foto)/i.test(msg)) {
-          // Intenta detectar el producto mencionado EN ESTE MENSAJE
-          let targetForImage = null;
-          
-          // PRIORIDAD 1: Buscar si el mensaje menciona un producto específico por nombre
-          for (const product of allProducts) {
-            const productNameNorm = normalizeForMatch(product.name || '');
-            const messageNorm = normalizeForMatch(msg);
-            // Busca si el nombre del producto aparece en el mensaje
-            if (productNameNorm && messageNorm.includes(productNameNorm)) {
-              targetForImage = product;
-              break;
-            }
-          }
-          
-          // PRIORIDAD 2: Si no encontró por nombre específico, usa el implicitTargetProduct
-          if (!targetForImage && implicitTargetProduct) {
-            targetForImage = implicitTargetProduct;
-          }
-          
-          if (targetForImage) {
-            ramiroPendingImageUpdate.set(adminKey, {
-              productId: targetForImage.id,
-              productName: targetForImage.name,
-              expiresAt: Date.now() + RAMIRO_IMAGE_TTL_MS,
-            });
-            response = {
-              message: `🖼️ Entendido, voy a actualizar la imagen de **${targetForImage.name}**. ¿Cuál es la URL?`,
-              action: null,
-              data: null,
-            };
-          } else {
-            response = {
-              message: `Para agregar una imagen, dime el nombre del producto. Ej: "añade imagen a los AirPods"`,
-              action: null,
-              data: null,
-            };
-          }
+        } else if (/(?:ponle|cambiale|actualizale|pon|cambia|agrega|agregale).*(?:imagen|foto)/i.test(msg)) {
+          ramiroPendingImageUpdate.set(adminKey, {
+            productId: implicitTargetProduct.id,
+            productName: implicitTargetProduct.name,
+            expiresAt: Date.now() + RAMIRO_IMAGE_TTL_MS,
+          });
+          response = {
+            message: `¿Cuál es la URL de la imagen que quieres agregar a ${implicitTargetProduct.name}?`,
+            action: null,
+            data: null,
+          };
         }
       }
 
@@ -1654,19 +1627,11 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
           ? resolveProductByIdOrSlug(allProducts, imagePending.productId)
           : null;
 
-        if (onlyUrl) {
-          let targetProd = null;
+        if (onlyUrl && (imagePending || implicitTargetProduct || fallbackPendingProduct)) {
+          let targetProd = fallbackPendingProduct || implicitTargetProduct;
           
-          // PRIORIDAD 1: Hay UPDATE pendiente activo
-          if (fallbackPendingProduct && imagePending && imagePending.expiresAt > Date.now()) {
-            targetProd = fallbackPendingProduct;
-          } 
-          // PRIORIDAD 2: Usa implicit (del contexto actual)
-          else if (implicitTargetProduct) {
-            targetProd = implicitTargetProduct;
-          }
-          // PRIORIDAD 3: Busca en conversación reciente
-          else if (conversationRows && conversationRows.length > 0) {
+          // Si no hay targetProd claro, busca en conversación reciente
+          if (!targetProd && conversationRows && conversationRows.length > 0) {
             for (let i = conversationRows.length - 1; i >= 0 && i >= conversationRows.length - 5; i--) {
               const row = conversationRows[i];
               if (row.role === 'user') {
@@ -1690,13 +1655,6 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
               }
             };
             ramiroPendingImageUpdate.delete(adminKey);
-          } else {
-            // Sin contexto de producto, pedir aclaración
-            response = {
-              message: `Recibí un URL pero no sé a cuál producto agregarlo. Primero dime: "añade imagen a [producto]" y luego envía el URL.`,
-              action: null,
-              data: null,
-            };
           }
         }
       }
