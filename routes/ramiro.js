@@ -221,9 +221,22 @@ function getQuickConversationalReply(message = '', admin = {}) {
   return null;
 }
 
+const BLOCKED_ALIAS_TERMS = new Set([
+  'que', 'como', 'cual', 'cuál', 'cuando', 'donde', 'dónde',
+  'significa', 'equivale', 'igual', 'lo mismo', 'es', 'son', 'esto', 'eso'
+]);
+
+function isSafeAliasTerm(term = '') {
+  const t = normalizeForMatch(term).slice(0, 80);
+  if (!t || t.length < 3) return false;
+  if (t.includes('?')) return false;
+  if (BLOCKED_ALIAS_TERMS.has(t)) return false;
+  return true;
+}
+
 function parseSemanticAliasInstruction(message = '') {
   const raw = cleanText(message, 300);
-  if (!raw) return null;
+  if (!raw || /\?/.test(raw)) return null;
 
   let m = raw.match(/^(?:para\s+mi\s+)?(.+?)\s+significa\s+(.+)$/i)
     || raw.match(/^cuando\s+digo\s+(.+?)\s+(?:me\s+refiero\s+a|es)\s+(.+)$/i)
@@ -232,10 +245,31 @@ function parseSemanticAliasInstruction(message = '') {
 
   const from = normalizeForMatch(m[1] || '').slice(0, 60);
   const to = normalizeForMatch(m[2] || '').slice(0, 120);
-  if (!from || !to || from === to) return null;
-  if (from.length < 3 || to.length < 3) return null;
+  if (!isSafeAliasTerm(from) || !isSafeAliasTerm(to) || from === to) return null;
 
   return { from, to };
+}
+
+function parseSemanticAliasGroupInstruction(message = '') {
+  const raw = cleanText(message, 300);
+  if (!raw || /\?/.test(raw)) return null;
+  if (!/es\s+lo\s+mismo|son\s+lo\s+mismo/i.test(raw)) return null;
+
+  const clean = raw.replace(/\s+(?:es|son)\s+lo\s+mismo\s*$/i, '').trim();
+  if (!clean) return null;
+
+  const terms = clean
+    .split(/,|\sy\s|\se\s/i)
+    .map(t => normalizeForMatch(t).slice(0, 60))
+    .filter(Boolean)
+    .filter(isSafeAliasTerm);
+
+  if (terms.length < 2) return null;
+  const canonical = terms[0];
+  const mappings = terms.slice(1)
+    .filter(t => t !== canonical)
+    .map(t => ({ from: t, to: canonical }));
+  return mappings.length ? mappings : null;
 }
 
 function escapeRegExp(value = '') {
@@ -572,20 +606,26 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     const mergedAliases = { ...persistedAliases, ...cachedAliases };
     ramiroSemanticAliases.set(adminKey, mergedAliases);
 
-    // Aprendizaje explícito de equivalencias semánticas (ej: "añadir significa agregar")
+    // Aprendizaje explícito de equivalencias semánticas (ej: "añadir significa agregar").
     const learnedAlias = parseSemanticAliasInstruction(String(message || ''));
-    if (learnedAlias) {
+    const learnedAliasGroup = parseSemanticAliasGroupInstruction(String(message || ''));
+    if (learnedAlias || (Array.isArray(learnedAliasGroup) && learnedAliasGroup.length)) {
       const currentAliases = ramiroSemanticAliases.get(adminKey) || {};
-      currentAliases[learnedAlias.from] = learnedAlias.to;
+      const toStore = learnedAlias ? [learnedAlias] : learnedAliasGroup;
+      for (const a of toStore) {
+        currentAliases[a.from] = a.to;
+      }
       ramiroSemanticAliases.set(adminKey, currentAliases);
 
-      rememberFacts(adminKey, [{
-        key: `alias_${learnedAlias.from.replace(/\s+/g, '_').slice(0, 40)}`,
-        value: `${learnedAlias.from} => ${learnedAlias.to}`,
+      rememberFacts(adminKey, toStore.map(a => ({
+        key: `alias_${a.from.replace(/\s+/g, '_').slice(0, 40)}`,
+        value: `${a.from} => ${a.to}`,
         reason: 'Equivalencia semántica definida por el usuario'
-      }]).catch(() => {});
+      }))).catch(() => {});
 
-      const aliasMsg = `Entendido. Aprendí esta equivalencia: "${learnedAlias.from}" = "${learnedAlias.to}". Desde ahora la aplicaré automáticamente.`;
+      const aliasMsg = learnedAlias
+        ? `Entendido. Aprendí esta equivalencia: "${learnedAlias.from}" = "${learnedAlias.to}". Desde ahora la aplicaré automáticamente.`
+        : `Entendido. Aprendí estas equivalencias: ${toStore.map(a => `"${a.from}" = "${a.to}"`).join(', ')}.`;
       await appendRamiroTranscript(db, {
         role: 'user',
         text: String(message || ''),
@@ -907,9 +947,12 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     const invalidUpdateAction = response.action === 'PRODUCT_UPDATE' && (!response.data?.productId || !response.data?.updates || !Object.keys(response.data.updates || {}).length);
     const invalidCreateAction = response.action === 'PRODUCT_CREATE' && !response.data?.product?.name;
     const hasCapacityEnableCommand = /(?:habilita|habilitar|activa|activar)\s+[0-9]{2,4}\s?gb\s+para\s+/i.test(String(effectiveMessage || ''));
+    const isBrainFallbackMessage = /no pude procesar bien ese mensaje/i.test(String(response.message || ''))
+      || String(response.intentType || '') === 'fallback_no_parse';
     const hasNaturalBrainResponse = Boolean(String(response.message || '').trim())
       && !isTemplatePlaceholder
-      && !isGenericAssistantPrompt(response.message);
+      && !isGenericAssistantPrompt(response.message)
+      && !isBrainFallbackMessage;
     const brainAlreadyHandledConversation = hasNaturalBrainResponse
       && !response.action
       && !isLikelyOperationalIntent(effectiveMessage || '');
