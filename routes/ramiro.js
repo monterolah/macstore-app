@@ -1105,8 +1105,9 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
       const brainNeedsHardClarification = brainDecision?.needsClarification
         && isHardClarificationActionType(brainDecision?.action?.type);
+      const shouldBypassHardClarification = isLikelyOperationalIntent(effectiveMessage || '');
 
-      if (brainNeedsHardClarification) {
+      if (brainNeedsHardClarification && !shouldBypassHardClarification) {
         const clarMessage = brainDecision.question || brainDecision.response || '¿Qué dato te falta para continuar?';
         await appendRamiroTranscript(db, {
           role: 'user',
