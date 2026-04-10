@@ -1834,8 +1834,13 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
     try { response = JSON.parse(rawText); }
     catch(e) { response = { message: rawText || 'No pude responder.', action: null, data: null }; }
 
-    // Fallback determinista: si Gemini no ejecuta acción, interpretamos comandos frecuentes
-    if (!response.action) {
+    // Fallback determinista: si Gemini no ejecuta acción o devuelve acción inválida, interpretamos comandos frecuentes
+    const invalidUpdateAction = response.action === 'PRODUCT_UPDATE' && (!response.data?.productId || !response.data?.updates || !Object.keys(response.data.updates || {}).length);
+    const invalidCreateAction = response.action === 'PRODUCT_CREATE' && !response.data?.product?.name;
+    const shouldForceDeterministic = !response.action || response.action === 'INFO' || invalidUpdateAction || invalidCreateAction;
+
+    if (shouldForceDeterministic) {
+      response = { message: response.message || 'Entendido.', action: null, data: null };
       const msg = String(message || '').trim();
       const msgNorm = normalizeForMatch(msg);
 
