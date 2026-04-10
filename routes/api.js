@@ -1787,6 +1787,43 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
     try { response = JSON.parse(rawText); }
     catch(e) { response = { message: rawText || 'No pude responder.', action: null, data: null }; }
 
+    // Fallback: si Gemini no ejecuta acción para comando de colores, forzamos PRODUCT_UPDATE
+    if (!response.action) {
+      const msg = String(message || '').trim();
+      const colorCmd = msg.match(/(?:agrega|agregar|anade|añade|pon|poner)\s+colores?\s+(.+?)\s+a\s+(.+)$/i);
+      if (colorCmd) {
+        const colorsRaw = colorCmd[1] || '';
+        const targetRaw = (colorCmd[2] || '').trim();
+        const targetSlug = slugify(targetRaw);
+        const targetProd = allProducts.find(p =>
+          String(p.name || '').toLowerCase() === targetRaw.toLowerCase() ||
+          String(p.name || '').toLowerCase().includes(targetRaw.toLowerCase()) ||
+          String(p.slug || '') === targetSlug
+        );
+
+        if (targetProd) {
+          const parsedColors = colorsRaw
+            .split(/,|\sy\s|\se\s/i)
+            .map(c => cleanText(c, 40))
+            .filter(Boolean);
+
+          const existingColors = Array.isArray(targetProd.color_variants)
+            ? targetProd.color_variants.map(c => typeof c === 'string' ? c : String(c?.label || c?.name || '')).filter(Boolean)
+            : [];
+
+          const merged = Array.from(new Set([...existingColors, ...parsedColors]));
+          response = {
+            message: `✅ agregado colores ${parsedColors.join(', ')} a ${targetProd.name}`,
+            action: 'PRODUCT_UPDATE',
+            data: {
+              productId: targetProd.id,
+              updates: { color_variants: merged }
+            }
+          };
+        }
+      }
+    }
+
     // Ejecutar acción si viene
     let actionResult = null;
     const ALLOWED_UPDATE_FIELDS = ['price', 'active', 'description', 'variants', 'color_variants', 'stock', 'specs', 'badge', 'image_url'];
@@ -1812,7 +1849,10 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
           if (key === 'price' || key === 'stock') val = Number(val) || 0;
           if (key === 'active') val = Boolean(val);
           if (key === 'variants' && !Array.isArray(val)) val = [];
-          if (key === 'color_variants' && !Array.isArray(val)) val = [];
+          if (key === 'color_variants') {
+            if (!Array.isArray(val)) val = [];
+            val = val.map(c => typeof c === 'string' ? c : String(c?.label || c?.name || '')).filter(Boolean);
+          }
           if (key === 'specs' && typeof val !== 'object') val = {};
           cleanUpdates[key] = val;
         }
