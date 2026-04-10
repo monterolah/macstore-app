@@ -289,6 +289,9 @@ function getQuickConversationalReply(message = '', admin = {}) {
   const n = normalizeForMatch(msg);
   if (!n) return null;
 
+  const orderedHowTo = buildOrderedHowToReply(msg);
+  if (orderedHowTo) return orderedHowTo;
+
   const helpIntent = /^(?:me\s+)?(?:puedes\s+)?ayuda(?:r|s|rme|me)?\s*[.!?]*$/i.test(n)
     || /^(?:si\s+)?(?:por\s+favor\s+)?(?:me\s+)?puedes\s+ayudar\s*[.!?]*$/i.test(n)
     || /^(?:ayuda|ayudame|ay[úu]dame|me\s+ayudas?)\s*[.!?]*$/i.test(n)
@@ -313,6 +316,45 @@ function getQuickConversationalReply(message = '', admin = {}) {
   }
 
   return null;
+}
+
+function buildOrderedHowToReply(message = '') {
+  const raw = String(message || '').trim();
+  const n = normalizeForMatch(raw);
+  if (!n) return null;
+
+  const asksHow = /(no\s+se|no\s+s[eé]|como\s+hago|c[oó]mo\s+hago|como\s+se\s+|c[oó]mo\s+se\s+|explica(?:me)?|gui(?:a|ame|ame)|gu[ií]a(?:me)?|ayuda(?:me)?\s+con)/i.test(n);
+  if (!asksHow) return null;
+
+  if (/(imagen|foto)/i.test(n)) {
+    return 'Claro. Para cambiar imagen: 1) dime el producto (ej: "AirPods 4 ANC"), 2) pásame la URL directa de la imagen (https://...), 3) yo la aplico y te confirmo. Ejemplo completo: "cambia imagen de AirPods 4 ANC a https://...".';
+  }
+
+  if (/(precio|costo|valor)/i.test(n)) {
+    return 'Claro. Para cambiar precio: 1) dime producto + precio final, 2) lo actualizo, 3) te confirmo el valor nuevo. Ejemplo: "precio de iPhone 15 a $999".';
+  }
+
+  if (/(color|colores|variante|variantes)/i.test(n)) {
+    return 'Claro. Para colores/variantes: 1) dime el producto, 2) indica si quieres agregar o quitar color/capacidad, 3) te confirmo el cambio aplicado. Ejemplo: "quita color azul a iPhone 15 Pro" o "habilita 512GB para iPhone 17 lavanda".';
+  }
+
+  if (/(activar|desactivar|ocultar|mostrar|inactivo|activo)/i.test(n)) {
+    return 'Claro. Para estado del producto: 1) dime el producto, 2) indica "activar" o "desactivar", 3) te confirmo si quedó visible o inactivo en catálogo.';
+  }
+
+  if (/(import|sincron|catalog|catálogo|url|link|enlace)/i.test(n)) {
+    return 'Claro. Para importar catálogo por URL: 1) envíame la URL completa, 2) verifico que sea pública, 3) ejecuto la sincronización y te doy resumen de creados/actualizados.';
+  }
+
+  if (/(cotiz|presupuesto)/i.test(n)) {
+    return 'Claro. Para cotizar: 1) dime cliente y productos con cantidades, 2) define IVA/cuotas/descuento, 3) genero el PDF y te indico cómo compartirlo.';
+  }
+
+  if (/(crear|agregar|anad|añad|subir|nuevo|producto|iphone|ipad|mac|airpods)/i.test(n)) {
+    return 'Claro. Para crear un producto: 1) nombre + categoría + precio, 2) opcional: imagen, colores, variantes, descripción, 3) yo lo creo y te confirmo. Ejemplo: "crea iPhone 17 Air en $1299".';
+  }
+
+  return 'Te lo explico ordenado. Dime qué quieres hacer con este formato: 1) acción, 2) producto, 3) dato nuevo. Ejemplos: "cambiar precio de iPhone 15 a $999", "poner imagen de AirPods 4 a https://...", "desactivar MacBook Air M2".';
 }
 
 const BLOCKED_ALIAS_TERMS = new Set([
@@ -1380,6 +1422,17 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         if (editHelpIntent) {
           response = {
             message: 'Te guío rápido para editar un producto: 1) abre Admin > Productos, 2) entra al producto, 3) toca Editar, 4) cambia lo que necesites (precio, imagen, colores, stock) y 5) guarda. Si quieres, también puedes pedírmelo por chat con una frase directa, por ejemplo: "precio de iPhone 15 a $999" o "cambia imagen de MacBook Air a https://...".',
+            action: null,
+            data: null
+          };
+        }
+      }
+
+      if (!response.action) {
+        const orderedHowTo = buildOrderedHowToReply(msg);
+        if (orderedHowTo) {
+          response = {
+            message: orderedHowTo,
             action: null,
             data: null
           };
