@@ -27,6 +27,73 @@ const RAMIRO_SESSION_CTX_TTL_MS = 20 * 60 * 1000;
 const ramiroLearnedPatterns = new Map();
 const ramiroSemanticAliases = new Map();
 
+const verbos = {
+  crear: ['crear', 'agregar', 'anadir', 'añadir', 'poner', 'meter', 'insertar', 'registrar', 'subir'],
+  eliminar: ['eliminar', 'borrar', 'quitar', 'remover', 'limpiar', 'suprimir'],
+  editar: ['editar', 'modificar', 'cambiar', 'actualizar', 'arreglar', 'ajustar'],
+  ver: ['ver', 'mostrar', 'listar', 'ensenar', 'enseñar', 'visualizar'],
+  buscar: ['buscar', 'encontrar', 'filtrar', 'localizar'],
+  activar: ['activar', 'habilitar', 'encender'],
+  desactivar: ['desactivar', 'apagar', 'inhabilitar'],
+  ocultar: ['ocultar', 'esconder', 'desaparecer'],
+  importar: ['importar', 'traer', 'cargar', 'extraer'],
+  ordenar: ['ordenar', 'organizar', 'clasificar'],
+  aumentar: ['aumentar', 'subir', 'incrementar'],
+  disminuir: ['bajar', 'reducir', 'disminuir']
+};
+
+const conectores = [
+  'y', 'o', 'pero', 'entonces', 'luego', 'despues', 'después',
+  'tambien', 'también', 'ademas', 'además', 'porque', 'ya que',
+  'aunque', 'mientras', 'cuando', 'si',
+  'como', 'para', 'con', 'sin', 'sobre',
+  'entre', 'hasta', 'desde'
+];
+
+const referencias = {
+  eso: 'contexto',
+  'eso mismo': 'contexto',
+  'lo otro': 'alternativa',
+  ese: 'contexto',
+  esa: 'contexto',
+  aquello: 'contexto',
+  ultimo: 'ultimo_elemento',
+  'último': 'ultimo_elemento',
+  anterior: 'elemento_anterior'
+};
+
+const modificadores = {
+  pro: ['mas pro', 'más pro', 'mejor', 'mas bonito', 'más bonito', 'mas limpio', 'más limpio', 'mas premium', 'más premium', 'mas apple', 'más apple'],
+  rapido: ['rapido', 'rápido', 'de una', 'sin tanto', 'directo'],
+  todo: ['todo', 'todos', 'todo eso', 'completo'],
+  nada: ['nada', 'ninguno']
+};
+
+const matematicas = {
+  suma: ['mas', 'más', '+', 'sumar', 'agregar'],
+  resta: ['menos', '-', 'quitar'],
+  multiplicar: ['por', '*', 'multiplicar'],
+  dividir: ['entre', '/', 'dividir'],
+  mayor: ['>', 'mayor que', 'mas que', 'más que'],
+  menor: ['<', 'menor que', 'menos que'],
+  igual: ['=', 'igual', 'lo mismo']
+};
+
+const masivo = {
+  todos: ['todos', 'todo', 'completo', 'entero'],
+  varios: ['varios', 'algunos', 'unos cuantos'],
+  ninguno: ['ninguno', 'ninguna']
+};
+
+const sistema = {
+  producto: ['producto', 'articulo', 'artículo', 'item', 'cosa'],
+  categoria: ['categoria', 'categoría', 'tipo', 'grupo'],
+  imagen: ['imagen', 'foto', 'imagen del producto'],
+  precio: ['precio', 'costo', 'valor'],
+  color: ['color', 'tono', 'variante'],
+  banner: ['banner', 'anuncio', 'imagen principal']
+};
+
 function cleanText(value, max = 5000) {
   return String(value || '').trim().slice(0, max);
 }
@@ -75,18 +142,15 @@ function hasAllStemGroups(text, groups = []) {
 
 function isLikelyOperationalIntent(text = '') {
   const normalized = normalizeForMatch(text);
-  return hasAnyStem(normalized, [
-    'agreg', 'anad', 'añad', 'cre', 'sub', 'mete', 'pon',
-    'edit', 'actualiz', 'modific', 'cambi', 'arregl',
-    'elimin', 'borr', 'quit', 'desactiv', 'activ', 'ocult',
-    'import', 'sincron', 'catalogo', 'link', 'url', 'imagen',
-    'foto', 'precio', 'stock', 'color', 'variante'
-  ]);
+  const verbTokens = Object.values(verbos).flat();
+  const systemTokens = Object.values(sistema).flat();
+  const mathTokens = Object.values(matematicas).flat();
+  return hasAnyStem(normalized, [...verbTokens, ...systemTokens, ...mathTokens, 'stock', 'catalogo', 'catálogo', 'url', 'link']);
 }
 
 function hasAmbiguousReferenceIntent(text = '') {
   const normalized = normalizeForMatch(text);
-  const hasDemonstrative = hasAnyStem(normalized, ['eso', 'ese', 'esa', 'este', 'esta', 'aquello', 'anterior']);
+  const hasDemonstrative = hasAnyStem(normalized, [...Object.keys(referencias), 'este', 'esta']);
   const hasActionVerb = hasAnyStem(normalized, [
     'quita', 'quit', 'borra', 'elimina', 'cambia', 'edita', 'arregla',
     'pon', 'actualiza', 'activa', 'desactiva', 'oculta', 'muestra'
@@ -291,6 +355,60 @@ function applySemanticAliases(message = '', aliases = {}) {
   return out;
 }
 
+function applyBaseDictionary(message = '') {
+  let out = String(message || '');
+  const hits = [];
+
+  const canonicalGroups = [
+    { key: 'crear', values: verbos.crear },
+    { key: 'eliminar', values: verbos.eliminar },
+    { key: 'editar', values: verbos.editar },
+    { key: 'ver', values: verbos.ver },
+    { key: 'buscar', values: verbos.buscar },
+    { key: 'activar', values: verbos.activar },
+    { key: 'desactivar', values: verbos.desactivar },
+    { key: 'ocultar', values: verbos.ocultar },
+    { key: 'importar', values: verbos.importar },
+    { key: 'ordenar', values: verbos.ordenar },
+    { key: 'aumentar', values: verbos.aumentar },
+    { key: 'disminuir', values: verbos.disminuir },
+    { key: 'mejorar diseno', values: modificadores.pro },
+  ];
+
+  for (const group of canonicalGroups) {
+    for (const variant of group.values) {
+      const vv = normalizeForMatch(variant);
+      if (!vv) continue;
+      const re = new RegExp(`\\b${escapeRegExp(vv)}\\b`, 'gi');
+      if (re.test(normalizeForMatch(out))) {
+        out = normalizeForMatch(out).replace(re, group.key);
+        hits.push(`dict_${group.key}`);
+      }
+    }
+  }
+
+  // Mantener conectores/estructura pero con texto normalizado para la fase IA+parser.
+  const normalizedOut = normalizeForMatch(out);
+  return { text: normalizedOut, hits: Array.from(new Set(hits)) };
+}
+
+function applyContextualReferenceHints(message = '', { implicitTargetProduct, sessionCtx, memoryProfile } = {}) {
+  const msg = String(message || '');
+  const n = normalizeForMatch(msg);
+  const hasVagueRef = /\b(eso|ese|esa|esto|esta|aquel|aquella|lo otro)\b/i.test(n);
+  if (!hasVagueRef) return msg;
+
+  const refProductName =
+    implicitTargetProduct?.name
+    || sessionCtx?.lastProductName
+    || memoryProfile?.lastProductName
+    || memoryProfile?.refs?.esoProductName
+    || '';
+
+  if (!refProductName) return msg;
+  return `${msg} (referencia_contextual_producto: ${refProductName})`;
+}
+
 function getRamiroSessionContext(adminKey) {
   const ctx = ramiroSessionContext.get(adminKey);
   if (!ctx) return null;
@@ -331,6 +449,39 @@ async function loadPersistentSemanticAliases(userId) {
   } catch {
     return {};
   }
+}
+
+async function loadAdaptiveMemoryProfile(userId) {
+  try {
+    const memory = await getUserMemory(userId);
+    const prefs = memory?.preferences || {};
+    const getVal = (k) => String(prefs?.[k]?.value || '').trim();
+
+    return {
+      tone: getVal('profile_tone') || 'neutral',
+      lastProductId: getVal('last_product_id') || '',
+      lastProductName: getVal('last_product_name') || '',
+      refs: {
+        esoProductId: getVal('ref_eso_product_id') || '',
+        esoProductName: getVal('ref_eso_product_name') || '',
+      }
+    };
+  } catch {
+    return {
+      tone: 'neutral',
+      lastProductId: '',
+      lastProductName: '',
+      refs: { esoProductId: '', esoProductName: '' },
+    };
+  }
+}
+
+function detectUserStyleLabel(message = '') {
+  const n = normalizeForMatch(message);
+  if (!n) return 'neutral';
+  if (/(vos|de una|ahorita|maje|bro|heyy|hey)/i.test(n)) return 'informal_direct';
+  if (/(por favor|podria|podrias|gracias|buenas tardes|buenos dias)/i.test(n)) return 'formal_polite';
+  return 'neutral';
 }
 
 function getProductIdFromPageContext(pageContext) {
@@ -625,6 +776,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     const adminKey = String(req.admin?.email || req.admin?.id || 'admin').toLowerCase();
     const incomingConversationId = sanitizeConversationId(req.body?.conversationId);
     const conversationId = incomingConversationId || generateConversationId(adminKey);
+    const memoryProfile = await loadAdaptiveMemoryProfile(adminKey);
 
     // Cargar equivalencias semánticas persistidas del usuario para aplicar aprendizaje entre sesiones.
     const persistedAliases = await loadPersistentSemanticAliases(adminKey);
@@ -671,7 +823,17 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     }
 
     const activeAliases = ramiroSemanticAliases.get(adminKey) || {};
-    const effectiveMessage = applySemanticAliases(String(message || ''), activeAliases);
+    const dictApplied = applyBaseDictionary(String(message || ''));
+    if (dictApplied.hits.length) {
+      rememberFacts(adminKey, dictApplied.hits.map(hit => ({
+        key: `dict_hit_${hit}`,
+        value: 'true',
+        reason: 'Regla base de diccionario aplicada en interpretación'
+      }))).catch(() => {});
+    }
+    let effectiveMessage = applySemanticAliases(dictApplied.text, activeAliases);
+    const userStyle = detectUserStyleLabel(effectiveMessage);
+    rememberFacts(adminKey, [{ key: 'profile_tone', value: userStyle, reason: 'Estilo detectado de conversación del usuario' }]).catch(() => {});
 
     const pendingConfirmation = ramiroPendingConfirmations.get(adminKey);
     if (pendingConfirmation && pendingConfirmation.expiresAt < Date.now()) {
@@ -723,6 +885,16 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       implicitTargetProduct = inferProductFromConversationRows(conversationRows, allProducts)
         || inferProductFromConversationRows(transcriptRows, allProducts);
     }
+    if (!implicitTargetProduct && memoryProfile?.lastProductId) {
+      implicitTargetProduct = resolveProductByIdOrSlug(allProducts, memoryProfile.lastProductId);
+    }
+    if (!implicitTargetProduct && memoryProfile?.refs?.esoProductId) {
+      implicitTargetProduct = resolveProductByIdOrSlug(allProducts, memoryProfile.refs.esoProductId);
+    }
+    if (!implicitTargetProduct && memoryProfile?.lastProductName) {
+      const q = normalizeForMatch(memoryProfile.lastProductName);
+      implicitTargetProduct = allProducts.find(p => normalizeForMatch(p.name || '') === q) || null;
+    }
     if (!implicitTargetProduct && sessionCtx?.lastProductId) {
       implicitTargetProduct = resolveProductByIdOrSlug(allProducts, sessionCtx.lastProductId);
     }
@@ -731,9 +903,23 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       implicitTargetProduct = allProducts.find(p => normalizeForMatch(p.name || '') === n) || null;
     }
 
+    effectiveMessage = applyContextualReferenceHints(effectiveMessage, {
+      implicitTargetProduct,
+      sessionCtx,
+      memoryProfile,
+    });
+
+    setRamiroSessionContext(adminKey, {
+      lastPageContext: String(pageContext || ''),
+    });
+
     // Cargar settings de la tienda
     const settDoc = await db.collection('settings').doc('main').get();
     const storeSettings = settDoc.exists ? settDoc.data() : {};
+    rememberFacts(adminKey, [
+      { key: 'cfg_store_name', value: String(storeSettings.store_name || 'MacStore'), reason: 'Configuración actual del sistema' },
+      { key: 'cfg_store_whatsapp', value: String(storeSettings.store_whatsapp || ''), reason: 'Configuración actual del sistema' },
+    ]).catch(() => {});
 
     // Cargar cotizaciones recientes
     const quotSnap = await db.collection('quotations').orderBy('createdAt', 'desc').limit(10).get();
@@ -1918,6 +2104,11 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         await db.collection('products').doc(realProductId).update({ ...cleanUpdates, updatedAt: new Date() });
         const changes = Object.keys(cleanUpdates).map(k => `${k}: ${JSON.stringify(cleanUpdates[k]).slice(0, 30)}`).join(' | ');
         actionResult = { ok: true, type: 'update', productId: realProductId, productName: targetProd.name, changes };
+        rememberFacts(adminKey, [
+          { key: 'last_action_type', value: 'PRODUCT_UPDATE', reason: 'Decisión ejecutada recientemente' },
+          { key: 'last_product_id', value: String(realProductId), reason: 'Último producto afectado' },
+          { key: 'last_product_name', value: String(targetProd.name || ''), reason: 'Último producto afectado' },
+        ]).catch(() => {});
         setRamiroSessionContext(adminKey, {
           lastProductId: realProductId,
           lastProductName: targetProd.name,
@@ -1939,6 +2130,11 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         
         await db.collection('products').doc(targetProd.id).delete();
         actionResult = { ok: true, type: 'delete', productId: targetProd.id, name: targetProd.name };
+        rememberFacts(adminKey, [
+          { key: 'last_action_type', value: 'PRODUCT_DELETE', reason: 'Decisión ejecutada recientemente' },
+          { key: 'last_product_id', value: String(targetProd.id), reason: 'Último producto afectado' },
+          { key: 'last_product_name', value: String(targetProd.name || ''), reason: 'Último producto afectado' },
+        ]).catch(() => {});
         setRamiroSessionContext(adminKey, {
           lastProductId: null,
           lastProductName: null,
@@ -2010,8 +2206,13 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
           await db.collection('products').doc(existing.id).update(updates);
           actionResult = { ok: true, type: 'upsert-update', id: existing.id, name: existing.name, price: updates.price || existing.price };
+          rememberFacts(adminKey, [
+            { key: 'last_action_type', value: 'PRODUCT_CREATE', reason: 'Decisión ejecutada recientemente' },
+            { key: 'last_product_id', value: String(existing.id), reason: 'Último producto afectado' },
+            { key: 'last_product_name', value: String(existing.name || ''), reason: 'Último producto afectado' },
+          ]).catch(() => {});
           setRamiroSessionContext(adminKey, {
-            lastProductId: id,
+            lastProductId: existing.id,
             lastProductName: prod.name,
             pendingProductName: null,
             pendingProductSlug: null,
@@ -2035,6 +2236,11 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
             updatedAt: new Date()
           });
           actionResult = { ok: true, type: 'create', id: ref.id, name: prod.name, price };
+          rememberFacts(adminKey, [
+            { key: 'last_action_type', value: 'PRODUCT_CREATE', reason: 'Decisión ejecutada recientemente' },
+            { key: 'last_product_id', value: String(ref.id), reason: 'Último producto afectado' },
+            { key: 'last_product_name', value: String(prod.name || ''), reason: 'Último producto afectado' },
+          ]).catch(() => {});
           setRamiroSessionContext(adminKey, {
             lastProductId: ref.id,
             lastProductName: prod.name,
