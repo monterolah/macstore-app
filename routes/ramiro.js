@@ -330,12 +330,12 @@ function buildRiskSummary(action, data) {
 
 function isPotentiallyRiskyAction(action, data) {
   if (action === 'PRODUCT_DELETE' || action === 'BULK_ACTION' || action === 'SYNC_FROM_URL') return true;
-  if (action === 'PRODUCT_CREATE') return true;
-  if (action === 'PRODUCT_UPDATE' && data?.updates) {
-    const keys = Object.keys(data.updates || {});
-    return keys.length >= 5;
-  }
   return false;
+}
+
+function isHardConfirmationActionType(actionType = '') {
+  const t = String(actionType || '').toLowerCase();
+  return ['delete', 'bulk', 'import', 'sync'].includes(t);
 }
 
 function isAmbiguousShortCommand(message) {
@@ -349,7 +349,7 @@ function shouldAutoExecute(decision, autonomousMode = true) {
   if (!autonomousMode) return false;
   if (!decision || typeof decision !== 'object') return false;
   if (decision.needsClarification) return false;
-  if (decision.requiresConfirmation) return false;
+  if (decision.requiresConfirmation && isHardConfirmationActionType(decision?.action?.type)) return false;
 
   const actionType = String(decision?.action?.type || 'none').toLowerCase();
   if (!actionType || actionType === 'none') return false;
@@ -638,7 +638,10 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       }
 
       const confirmed = isExplicitConfirmation(String(message || ''));
-      if (brainDecision?.requiresConfirmation && !confirmed) {
+      const brainNeedsHardConfirmation = brainDecision?.requiresConfirmation
+        && isHardConfirmationActionType(brainDecision?.action?.type);
+
+      if (brainNeedsHardConfirmation && !confirmed) {
         const confirmMessage = brainDecision.question || brainDecision.response || 'Necesito confirmación para continuar.';
         await appendRamiroTranscript(db, {
           role: 'user',
@@ -1546,7 +1549,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     }
 
     // Confirmación obligatoria para acciones riesgosas o plan marcado como riesgoso.
-    const mustConfirmRisk = (plan?.needsConfirmation === true) || isPotentiallyRiskyAction(response.action, response.data);
+    const mustConfirmRisk = isPotentiallyRiskyAction(response.action, response.data);
     if (mustConfirmRisk && !isExplicitConfirmation(String(message || ''))) {
       ramiroPendingConfirmations.set(adminKey, {
         response: {
