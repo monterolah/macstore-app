@@ -1280,7 +1280,9 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       || (!brainAlreadyHandledConversation && (!response.action || isLikelyOperationalIntent(effectiveMessage || '') || !hasNaturalBrainResponse));
 
     if (shouldForceDeterministic) {
-      response = { message: response.message || '', action: null, data: null };
+      // Reiniciar mensaje para evitar que sobreviva un fallback del brain y bloquee
+      // las respuestas deterministas de ayuda/operación.
+      response = { message: '', action: null, data: null };
       const msg = String(effectiveMessage || '').trim();
       const msgNorm = normalizeForMatch(msg);
       const adminDisplayName = getAdminDisplayName(req.admin);
