@@ -1233,7 +1233,12 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
     const shouldPrioritizeImageDeterministic = (hasPendingImageContext && onlyUrlInput)
       || (hasImageCommandHint && isLikelyOperationalIntent(effectiveMessage || ''));
     const isBrainFallbackMessage = /no pude procesar bien ese mensaje/i.test(String(response.message || ''))
+      || /no te voy a responder con relleno/i.test(String(response.message || ''))
+      || /cambio de imagen qued[oó] incompleto/i.test(String(response.message || ''))
       || String(response.intentType || '') === 'fallback_no_parse';
+
+    const hasNaturalImportIntent = /(te\s+paso).*(link|url|enlace).*(catalogo|catálogo|productos?)|importas?.*(catalogo|catálogo|productos?)/i.test(String(effectiveMessage || ''));
+    const hasNaturalImageChangeIntent = /(quiero\s+cambiar\s+la\s+imagen|cambiar\s+imagen\s+de|actualizar\s+imagen\s+de|poner\s+imagen\s+de)/i.test(String(effectiveMessage || ''));
 
     // Si el brain falló y el mensaje parece conversacional, intenta respuesta rápida
     if (isBrainFallbackMessage && !isLikelyOperationalIntent(effectiveMessage || '')) {
@@ -1256,6 +1261,8 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       || invalidCreateAction
       || hasCapacityEnableCommand
       || shouldPrioritizeImageDeterministic
+      || hasNaturalImportIntent
+      || hasNaturalImageChangeIntent
       || isTemplatePlaceholder
       || (!brainAlreadyHandledConversation && (!response.action || isLikelyOperationalIntent(effectiveMessage || '') || !hasNaturalBrainResponse));
 
@@ -1467,7 +1474,11 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       if (!response.action) {
         const materialIntent = /(de\s+que\s+material|de\s+qué\s+material|que\s+material|qué\s+material|material\s+(?:es|tiene|del)|de\s+que\s+esta\s+hecho|de\s+qué\s+está\s+hecho|esta\s+hecho\s+de)/i.test(msgNorm);
         if (materialIntent) {
-          const targetProd = findProductMentionInText(allProducts, msg) || implicitTargetProduct;
+          const materialTargetMatch = msg.match(/(?:de\s+que\s+material|de\s+qué\s+material|de\s+que\s+esta\s+hecho|de\s+qué\s+está\s+hecho|material\s+del?)\s+(.+)$/i);
+          const materialRef = materialTargetMatch ? cleanText(materialTargetMatch[1], 120) : '';
+          const targetProd = (materialRef ? findProductByRef(allProducts, materialRef) : null)
+            || findProductMentionInText(allProducts, msg)
+            || implicitTargetProduct;
           if (targetProd) {
             const specs = targetProd.specs;
             let materialVal = '';
