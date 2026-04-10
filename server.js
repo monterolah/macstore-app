@@ -47,6 +47,11 @@ if (isProd) {
     console.error('❌ Variables de entorno faltantes en producción:', missing.join(', '));
     process.exit(1);
   }
+
+  if (!process.env.GOOGLE_AI_API_KEY && !process.env.GEMINI_API_KEY) {
+    console.error('❌ Falta GOOGLE_AI_API_KEY o GEMINI_API_KEY en producción');
+    process.exit(1);
+  }
 }
 
 app.set('view engine', 'ejs');
