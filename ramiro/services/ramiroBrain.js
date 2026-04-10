@@ -69,18 +69,26 @@ async function callGeminiBrain(prompt) {
 /**
  * Fallback seguro cuando Gemini no retorna JSON válido o la confianza es muy baja.
  */
-function buildFallbackDecision(userMessage, question = null) {
+function buildFallbackDecision(userMessage, question = null, rawResponse = null) {
+  const cleanRaw = String(rawResponse || '').trim();
+  const hasUsefulRaw = cleanRaw.length >= 12;
+  const fallbackText = hasUsefulRaw
+    ? cleanRaw.slice(0, 2200)
+    : (question || 'No pude procesar bien ese mensaje. ¿Qué quieres hacer exactamente? Ejemplos: "editar precio", "cambiar imagen", "crear producto", "activar producto".');
+
   return {
-    mode: 'clarification',
+    mode: hasUsefulRaw ? 'general' : 'clarification',
     intent: 'fallback_no_parse',
     confidence: 0,
     requiresConfirmation: false,
-    needsClarification: true,
-    understood: 'No pude interpretar la intención con seguridad.',
+    needsClarification: !hasUsefulRaw,
+    understood: hasUsefulRaw
+      ? 'Respuesta conversacional recuperada de salida no estructurada.'
+      : 'No pude interpretar la intención con seguridad.',
     entity: { type: 'unknown', id: null, name: null, filters: {}, matches: [] },
-    action: { type: 'ask', payload: {} },
-    question: question || 'No pude procesar bien ese mensaje. ¿Qué quieres hacer exactamente? Ejemplos: "editar precio", "cambiar imagen", "crear producto", "activar producto".',
-    response: question || 'No pude procesar bien ese mensaje. ¿Qué quieres hacer exactamente? Ejemplos: "editar precio", "cambiar imagen", "crear producto", "activar producto".',
+    action: hasUsefulRaw ? { type: 'answer', payload: {} } : { type: 'ask', payload: {} },
+    question: hasUsefulRaw ? null : fallbackText,
+    response: fallbackText,
     memory: { shouldRemember: false, facts: [] },
   };
 }
@@ -156,7 +164,7 @@ Responde SOLO en JSON válido según el esquema indicado.`;
   const parsed = safeJsonParse(rawText);
   if (!parsed.ok || !parsed.data || typeof parsed.data !== 'object') {
     console.warn('[RamiroBrain] JSON inválido de Gemini:', String(rawText).slice(0, 300));
-    const fb = buildFallbackDecision(userMessage);
+    const fb = buildFallbackDecision(userMessage, null, rawText);
     return { decision: fb, legacy: translateBrainToLegacy(fb) };
   }
 
