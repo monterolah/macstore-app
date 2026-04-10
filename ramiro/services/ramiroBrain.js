@@ -12,66 +12,43 @@ const CANDIDATE_MODELS = [
   'gemini-pro',
 ];
 
+function getGeminiApiKeys() {
+  const candidates = [
+    process.env.GOOGLE_AI_API_KEY,
+    process.env.GEMINI_API_KEY,
+    process.env.CLAVE_API_IA_GOOGLE,
+    process.env.CLAVE_API_GÉMINIS,
+    process.env['CLAVE_API_GÉMINIS'],
+  ]
+    .map(v => String(v || '').trim())
+    .filter(Boolean);
 
-  // ── 1. GEMINI: Conversación libre y operaciones ──────────────────────────────
-  let geminiResult = null;
-  let geminiError = null;
-  try {
-    geminiResult = await callGemini({
-      userMessage,
-      userId,
-      storeName,
-      personality,
-      notes,
-      autonomousMode,
-      allProducts,
-      implicitProduct,
-      persistentHistory,
-      quoteSummary,
-      recentHistory,
-      projectContext,
-    });
-  } catch (e) {
-    geminiError = e;
+  return [...new Set(candidates)];
+}
+
+/**
+ * Llama a la API de Gemini con el prompt dado y devuelve el texto bruto.
+ * @param {string} prompt
+ * @param {number} [temperature=0.25] - 0.25 para JSON estructurado, 0.8 para conversación libre
+ */
+async function callGeminiBrain(prompt, temperature = 0.25) {
+  const geminiApiKeys = getGeminiApiKeys();
+  if (!geminiApiKeys.length) {
+    throw new Error('Faltan GOOGLE_AI_API_KEY y GEMINI_API_KEY en variables de entorno');
   }
 
-  if (geminiResult && geminiResult.message) {
-    return {
-      ...geminiResult,
-      source: 'gemini',
-      legacy: {
-        message: geminiResult.message,
-        action: geminiResult.action || null,
-        data: geminiResult.data || null,
-        intent: geminiResult.intentType || 'general',
-        mode: geminiResult.intentType || 'general',
-        confidence: geminiResult.confidence || 0.9,
-      },
-      decision: geminiResult.decision || { mode: geminiResult.intentType || 'general' },
-    };
-  }
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature, maxOutputTokens: 4096 },
+  });
 
-  // Si Gemini no responde, reintentar con prompt reducido antes de fallback
-  if (!geminiResult && !geminiError && userMessage && userMessage.length > 0) {
-    try {
-      const retryGemini = await callGemini({ userMessage, userId });
-      if (retryGemini && retryGemini.message) {
-        return {
-          ...retryGemini,
-          source: 'gemini',
-          legacy: {
-            message: retryGemini.message,
-            action: retryGemini.action || null,
-            data: retryGemini.data || null,
-            intent: retryGemini.intentType || 'general',
-            mode: retryGemini.intentType || 'general',
-            confidence: retryGemini.confidence || 0.8,
-          },
-          decision: retryGemini.decision || { mode: retryGemini.intentType || 'general' },
-        };
-      }
-    } catch (e) {}
-  }
+  let lastError = null;
+  for (const apiKey of geminiApiKeys) {
+    for (const model of CANDIDATE_MODELS) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      try {
+        const text = await new Promise((resolve, reject) => {
+          const u = new URL(geminiUrl);
           const req = https.request({
             hostname: u.hostname,
             path: u.pathname + u.search,
@@ -88,37 +65,37 @@ const CANDIDATE_MODELS = [
                 const parsed = JSON.parse(data);
                 if (parsed.error?.message) return reject(new Error(parsed.error.message));
                 const out = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                resolve(out);
+              } catch (e) { reject(e); }
+            });
+          });
+          req.on('error', reject);
+          req.write(body);
+          req.end();
+        });
 
-      // ── 2. PARSER DETERMINISTA: Solo si Gemini no responde ──────────────────────
-      // Si no hay respuesta de Gemini, intentar parser determinista
-      const parserResult = await parseRamiroIntent({
-        userMessage,
-        userId,
-        storeName,
-        allProducts,
-        implicitProduct,
-        projectContext,
-        notes,
-        autonomousMode,
-        persistentHistory,
-        quoteSummary,
-        recentHistory,
-      });
-      if (parserResult && parserResult.message) {
-        return {
-          ...parserResult,
-          source: 'ramiro',
-          legacy: {
-            message: parserResult.message,
-            action: parserResult.action || null,
-            data: parserResult.data || null,
-            intent: parserResult.intentType || 'general',
-            mode: parserResult.intentType || 'general',
-            confidence: parserResult.confidence || 0.7,
-          },
-          decision: parserResult.decision || { mode: parserResult.intentType || 'general' },
-        };
+        if (text) return text;
+        lastError = new Error(`Respuesta vacía del modelo ${model}`);
+      } catch (e) {
+        lastError = e;
+        const msg = String(e?.message || '').toLowerCase();
+        if (!msg.includes('not found') && !msg.includes('not supported') && !msg.includes('model')) break;
       }
+    }
+  }
+  throw lastError || new Error('No fue posible obtener respuesta de Gemini');
+}
+
+/**
+ * Fallback seguro cuando Gemini no retorna JSON válido o la confianza es muy baja.
+ */
+function buildFallbackDecision(userMessage, question = null, rawResponse = null) {
+  const cleanRaw = String(rawResponse || '').trim();
+  const hasUsefulRaw = cleanRaw.length >= 12 && !isLowValueConversationText(cleanRaw);
+  let fallbackText;
+  if (hasUsefulRaw) {
+    fallbackText = cleanRaw.slice(0, 2200);
+  } else if (question) {
     fallbackText = question;
   } else {
     const msgLower = String(userMessage || '').toLowerCase();
@@ -608,21 +585,21 @@ async function thinkRamiro(opts) {
   // Cargar memoria del usuario
   let userMemory;
   try { userMemory = await getUserMemory(userId); } catch { userMemory = {}; }
-  // ── 3. FALLBACK HUMANO: Solo si todo falla ───────────────────────────────────
-  const fallback = buildHumanFallbackReply(userMessage);
-  return {
-    message: fallback,
-    source: 'ramiro',
-    legacy: {
-      message: fallback,
-      action: null,
-      data: null,
-      intent: 'general',
-      mode: 'general',
-      confidence: 0.5,
-    },
-    decision: { mode: 'general' },
-  };
+  const memorySummary = formatMemoryForPrompt(userMemory) || '';
+
+  // Catálogo resumido
+  const catalogSummary = allProducts.map(p =>
+    `ID=${p.id} | ${p.name} (${p.category}): $${p.price} | activo:${p.active ? 'si' : 'no'} | imagen:${p.image_url ? 'si' : 'no'}`
+  ).join('\n');
+
+  const deterministicDecision = buildDeterministicOperationalDecision(userMessage, allProducts, implicitProduct);
+  const deterministicGuidanceDecision = buildDeterministicGuidanceDecision(userMessage, allProducts, implicitProduct);
+  const deterministicFallbackDecision = deterministicDecision || deterministicGuidanceDecision || null;
+
+  // Atajo conversacional por defecto: cualquier mensaje no operacional va por Gemini directamente.
+  if (!isLikelyOperationalMessage(userMessage)) {
+    try {
+      const text = await buildGeneralConversationText({ storeName, userMessage, recentHistory });
       if (text && !isLowValueConversationText(text)) {
         const fb = buildFallbackDecision(userMessage, null, text);
         fb.mode = 'general';
