@@ -52,7 +52,238 @@ ARQUITECTURA INTERNA RELEVANTE
 
 LIMITE DE SEGURIDAD
 - No guardar informacion sensible del usuario en memoria.
+
+CONOCIMIENTO DE PRODUCTOS APPLE (fuente: apple.com/la — linea actual 2025-2026)
+Usa esta informacion cuando el usuario pregunte specs, diferencias o caracteristicas. NUNCA inventes datos que no esten aqui.
+
+── iPHONE ──────────────────────────────────────────────────────────────────
+
+iPhone 17 Pro Max
+  Pantalla: 6.86" Super Retina XDR OLED, ProMotion 1-120Hz, Always-On
+  Chip: A19 Pro | Carcasa: titanio
+  Camaras traseras: 48 MP Fusion (f/1.78) + 48 MP Ultrawide (f/1.8) + 48 MP Telephoto 5x tetraprism
+  Camara frontal: 24 MP TrueDepth
+  Video: 4K 120fps, ProRes, Log video
+  Bateria: hasta 40h video
+  Puerto: USB-C (USB 3, 10 Gb/s) | MagSafe hasta 25W
+  Conectividad: 5G, Wi-Fi 7, Bluetooth 5.3, UWB, NFC
+  Autenticacion: Face ID | Dynamic Island | Boton de accion | Camera Control
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 256GB, 512GB, 1TB
+  Sistema: iOS 26 | Apple Intelligence
+  Colores: Negro Titanio, Blanco Titanio, Titanio Natural, Titanio Desierto
+
+iPhone 17 Pro
+  Pantalla: 6.27" Super Retina XDR OLED, ProMotion 1-120Hz, Always-On
+  Chip: A19 Pro | Carcasa: titanio
+  Camaras traseras: 48 MP Fusion + 48 MP Ultrawide + 48 MP Telephoto 5x tetraprism
+  Camara frontal: 24 MP TrueDepth
+  Video: 4K 120fps, ProRes, Log video
+  Bateria: hasta 33h video
+  Puerto: USB-C (USB 3, 10 Gb/s) | MagSafe hasta 25W
+  Conectividad: 5G, Wi-Fi 7, Bluetooth 5.3, UWB, NFC
+  Autenticacion: Face ID | Dynamic Island | Boton de accion | Camera Control
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 256GB, 512GB, 1TB
+  Sistema: iOS 26 | Apple Intelligence
+  Colores: Negro Titanio, Blanco Titanio, Titanio Natural, Titanio Desierto
+
+iPhone Air (2025)
+  Pantalla: 6.55" Super Retina XDR OLED
+  Chip: A19 | Carcasa: aluminio — el iPhone mas delgado de la historia
+  Camaras traseras: 48 MP Fusion
+  Camara frontal: 12 MP TrueDepth
+  Video: 4K
+  Puerto: USB-C | MagSafe hasta 25W (bateria MagSafe externa opcional)
+  Conectividad: 5G, Wi-Fi 7, Bluetooth 5.3, UWB, NFC
+  Autenticacion: Face ID | Dynamic Island | Camera Control
+  Resistencia: IP68 (6m/30min)
+  SIM: solo eSIM (sin ranura fisica)
+  Almacenamiento: 128GB, 256GB, 512GB
+  Sistema: iOS 26 | Apple Intelligence
+
+iPhone 17
+  Pantalla: 6.27" Super Retina XDR OLED
+  Chip: A19 | Carcasa: aluminio
+  Camaras traseras: 48 MP Fusion + 12 MP Ultrawide
+  Camara frontal: 12 MP TrueDepth
+  Video: 4K
+  Bateria: hasta 28h video
+  Puerto: USB-C | MagSafe hasta 25W
+  Conectividad: 5G, Wi-Fi 7, Bluetooth 5.3, UWB, NFC
+  Autenticacion: Face ID | Dynamic Island | Boton de accion | Camera Control
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 128GB, 256GB, 512GB
+  Sistema: iOS 26 | Apple Intelligence
+
+iPhone 17e (2026)
+  Pantalla: 6.06" Super Retina XDR OLED
+  Chip: A18 | Carcasa: aluminio
+  Camara trasera: 48 MP Fusion
+  Camara frontal: 12 MP TrueDepth
+  Puerto: USB-C | MagSafe
+  Conectividad: 5G, Wi-Fi 6, Bluetooth 5.3
+  Autenticacion: Face ID | Dynamic Island
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 128GB, 256GB
+  Sistema: iOS 26 | Apple Intelligence
+
+iPhone 16 Pro Max
+  Pantalla: 6.86" Super Retina XDR OLED, ProMotion 1-120Hz, Always-On
+  Chip: A18 Pro | Carcasa: titanio
+  Camaras traseras: 48 MP Fusion + 48 MP Ultrawide + 5x Telephoto tetraprism
+  Camara frontal: 12 MP TrueDepth
+  Video: 4K 120fps, ProRes
+  Bateria: hasta 33h video
+  Puerto: USB-C (USB 3, 10 Gb/s) | MagSafe hasta 25W
+  Conectividad: 5G, Wi-Fi 6E, Bluetooth 5.3, UWB, NFC
+  Autenticacion: Face ID | Dynamic Island | Boton de accion | Camera Control
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 256GB, 512GB, 1TB
+  Sistema: iOS 18+ → iOS 26
+
+iPhone 16 Pro
+  Pantalla: 6.27" Super Retina XDR OLED, ProMotion 1-120Hz, Always-On
+  Chip: A18 Pro | Carcasa: titanio
+  Camaras traseras: 48 MP Fusion + 48 MP Ultrawide + 5x Telephoto tetraprism
+  Camara frontal: 12 MP TrueDepth
+  Video: 4K 120fps, ProRes
+  Bateria: hasta 27h video
+  Puerto: USB-C (USB 3, 10 Gb/s) | MagSafe hasta 25W
+  Conectividad: 5G, Wi-Fi 6E, Bluetooth 5.3, UWB, NFC
+  Autenticacion: Face ID | Dynamic Island | Boton de accion | Camera Control
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 128GB, 256GB, 512GB, 1TB
+  Colores: Titanio Negro, Titanio Blanco, Titanio Natural, Titanio Desierto
+
+iPhone 16 Plus
+  Pantalla: 6.69" Super Retina XDR OLED
+  Chip: A18 | Carcasa: aluminio
+  Camaras traseras: 48 MP Fusion + 12 MP Ultrawide
+  Camara frontal: 12 MP TrueDepth
+  Video: 4K
+  Bateria: hasta 27h video
+  Puerto: USB-C | MagSafe hasta 25W
+  Conectividad: 5G, Wi-Fi 6E, Bluetooth 5.3, UWB, NFC
+  Autenticacion: Face ID | Dynamic Island | Boton de accion | Camera Control
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 128GB, 256GB, 512GB
+
+iPhone 16
+  Pantalla: 6.12" Super Retina XDR OLED
+  Chip: A18 | Carcasa: aluminio
+  Camaras traseras: 48 MP Fusion + 12 MP Ultrawide
+  Camara frontal: 12 MP TrueDepth
+  Video: 4K
+  Bateria: hasta 22h video
+  Puerto: USB-C | MagSafe hasta 25W
+  Conectividad: 5G, Wi-Fi 6E, Bluetooth 5.3, UWB, NFC
+  Autenticacion: Face ID | Dynamic Island | Boton de accion | Camera Control
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 128GB, 256GB, 512GB
+
+iPhone 16e (2025)
+  Pantalla: 6.12" Super Retina XDR OLED
+  Chip: A16 | Carcasa: aluminio
+  Camara trasera: 48 MP Fusion
+  Camara frontal: 12 MP TrueDepth
+  Puerto: USB-C | MagSafe (cargador separado)
+  Conectividad: 5G, Wi-Fi 6, Bluetooth 5.3
+  Autenticacion: Face ID | Dynamic Island
+  Resistencia: IP68 (6m/30min)
+  Almacenamiento: 128GB, 256GB
+
+── iPAD ────────────────────────────────────────────────────────────────────
+
+iPad Pro M4 — 11" y 13"
+  Chip: M4 | Pantalla: OLED Ultra Retina XDR (tandem OLED — la mas brillante de iPad)
+  Puerto: USB-C con Thunderbolt 4 (hasta 40 Gb/s)
+  Camara trasera: 12 MP | Camara frontal: 12 MP paisaje
+  Compatible: Apple Pencil Pro, Magic Keyboard con trackpad, Nano-texture glass (13")
+  Face ID horizontal | 5G (modelos celular) | Wi-Fi 6E
+  Almacenamiento: 256GB, 512GB, 1TB, 2TB
+  El iPad mas delgado de la historia hasta su lanzamiento
+
+iPad Air M3 — 11" y 13"
+  Chip: M3 | Pantalla: Liquid Retina IPS
+  Puerto: USB-C (USB 3)
+  Camara trasera: 12 MP | Camara frontal: 12 MP paisaje
+  Compatible: Apple Pencil Pro, Magic Keyboard
+  Touch ID en boton lateral | 5G (modelos celular) | Wi-Fi 6E
+  Almacenamiento: 128GB, 256GB, 512GB, 1TB
+
+iPad mini 7 (A17 Pro)
+  Chip: A17 Pro | Pantalla: 8.3" Liquid Retina
+  Puerto: USB-C (USB 3)
+  Camara trasera: 12 MP | Camara frontal: 12 MP
+  Compatible: Apple Pencil Pro
+  Touch ID en boton lateral | 5G (modelos celular) | Wi-Fi 6E
+  Apple Intelligence | Almacenamiento: 128GB, 256GB, 512GB
+
+iPad 11 (A16) — iPad basico 2025
+  Chip: A16 | Pantalla: 10.9" Liquid Retina
+  Puerto: USB-C
+  Camara trasera: 12 MP | Camara frontal: 12 MP
+  Compatible: Apple Pencil (USB-C), Smart Folio
+  Touch ID en boton lateral | 5G (modelos celular) | Wi-Fi 6
+  Almacenamiento: 128GB, 256GB
+
+── MAC ─────────────────────────────────────────────────────────────────────
+
+MacBook Air M4 — 13" y 15"
+  Chip: M4 (10 nucleos CPU, 10 nucleos GPU) | RAM: 16GB o 32GB
+  Pantalla: 13.6" o 15.3" Liquid Retina
+  Puertos: MagSafe 3 + 2x Thunderbolt 4 + jack 3.5mm
+  Sin ventilador (disipacion pasiva) | Bateria: hasta 18h (13") / 15h (15")
+  Camara: 12 MP Center Stage
+  Wi-Fi 6E, Bluetooth 5.3
+  Almacenamiento: 256GB, 512GB, 1TB, 2TB SSD
+
+MacBook Pro 14" (M4 / M4 Pro)
+  Chip: M4 (base) o M4 Pro (10 o 14 nucleos CPU)
+  RAM: 16GB (M4), 24GB o 48GB (M4 Pro)
+  Pantalla: 14.2" Liquid Retina XDR ProMotion 120Hz
+  Puertos: MagSafe 3 + 3x Thunderbolt 4 + HDMI + SD Card + jack 3.5mm
+  Bateria: hasta 24h video | Con ventiladores (alto rendimiento sostenido)
+  Camara: 12 MP Center Stage
+
+MacBook Pro 16" (M4 Pro / M4 Max)
+  Chip: M4 Pro (14 nucleos CPU) o M4 Max (16 nucleos CPU)
+  RAM: 24GB, 48GB (M4 Pro) / 36GB, 64GB, 128GB (M4 Max)
+  Pantalla: 16.2" Liquid Retina XDR ProMotion 120Hz
+  Puertos: MagSafe 3 + 3x Thunderbolt 4 + HDMI 2.1 + SD Card + jack 3.5mm
+  Bateria: hasta 22h video
+
+Mac mini M4 / M4 Pro
+  Chip: M4 (10 nucleos) o M4 Pro (14 nucleos) | RAM: 16GB a 64GB
+  Puertos: 2x Thunderbolt 4 front (M4 Pro: Thunderbolt 5) + 3x USB-A + HDMI + Ethernet
+
+── AirPods ──────────────────────────────────────────────────────────────────
+
+AirPods 4 (version estandar)
+  Chip: H2 | Nuevo diseno sin almohadilla (fit abierto)
+  Audio Adaptivo | Eliminacion de ruido activa NO incluida en esta version
+  USB-C en el estuche | Hasta 30h bateria total (auriculares + estuche)
+  Resistencia: IPX4 (auriculares y estuche)
+
+AirPods 4 con Cancelacion Activa de Ruido (ANC)
+  Chip: H2 | Cancelacion Activa de Ruido (ANC)
+  Modo Transparencia | Audio Adaptivo | Siri Manos Libres
+  USB-C | Carga inalambrica del estuche (MagSafe opcional)
+  Resistencia: IP54 (auriculares) / IPX4 (estuche)
+
+AirPods Pro 2 (2.a generacion, conector USB-C)
+  Chip: H2 | ANC y Modo transparencia de siguiente nivel
+  Funcion Audifono clinicamente validada (Hearing Aid) — solo USA por ahora
+  Siri Manos Libres | USB-C | Carga MagSafe / Apple Watch / Qi
+  Hasta 30h bateria total | Resistencia: IP54
+
+AirPods Max (USB-C)
+  Chip: H1 en cada auricular | Diadema con copa de aluminio y almohada de malla
+  ANC de alta fidelidad | Modo transparencia | Audio espacial
+  USB-C | Hasta 30h bateria | Se incluye estuche de tela
 `;
+
 
 const JARVIS_RULES = `
 MODO AGENTE TIPO JARVIS
