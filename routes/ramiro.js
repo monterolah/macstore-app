@@ -22,7 +22,7 @@ const RAMIRO_CLARIF_TTL_MS = 3 * 60 * 1000;
 const ramiroPendingProductDraft = new Map();
 const RAMIRO_DRAFT_TTL_MS = 10 * 60 * 1000;
 const ramiroPendingImageUpdate = new Map();
-const RAMIRO_IMAGE_TTL_MS = 10 * 60 * 1000;
+const RAMIRO_IMAGE_TTL_MS = 30 * 60 * 1000; // 30 minutos útil para encontrar URL
 const ramiroSessionContext = new Map();
 const RAMIRO_SESSION_CTX_TTL_MS = 20 * 60 * 1000;
 
@@ -1619,7 +1619,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         }
       }
 
-      // 2.6) Seguimiento de imagen pendiente con solo URL
+      // 2.6) Seguimiento de imagen pendiente con solo URL - más tolerante
       if (!response.action) {
         const onlyUrl = msg.match(/^\s*(https?:\/\/\S+)\s*$/i);
         const imagePending = ramiroPendingImageUpdate.get(adminKey);
@@ -1627,20 +1627,35 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
           ? resolveProductByIdOrSlug(allProducts, imagePending.productId)
           : null;
 
-        if (onlyUrl && (imagePending || implicitTargetProduct || fallbackPendingProduct)) {
-          const targetProd = fallbackPendingProduct || implicitTargetProduct;
-          if (targetProd) {
-            const imageUrl = await resolveImageUrlFromInput(onlyUrl[1]);
-            response = {
-              message: `✅ imagen actualizada para ${targetProd.name}`,
-              action: 'PRODUCT_UPDATE',
-              data: {
-                productId: targetProd.id,
-                updates: { image_url: imageUrl }
+        // Estrategia de fallback: si llegó solo un URL y no hay estado claro,
+        // busca en conversación reciente qué producto se mencionaba
+        let targetProd = fallbackPendingProduct || implicitTargetProduct;
+        
+        if (onlyUrl && !targetProd && conversationRows && conversationRows.length > 0) {
+          // Escanea últimos 5 mensajes de usuario para encontrar mención de producto
+          for (let i = conversationRows.length - 1; i >= 0 && i >= conversationRows.length - 5; i--) {
+            const row = conversationRows[i];
+            if (row.role === 'user') {
+              const inferred = inferProductFromConversationRows([row], allProducts);
+              if (inferred) {
+                targetProd = inferred;
+                break;
               }
-            };
-            ramiroPendingImageUpdate.delete(adminKey);
+            }
           }
+        }
+
+        if (onlyUrl && targetProd) {
+          const imageUrl = await resolveImageUrlFromInput(onlyUrl[1]);
+          response = {
+            message: `✅ imagen actualizada para ${targetProd.name}`,
+            action: 'PRODUCT_UPDATE',
+            data: {
+              productId: targetProd.id,
+              updates: { image_url: imageUrl }
+            }
+          };
+          ramiroPendingImageUpdate.delete(adminKey);
         }
       }
 
