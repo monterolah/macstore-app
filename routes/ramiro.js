@@ -314,6 +314,14 @@ function getQuickConversationalReply(message = '', admin = {}) {
   const n = normalizeForMatch(msg);
   if (!n) return null;
 
+  const greetingIntent = /^(hola+|holi|hey+|que tal|q tal|como estas|como andas|como vas|todo bien|buenas?|buen dia|buenos dias|buenas tardes|buenas noches)\s*[.!?]*$/i.test(n);
+  if (greetingIntent) {
+    const displayName = getAdminDisplayName(admin);
+    return displayName
+      ? `Todo bien, ${displayName}. ¿Cómo vas tú? Si quieres, te ayudo en lo que ocupes ahora mismo.`
+      : 'Todo bien. ¿Cómo vas tú? Si quieres, te ayudo en lo que ocupes ahora mismo.';
+  }
+
   const orderedHowTo = buildOrderedHowToReply(msg);
   if (orderedHowTo) return orderedHowTo;
 
