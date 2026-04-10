@@ -12,21 +12,26 @@ const CANDIDATE_MODELS = [
   'gemini-pro',
 ];
 
-function getGeminiApiKey() {
-  return process.env.GOOGLE_AI_API_KEY
-    || process.env.GEMINI_API_KEY
-    || process.env.CLAVE_API_IA_GOOGLE
-    || process.env.CLAVE_API_GEMINIS
-    || process.env['CLAVE_API_GÉMINIS']
-    || '';
+function getGeminiApiKeys() {
+  const candidates = [
+    process.env.GOOGLE_AI_API_KEY,
+    process.env.GEMINI_API_KEY,
+    process.env.CLAVE_API_IA_GOOGLE,
+    process.env.CLAVE_API_GEMINIS,
+    process.env['CLAVE_API_GÉMINIS'],
+  ]
+    .map(v => String(v || '').trim())
+    .filter(Boolean);
+
+  return [...new Set(candidates)];
 }
 
 /**
  * Llama a la API de Gemini con el prompt dado y devuelve el texto bruto.
  */
 async function callGeminiBrain(prompt) {
-  const geminiApiKey = getGeminiApiKey();
-  if (!geminiApiKey) {
+  const geminiApiKeys = getGeminiApiKeys();
+  if (!geminiApiKeys.length) {
     throw new Error('Faltan GOOGLE_AI_API_KEY y GEMINI_API_KEY en variables de entorno');
   }
 
@@ -36,42 +41,44 @@ async function callGeminiBrain(prompt) {
   });
 
   let lastError = null;
-  for (const model of CANDIDATE_MODELS) {
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
-    try {
-      const text = await new Promise((resolve, reject) => {
-        const u = new URL(geminiUrl);
-        const req = https.request({
-          hostname: u.hostname,
-          path: u.pathname + u.search,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(body),
-          },
-        }, (res) => {
-          let data = '';
-          res.on('data', chunk => data += chunk);
-          res.on('end', () => {
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.error?.message) return reject(new Error(parsed.error.message));
-              const out = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-              resolve(out);
-            } catch (e) { reject(e); }
+  for (const apiKey of geminiApiKeys) {
+    for (const model of CANDIDATE_MODELS) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      try {
+        const text = await new Promise((resolve, reject) => {
+          const u = new URL(geminiUrl);
+          const req = https.request({
+            hostname: u.hostname,
+            path: u.pathname + u.search,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(body),
+            },
+          }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.error?.message) return reject(new Error(parsed.error.message));
+                const out = parsed?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                resolve(out);
+              } catch (e) { reject(e); }
+            });
           });
+          req.on('error', reject);
+          req.write(body);
+          req.end();
         });
-        req.on('error', reject);
-        req.write(body);
-        req.end();
-      });
 
-      if (text) return text;
-      lastError = new Error(`Respuesta vacía del modelo ${model}`);
-    } catch (e) {
-      lastError = e;
-      const msg = String(e?.message || '').toLowerCase();
-      if (!msg.includes('not found') && !msg.includes('not supported') && !msg.includes('model')) break;
+        if (text) return text;
+        lastError = new Error(`Respuesta vacía del modelo ${model}`);
+      } catch (e) {
+        lastError = e;
+        const msg = String(e?.message || '').toLowerCase();
+        if (!msg.includes('not found') && !msg.includes('not supported') && !msg.includes('model')) break;
+      }
     }
   }
   throw lastError || new Error('No fue posible obtener respuesta de Gemini');
