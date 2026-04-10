@@ -90,13 +90,35 @@ const heroProduct = featured && featured[0];
       grid-template-columns: 1fr;
     }
   }
+
+  /* Ajuste específico para banners del hero en móvil */
+  @media (max-width: 768px) {
+    .ms-slide.hero-banner-slide {
+      background: #000 !important;
+    }
+    .ms-slide.hero-banner-slide .ms-hero-bg {
+      object-fit: contain !important;
+      object-position: center center !important;
+      transform: none !important;
+      background: #000;
+    }
+    .ms-slide.hero-banner-slide.active .ms-hero-bg {
+      transform: none !important;
+    }
+    .ms-slide.hero-banner-slide .ms-hero-overlay {
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.18) 0, rgba(0, 0, 0, 0.52) 100%);
+    }
+    .ms-slide.hero-banner-slide .ms-hero-content {
+      padding: 0 16px;
+    }
+  }
 </style>
 
 <!-- ══ HERO — full screen con imagen de fondo ══ -->
 <section class="ms-hero-wrap">
   <% if(heroBanners.length){ %>
     <% heroBanners.forEach((b,i)=>{ %>
-    <div class="ms-slide <%=i===0?'active':''%>" style="background:<%=b.bg_color||'#000'%>">
+    <div class="ms-slide hero-banner-slide <%=i===0?'active':''%>" style="background:<%=b.bg_color||'#000'%>">
       <% if(b.image_url){ %>
       <img class="ms-hero-bg" src="<%=b.image_url%>" alt="<%=b.title%>" loading="<%=i===0?'eager':'lazy'%>">
       <% } %>
