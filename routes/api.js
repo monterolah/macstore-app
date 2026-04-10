@@ -1227,12 +1227,23 @@ const FRONT_TARGET_GROUPS = {
 const frontPreviewStore = new Map();
 
 function cleanGeminiJson(rawText) {
-  return String(rawText || '')
+  let text = String(rawText || '')
     .trim()
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
     .replace(/```\s*$/i, '')
     .trim();
+  
+  // Reparar JSON incompleto (falta llave final)
+  if (text.startsWith('{') && !text.endsWith('}')) {
+    const openBraces = (text.match(/{/g) || []).length;
+    const closeBraces = (text.match(/}/g) || []).length;
+    if (openBraces > closeBraces) {
+      text += '}'.repeat(openBraces - closeBraces);
+    }
+  }
+  
+  return text;
 }
 
 function buildFrontFilesSnapshot(target) {
