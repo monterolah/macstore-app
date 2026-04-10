@@ -98,10 +98,10 @@ const C = {
   bg:       '#f5f5f7',
   border:   '#e8e8ed',
   blue:     '#0071e3',
-  blueBg:   '#dbeafe',
+  blueBg:   '#f5f5f7',
   green:    '#1a7f37',
-  greenBg:  '#dcfce7',
-  accent:   '#0071e3',
+  greenBg:  '#f0f0f0',
+  accent:   '#1d1d1f',
   rowAlt:   '#fafafa',
 };
 
@@ -161,56 +161,50 @@ function buildPdfBuffer(q) {
       const validText = q.validity === '0' ? 'Sin vencimiento' : `Válida por ${q.validity || 7} días`;
 
       // ── HEADER ──
-      // Barra azul superior
-      drawRect(0, 0, doc.page.width, 6, C.accent);
-
-      // Logo / nombre grande
-      doc.font('Helvetica-Bold').fontSize(28).fillColor(C.black).text(storeName, LM, y);
-      y += 32;
+      doc.font('Helvetica-Bold').fontSize(26).fillColor(C.black).text(storeName, LM, y);
+      y += 30;
       doc.font('Helvetica').fontSize(10).fillColor(C.lightG).text(storeTagline, LM, y);
-      y += 28;
+      y += 18;
+      drawLine(LM, y, LM + W, C.black, 2);
+      y += 16;
 
       // ── META: CLIENTE + INFO en 2 columnas ──
-      const metaW = (W - 20) / 2;
-      const infoX = LM + metaW + 20;
-      const metaH = 80;
+      const metaW = (W - 14) / 2;
+      const infoX = LM + metaW + 14;
+      const metaH = 68;
 
-      // Card cliente — fondo sutil
+      // Card cliente
       doc.save();
-      doc.roundedRect(LM, y, metaW, metaH, 10).fill('#f0f4ff');
+      doc.roundedRect(LM, y, metaW, metaH, 6).fill(C.bg);
       doc.restore();
-      // Línea azul izquierda
-      doc.save();
-      doc.rect(LM, y, 3, metaH).fill(C.accent);
-      doc.restore();
-      doc.font('Helvetica-Bold').fontSize(7).fillColor(C.accent).text('COTIZACIÓN PARA', LM + 16, y + 14);
-      doc.font('Helvetica-Bold').fontSize(16).fillColor(C.black).text(q.client || '—', LM + 16, y + 26, { width: metaW - 28 });
+      doc.font('Helvetica-Bold').fontSize(7).fillColor(C.lightG).text('COTIZACIÓN PARA', LM + 14, y + 12);
+      doc.font('Helvetica-Bold').fontSize(15).fillColor(C.black).text(q.client || '—', LM + 14, y + 26, { width: metaW - 28 });
       if (q.company) {
-        doc.font('Helvetica').fontSize(10).fillColor(C.grey).text(q.company, LM + 16, y + 48, { width: metaW - 28 });
+        doc.font('Helvetica').fontSize(10).fillColor(C.grey).text(q.company, LM + 14, y + 44, { width: metaW - 28 });
       }
 
-      // Card info — fondo oscuro
+      // Card info
       doc.save();
-      doc.roundedRect(infoX, y, metaW, metaH, 10).fill(C.black);
+      doc.roundedRect(infoX, y, metaW, metaH, 6).fill(C.bg);
       doc.restore();
-      doc.font('Helvetica-Bold').fontSize(7).fillColor('rgba(255,255,255,0.5)').text('N° COTIZACIÓN', infoX + 16, y + 14);
-      doc.font('Helvetica-Bold').fontSize(16).fillColor(C.white).text(q.qNum || '', infoX + 16, y + 26, { width: metaW - 28 });
-      doc.font('Helvetica').fontSize(9).fillColor('rgba(255,255,255,0.65)').text(dateStr, infoX + 16, y + 50);
-      doc.font('Helvetica').fontSize(9).fillColor('rgba(255,255,255,0.65)').text(validText, infoX + 16, y + 63);
+      doc.font('Helvetica-Bold').fontSize(7).fillColor(C.lightG).text('INFORMACIÓN', infoX + 14, y + 12);
+      doc.font('Helvetica-Bold').fontSize(15).fillColor(C.black).text(q.qNum || '', infoX + 14, y + 26, { width: metaW - 28 });
+      doc.font('Helvetica').fontSize(9).fillColor(C.grey).text(`Emitida: ${dateStr}`, infoX + 14, y + 44);
+      doc.font('Helvetica').fontSize(9).fillColor(C.grey).text(validText, infoX + 14, y + 56);
 
-      y += metaH + 14;
+      y += metaH + 12;
 
-      // Vendedor badge
+      // Vendedor badge — gris neutro
       if (q.seller) {
         checkPage(24);
-        const badgeLabel = `  Vendedor: ${q.seller}  `;
+        const badgeLabel = `Vendedor: ${q.seller}`;
         doc.font('Helvetica-Bold').fontSize(9);
-        const bw = doc.widthOfString(badgeLabel) + 4;
+        const bw = doc.widthOfString(badgeLabel) + 20;
         doc.save();
-        doc.roundedRect(LM, y, bw, 20, 10).fill(C.blueBg);
+        doc.roundedRect(infoX + 14, y, bw, 18, 9).fill(C.bg);
         doc.restore();
-        doc.font('Helvetica-Bold').fontSize(9).fillColor(C.accent).text(badgeLabel, LM + 2, y + 5);
-        y += 30;
+        doc.font('Helvetica-Bold').fontSize(9).fillColor(C.grey).text(badgeLabel, infoX + 24, y + 4);
+        y += 26;
       }
 
       y += 8;
@@ -408,19 +402,12 @@ function buildPdfBuffer(q) {
         y += 18;
       }
 
-      // Línea separadora total
-      drawLine(totX, y, totX + totW, C.border, 1);
-      y += 10;
-
-      // Caja total destacada
-      doc.save();
-      doc.roundedRect(totX - 12, y - 6, totW + 12, 40, 8).fill(C.black);
-      doc.restore();
-      doc.font('Helvetica-Bold').fontSize(13).fillColor('rgba(255,255,255,0.65)');
-      doc.text('TOTAL', totX, y + 8, { width: totW * 0.45 });
-      doc.font('Helvetica-Bold').fontSize(22).fillColor(C.white);
-      doc.text(`$${total.toFixed(2)}`, totX + totW * 0.1, y + 4, { width: totW * 0.78, align: 'right' });
-      y += 48;
+      drawLine(totX, y, totX + totW, C.black, 1.5);
+      y += 8;
+      doc.font('Helvetica-Bold').fontSize(18).fillColor(C.black);
+      doc.text('Total', totX, y, { width: totW * 0.45 });
+      doc.text(`$${total.toFixed(2)}`, totX + totW * 0.45, y, { width: totW * 0.55, align: 'right' });
+      y += 28;
 
       // ── CUOTAS ──
       if (options.showCuotasPDF) {
@@ -436,22 +423,22 @@ function buildPdfBuffer(q) {
         const cuotaW = (W - 16) / 2;
         const cuotaH = 64;
 
-        // Cuota 1 — fondo azul
+        // Cuota 1
         doc.save();
-        doc.roundedRect(LM, y, cuotaW, cuotaH, 10).fill(C.accent);
+        doc.roundedRect(LM, y, cuotaW, cuotaH, 8).lineWidth(1).strokeColor(C.border).stroke();
         doc.restore();
-        doc.font('Helvetica').fontSize(9).fillColor('rgba(255,255,255,0.7)').text(lbl1, LM, y + 12, { width: cuotaW, align: 'center', lineBreak: false });
-        doc.font('Helvetica-Bold').fontSize(22).fillColor(C.white).text(`$${(total / div1).toFixed(2)}`, LM, y + 26, { width: cuotaW, align: 'center', lineBreak: false });
-        doc.font('Helvetica').fontSize(8).fillColor('rgba(255,255,255,0.6)').text('por mes', LM, y + 51, { width: cuotaW, align: 'center', lineBreak: false });
+        doc.font('Helvetica').fontSize(9).fillColor(C.lightG).text(lbl1, LM, y + 10, { width: cuotaW, align: 'center', lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(20).fillColor(C.black).text(`$${(total / div1).toFixed(2)}`, LM, y + 24, { width: cuotaW, align: 'center', lineBreak: false });
+        doc.font('Helvetica').fontSize(8).fillColor(C.lightG).text('por mes', LM, y + 46, { width: cuotaW, align: 'center', lineBreak: false });
 
-        // Cuota 2 — fondo gris claro
-        const c2x = LM + cuotaW + 16;
+        // Cuota 2
+        const c2x = LM + cuotaW + 14;
         doc.save();
-        doc.roundedRect(c2x, y, cuotaW, cuotaH, 10).fill(C.bg);
+        doc.roundedRect(c2x, y, cuotaW, cuotaH, 8).lineWidth(1).strokeColor(C.border).stroke();
         doc.restore();
-        doc.font('Helvetica').fontSize(9).fillColor(C.lightG).text(lbl2, c2x, y + 12, { width: cuotaW, align: 'center', lineBreak: false });
-        doc.font('Helvetica-Bold').fontSize(22).fillColor(C.black).text(`$${(total / div2).toFixed(2)}`, c2x, y + 26, { width: cuotaW, align: 'center', lineBreak: false });
-        doc.font('Helvetica').fontSize(8).fillColor(C.lightG).text('por mes', c2x, y + 51, { width: cuotaW, align: 'center', lineBreak: false });
+        doc.font('Helvetica').fontSize(9).fillColor(C.lightG).text(lbl2, c2x, y + 10, { width: cuotaW, align: 'center', lineBreak: false });
+        doc.font('Helvetica-Bold').fontSize(20).fillColor(C.black).text(`$${(total / div2).toFixed(2)}`, c2x, y + 24, { width: cuotaW, align: 'center', lineBreak: false });
+        doc.font('Helvetica').fontSize(8).fillColor(C.lightG).text('por mes', c2x, y + 46, { width: cuotaW, align: 'center', lineBreak: false });
 
         y += cuotaH + 24;
       }
