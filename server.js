@@ -167,6 +167,7 @@ app.locals.formatPrice = formatPrice;
 
 app.use('/api', adminApiApp);
 adminApiApp.use('/', require('./routes/api'));
+adminApiApp.use('/ramiro', require('./routes/ramiro'));
 app.use('/admin', adminApp);
 adminApp.use('/', require('./routes/admin'));
 app.use('/', require('./routes/public'));
