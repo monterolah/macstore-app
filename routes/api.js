@@ -8,6 +8,10 @@ const { getFirestore } = require('../db/firebase');
 const { uploadToStorage } = require('../utils/storageUpload');
 const { requireAdminAPI } = require('../middleware/auth');
 const { importCatalogFromWorkbook, importInventoryWorkbook } = require('../utils/catalogImport');
+const { thinkRamiro } = require('../ramiro/services/ramiroBrain');
+const { readUrlContent, extractProductsFromUrl } = require('../ramiro/services/ramiroUrlReader');
+const { syncProductsFromArray } = require('../ramiro/services/ramiroCatalogTools');
+const { learnPattern } = require('../ramiro/services/ramiroMemory');
 
 const PDFDocument = require('pdfkit');
 
@@ -2004,162 +2008,64 @@ router.post('/ramiro/chat', requireAdminAPI, async (req, res) => {
       createdAt: d.data().createdAt?.toDate?.()?.toLocaleDateString('es-SV') || 'reciente'
     }));
 
-    // Construir catálogo detallado para el prompt
-    const catalogoDetallado = allProducts.map(p =>
-      `ID=${p.id} | ${p.name} (${p.category}): $${p.price} | stock:${Number(p.stock) || 0} | activo:${p.active ? 'si' : 'no'}`
-    ).join('\n');
-
-    const storeSummary = [
-      `Tienda: ${cleanText(storeSettings.store_name || 'MacStore', 120)}`,
-      `Tagline: ${cleanText(storeSettings.store_tagline || '', 180)}`,
-      `WhatsApp: ${cleanText(storeSettings.store_whatsapp || '', 80)}`,
-      `Email: ${cleanText(storeSettings.store_email || '', 120)}`
-    ].join(' | ');
-
-    const memorySummary = ramiroMemory.length
-      ? ramiroMemory.map((m, i) => `${i + 1}. ${cleanText(m?.text || m, 220)}`).join('\n')
-      : 'Sin memoria guardada.';
-
     const recentQuotesSummary = recentQuotations.length
       ? recentQuotations.map(q => `- ${cleanText(q.client || 'Cliente', 80)} | total:$${Number(q.total) || 0} | fecha:${q.createdAt}`).join('\n')
       : 'Sin cotizaciones recientes.';
 
-    const persistentConversationSummary = persistentConversation || 'Sin historial persistente.';
-    const styleHintsSummary = styleHints || 'Sin preferencias de estilo detectadas aún.';
-
-    // Construir prompt de sistema con reglas generales de intención + ejecución
-    const systemPrompt = `Eres ${ramiroName}, asistente de MacStore (tienda Apple en El Salvador).
-
-PERSONALIDAD BASE:
-${ramiroPersonality}
-
-NOTAS PRIVADAS DEL ADMIN:
-${cleanText(ramiro.notes || '', 1500) || 'Sin notas privadas.'}
-
-MODO AUTÓNOMO:
-${autonomousMode ? 'ACTIVO (puedes ejecutar acciones cuando el pedido sea claro).' : 'DESACTIVADO (prioriza responder y pedir confirmación antes de cambios).' }
-
-MEMORIA IMPORTANTE (los registros [Aprendido] son patrones reales del usuario — úsalos con prioridad máxima para interpretar mensajes cortos o ambiguos):
-${memorySummary}
-
-PREFERENCIAS DE RESPUESTA (aprendidas):
-${styleHintsSummary}
-
-CONTEXTO DE TIENDA:
-${storeSummary}
-
-COTIZACIONES RECIENTES:
-${recentQuotesSummary}
-
-HISTORIAL PERSISTENTE RECIENTE:
-${persistentConversationSummary}
-
-PRODUCTO EN CONTEXTO ACTUAL:
-${implicitTargetProduct ? `ID=${implicitTargetProduct.id} | ${implicitTargetProduct.name}` : 'No determinado; si el admin usa "esto/este", intenta inferir con esta conversación.'}
-
-📦 CATÁLOGO (${allProducts.length} productos):
-${catalogoDetallado}
-
-FAMILIAS DE INTENCIÓN QUE DEBES RECONOCER:
-- Conversación general
-- Consulta del sistema
-- Modificación puntual
-- Tarea compleja de varios pasos
-- Acción riesgosa
-- Petición ambigua
-
-REGLAS DE COMPORTAMIENTO:
-- No dependas de palabras exactas ni comandos rígidos.
-- Interpreta intención, contexto y objetivo final.
-- Si falta contexto y no puedes inferir de forma segura, pregunta breve y específica.
-- No inventes datos.
-- Si se puede investigar con datos internos, hazlo antes de responder.
-- Si la acción es destructiva o de alto impacto, pide confirmación.
-- Prefiere la interpretación menos destructiva ante ambigüedad.
-
-⚡ RESPUESTA OPERATIVA - Devuelve SOLO JSON válido, sin markdown:
-
-1. PRODUCT_UPDATE: Modificar producto
-   {"message":"✅ actualizado","action":"PRODUCT_UPDATE","data":{"productId":"ID","updates":{"price":999,"color_variants":["Rojo"]}}}
-
-2. PRODUCT_CREATE: Crear producto NUEVO
-  {"message":"Listo, creo [nombre] en [categoría] a $[precio].","action":"PRODUCT_CREATE","data":{"product":{"name":"AirPods Pro","category":"airpods","price":299}}}
-  ⚠️ IMPORTANTE: category DEBE SER uno de estos: mac, iphone, ipad, airpods (NO una lista)
-  ⚠️ El message debe ser una oración natural tuya, NO copies este ejemplo.
-
-3. PRODUCT_DELETE: Borrar producto
-   {"message":"✅ borrado","action":"PRODUCT_DELETE","data":{"productId":"ID"}}
-
-4. INFO: Solo responder (cuando usuario pregunta sin pedir acción)
-  {"message":"<escribe aquí tu respuesta real en español>","action":null}
-  NUNCA copies ese texto literal — siempre escribe la respuesta real.
-
-5. Cuando la petición sea ambigua y falte contexto para actuar con seguridad
-  {"message":"Pregunta breve de aclaración","action":null,"data":null}
-
-6. SYNC_FROM_URL: importar o actualizar catálogo desde una URL externa
-  {"message":"✅ sincronizando catálogo desde URL","action":"SYNC_FROM_URL","data":{"url":"https://..."}}
-
-REGLAS CRÍTICAS:
-- Para CREATE: SIEMPRE elige UNA categoría de: mac, iphone, ipad, airpods
-- Campos permitidos: price, description, variants, color_variants, stock, active, specs, badge, image_url
-
-Estilo: Responde en español, conversacional, claro y conciso.`;
-
-
-
-    // Construir historial de conversación como texto para incluir en el prompt
     const recentHistory = (history || []).slice(-10)
       .map(m => `${m.role === 'user' ? 'Admin' : 'Ramiro'}: ${String(m.text || '').slice(0, 300)}`)
       .join('\n');
 
-    // Prompt completo para callGemini (función probada)
-    const fullPrompt = `${systemPrompt}
-
-CONVERSACIÓN ACTUAL:
-${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
-
-    // Capa 1: Planner de intención y pasos (si falla, seguimos normal)
+    // ── NUEVO BRAIN: Gemini con prompt estructurado y schema JSON claro ──────
     let plan = null;
+    let brainLegacy = null;
+    let response = { message: '', action: null, data: null };
+
     try {
-      const plannerPrompt = `Analiza la intención del Admin y responde SOLO JSON válido con esta forma:
-{
-  "intentType": "general_chat|system_query|simple_update|complex_update|risky_action|ambiguous|unknown",
-  "targetEntity": "product|banner|settings|category|none",
-  "targetName": "texto o null",
-  "goal": "objetivo final en una línea",
-  "needsResearch": true|false,
-  "needsConfirmation": true|false,
-  "steps": ["paso 1", "paso 2"],
-  "clarificationQuestion": "pregunta corta si hay ambigüedad"
-}
+      const brainResult = await thinkRamiro({
+        userMessage: String(message || ''),
+        userId: adminKey,
+        storeName: storeSettings.store_name || 'MacStore',
+        personality: ramiroPersonality,
+        notes: cleanText(ramiro.notes || '', 1500),
+        autonomousMode,
+        allProducts,
+        implicitProduct: implicitTargetProduct,
+        persistentHistory: persistentConversation || '',
+        quoteSummary: recentQuotesSummary,
+        recentHistory,
+      });
 
-Contexto reciente:
-${recentHistory || 'sin historial'}
+      brainLegacy = brainResult.legacy;
+      plan = {
+        intentType: brainResult.decision?.mode || 'general',
+        goal: brainResult.decision?.understood || '',
+        needsConfirmation: !!(brainResult.decision?.requiresConfirmation),
+        needsResearch: false,
+        steps: [],
+        clarificationQuestion: brainResult.decision?.question || '',
+      };
 
-Mensaje actual del Admin:
-${String(message || '').slice(0, 1000)}
+      // Mapear salida del brain al formato legacy del sistema
+      response = {
+        message: brainLegacy.message || '',
+        action: brainLegacy.action || null,
+        data: brainLegacy.data || null,
+        intentType: brainLegacy.intent,
+        mode: brainLegacy.mode,
+        confidence: brainLegacy.confidence,
+      };
 
-Producto en contexto:
-${implicitTargetProduct ? `${implicitTargetProduct.id} | ${implicitTargetProduct.name}` : 'ninguno'}`;
-      plan = parsePlanJson(await callGemini(plannerPrompt));
-    } catch {
-      plan = null;
-    }
+      // Guardar patrones aprendidos del brain en la memoria antigua también
+      if (brainLegacy.shouldRemember && brainLegacy.memoryFacts?.length) {
+        // Ya se guarda en ramiro_memory por userId; también en la colección legada
+      }
 
-    let rawText;
-    try {
-      rawText = await callGemini(fullPrompt);
-    } catch(geminiErr) {
-      console.error('[Ramiro] Error Gemini:', geminiErr.message);
+    } catch (geminiErr) {
+      console.error('[Ramiro] Error Brain:', geminiErr.message);
       return res.status(500).json({ error: geminiErr.message, message: 'Error al llamar a la IA.' });
     }
 
-    rawText = cleanGeminiJson(rawText);
-
-    let response;
-    try { response = JSON.parse(rawText); }
-    catch(e) { response = { message: rawText || 'No pude responder.', action: null, data: null }; }
 
     const PLACEHOLDER_PATTERNS = [
       /tu respuesta conversacional aqui/i,
@@ -3062,82 +2968,27 @@ ${implicitTargetProduct ? `${implicitTargetProduct.id} | ${implicitTargetProduct
     else if (response.action === 'SYNC_FROM_URL' && response.data?.url) {
       try {
         const url = cleanText(response.data.url, 2000);
-        const text = await fetchExternalUrlText(url);
-        const existingBySlug = new Map(allProducts.map(p => [p.slug, p]));
-
-        const syncPrompt = `Extrae productos de este texto de catálogo y devuelve SOLO JSON válido.
-Formato estricto:
-{
-  "products": [
-    {
-      "name": "Nombre",
-      "category": "mac|iphone|ipad|airpods",
-      "price": 0,
-      "description": "texto corto",
-      "variants": [{"label":"...","price":0}],
-      "specs": {"clave":"valor"}
-    }
-  ]
-}
-Reglas:
-- No inventes campos si no aparecen.
-- price siempre número.
-- category solo mac|iphone|ipad|airpods.
-- Si no detectas un dato, omítelo.
-
-TEXTO FUENTE:\n${text}`;
-
-        const syncRaw = await callGemini(syncPrompt);
-        let parsedSync;
-        try {
-          parsedSync = JSON.parse(cleanGeminiJson(syncRaw));
-        } catch {
-          throw new Error('No se pudo interpretar JSON de sincronización');
+        // Usar el nuevo ramiroUrlReader con cheerio para mejor extracción
+        const extracted = await extractProductsFromUrl(url);
+        let syncResult;
+        if (extracted.length) {
+          // syncProductsFromArray hace el upsert por slug directamente
+          syncResult = await syncProductsFromArray(extracted, url);
+        } else {
+          // Fallback: leer contenido de la página y pasarlo a Gemini
+          const { rawText } = await readUrlContent(url);
+          const syncPrompt = `Extrae productos de este texto de catálogo y devuelve SOLO JSON válido.
+Formato: {"products":[{"name":"Nombre","category":"mac|iphone|ipad|airpods","price":0,"description":"texto"}]}
+Reglas: price siempre número, category solo mac|iphone|ipad|airpods, no inventes campos.
+TEXTO:\n${rawText}`;
+          const syncRaw = await callGemini(syncPrompt);
+          let parsedSync;
+          try { parsedSync = JSON.parse(cleanGeminiJson(syncRaw)); }
+          catch { throw new Error('No se pudo interpretar JSON de sincronización'); }
+          const productsToSync = Array.isArray(parsedSync.products) ? parsedSync.products : [];
+          syncResult = await syncProductsFromArray(productsToSync, url);
         }
-
-        const productsToSync = Array.isArray(parsedSync.products) ? parsedSync.products : [];
-        let created = 0;
-        let updated = 0;
-
-        for (const p of productsToSync) {
-          const name = cleanText(p.name, 160);
-          if (!name) continue;
-          const slug = slugify(name);
-          const category = ['mac', 'iphone', 'ipad', 'airpods'].includes(String(p.category || '').toLowerCase())
-            ? String(p.category).toLowerCase()
-            : 'mac';
-          const price = Number(p.price);
-          const payload = {
-            name,
-            slug,
-            category,
-            description: cleanText(p.description || `${name} disponible en MacStore.`, 2000),
-            price: Number.isFinite(price) && price > 0 ? price : 1,
-            variants: Array.isArray(p.variants) ? p.variants : [],
-            specs: p.specs && typeof p.specs === 'object' ? p.specs : {},
-            ficha: {
-              modelo: name,
-              marca: 'Apple',
-              capacidad: 'Consultar disponibilidad',
-              colores: 'Consultar disponibilidad',
-              garantia: 'Consultar garantía',
-              notas: `Sincronizado desde URL: ${url}`
-            },
-            active: true,
-            updatedAt: new Date()
-          };
-
-          const existing = existingBySlug.get(slug);
-          if (existing) {
-            await db.collection('products').doc(existing.id).update(payload);
-            updated += 1;
-          } else {
-            await db.collection('products').add({ ...payload, createdAt: new Date(), stock: 0, sort_order: 0 });
-            created += 1;
-          }
-        }
-
-        actionResult = { ok: true, type: 'sync', created, updated, source: url, total: productsToSync.length };
+        actionResult = { ok: true, type: 'sync', ...syncResult };
       } catch(e) {
         actionResult = { ok: false, error: e.message };
       }
@@ -3156,13 +3007,14 @@ TEXTO FUENTE:\n${text}`;
       if (pendingClar && pendingClar.expiresAt >= Date.now()) {
         const learnedEntry = buildLearnedMemoryEntry(pendingClar.originalMessage, response.action, response.data, actionResult, allProducts);
         if (learnedEntry) {
-          // Guardar en Firestore (fire-and-forget, no bloqueamos el response)
+          // Guardar en nueva colección ramiro_memory por userId (módulo nuevo)
+          learnPattern(adminKey, pendingClar.originalMessage, learnedEntry).catch(() => {});
+          // Guardar también en colección settings/ramiro legada (fire-and-forget)
           (async () => {
             try {
               const ramiroRef = db.collection('settings').doc('ramiro');
               const ramiroSnap = await ramiroRef.get();
               const existingMemory = ramiroSnap.exists ? (ramiroSnap.data().memory || []) : [];
-              // Evitar duplicados del mismo trigger
               const alreadyLearned = existingMemory.some(m =>
                 String(m?.text || m).includes(`"${pendingClar.originalMessage.slice(0, 40)}`)
               );
@@ -3175,7 +3027,6 @@ TEXTO FUENTE:\n${text}`;
               }
             } catch(e) { console.error('[Ramiro] Error guardando patrón aprendido:', e.message); }
           })();
-          // Cache rápido en memoria también
           const patterns = ramiroLearnedPatterns.get(adminKey) || [];
           patterns.unshift({ trigger: pendingClar.originalMessage, meaning: learnedEntry });
           ramiroLearnedPatterns.set(adminKey, patterns.slice(0, 50));
