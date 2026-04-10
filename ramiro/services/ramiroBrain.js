@@ -420,11 +420,13 @@ function hasOperationalSignals(text = '') {
 
   const hasUrl = /https?:\/\//i.test(String(text || ''));
   const actionVerbs = [
-    'crear', 'agregar', 'anadir', 'editar', 'actualizar', 'cambiar', 'modificar',
-    'eliminar', 'borrar', 'activar', 'desactivar', 'ocultar', 'mostrar',
+    'crear', 'crea', 'agregar', 'agrega', 'anadir', 'anade',
+    'editar', 'edita', 'actualizar', 'actualiza', 'cambiar', 'cambia', 'modificar', 'modifica',
+    'eliminar', 'elimina', 'borrar', 'borra', 'activar', 'activa', 'desactivar', 'desactiva',
+    'ocultar', 'oculta', 'mostrar', 'muestra',
     'poner', 'pon', 'ponle', 'subir', 'sube', 'quitar', 'quita',
-    'importar', 'sincronizar', 'extraer', 'leer', 'lee', 'buscar', 'busca',
-    'completar', 'completa', 'rellenar', 'rellena', 'cotizar', 'cotizacion'
+    'importar', 'importa', 'sincronizar', 'sincroniza', 'extraer', 'extrae',
+    'completar', 'completa', 'rellenar', 'rellena', 'cotizar'
   ];
   const catalogTargets = [
     'producto', 'productos', 'catalogo', 'categoria', 'precio', 'imagen', 'foto',
@@ -434,9 +436,20 @@ function hasOperationalSignals(text = '') {
 
   const hasAction = actionVerbs.some(k => n.includes(k));
   const hasTarget = catalogTargets.some(k => n.includes(k));
+  const hasStrongCatalogCommand = /(pon|poner|ponle|cambia|cambiar|actualiza|actualizar|edita|editar|modifica|modificar|agrega|agregar|anade|añade|crea|crear|elimina|eliminar|borra|borrar|quita|quitar|activa|activar|desactiva|desactivar|oculta|ocultar|muestra|mostrar|importa|importar|sincroniza|sincronizar|extrae|extraer|habilita|habilitar).*(producto|productos|catalogo|precio|imagen|foto|color|colores|stock|variante|variantes|cotizacion|cotizaciones)|(?:precio|imagen|foto|color|stock)\s+(?:de|del)\s+/i.test(n);
+  const isQuestionLike = /[?¿]/.test(String(text || ''))
+    || /(como|que|cual|cuanto|por que|me ayudas|puedes ayudar|ayudame|ayudarme|explica|opinas|te parece|entiendo|entender|diferencia|recomiendas)/i.test(n);
+  const isExplainerQuestion = /(me ayudas a entender|ayudame a entender|explicame|explica|que te parece|que opinas|como funciona|como hago|no se como)/i.test(n);
+
+  if (isQuestionLike && isExplainerQuestion && !hasStrongCatalogCommand) return false;
 
   if (hasUrl && /(import|sincron|extra|leer|imagen|foto|producto)/.test(n)) return true;
-  return hasAction && hasTarget;
+  if (hasStrongCatalogCommand) return true;
+
+  const hasSearchCommand = /(busca|buscar|encuentra|filtra|lista|listar)\s+/.test(n) && hasTarget;
+  if (hasSearchCommand && !isExplainerQuestion) return true;
+
+  return hasAction && hasTarget && !isExplainerQuestion;
 }
 
 function buildHumanFallbackReply(userMessage = '') {
@@ -471,49 +484,7 @@ function isLikelyOperationalMessage(text = '') {
 }
 
 function buildOfflineGeneralConversationText(userMessage = '') {
-  const n = normalizeForIntent(userMessage);
-  if (!n) return '';
-
-  if (n.includes('guerra fria')) {
-    return 'Claro. La Guerra Fria fue una rivalidad geopolitica (1947-1991) entre Estados Unidos y la URSS. No fue una guerra directa entre ambas potencias, sino un conflicto de influencia global con carrera armamentista nuclear, espionaje, propaganda y guerras indirectas (Corea, Vietnam, Afganistan). En Europa simbolizo la division entre bloques (OTAN y Pacto de Varsovia), con episodios criticos como Berlin y la Crisis de los Misiles en Cuba (1962). Termino con la crisis del bloque sovietico y la disolucion de la URSS en 1991.';
-  }
-
-  if (n.includes('que es la ia') || n.includes('inteligencia artificial')) {
-    return 'La inteligencia artificial es el campo que desarrolla sistemas capaces de realizar tareas cognitivas, como comprender lenguaje, reconocer patrones, predecir resultados y apoyar decisiones, usando modelos entrenados con datos.';
-  }
-
-  if (n.includes('a que equipo le vas') || (n.includes('equipo') && n.includes('mundial'))) {
-    return 'No tengo camiseta propia, pero si me preguntas por nivel de juego y consistencia, Argentina suele aparecer fuerte. Si quieres, también te puedo responder más neutral y comparar favoritos al Mundial.';
-  }
-
-  if ((n.includes('paises') || n.includes('selecciones')) && n.includes('mundial')) {
-    return 'Depende de cuál Mundial hablas, porque los clasificados cambian por edición. Si me dices si te refieres a 2022, 2026 u otro, te digo los países exactos; si quieres, también te explico cómo se reparten los cupos por confederación.';
-  }
-
-  if (n.includes('argentina') || n.includes('argentino')) {
-    return 'Si hablas de Argentina para el Mundial, suele estar entre favoritos por plantilla y funcionamiento. Si quieres, te comparo contra 2 o 3 selecciones fuertes y te digo puntos clave.';
-  }
-
-  if (n.includes('futbol') || n.includes('mundial')) {
-    if (n.includes('2026')) {
-      return 'Si hablas del Mundial 2026, Argentina sigue siendo candidata fuerte por estructura y experiencia, pero en torneos cortos el momento del equipo y los cruces pesan mucho.';
-    }
-    return 'Si quieres, te doy una lectura directa del Mundial: favoritos, cruces y qué selección llega mejor.';
-  }
-
-  if (n.includes('juegos olimpicos') || n.includes('juegos olímpicos') || n.includes('olimpiadas') || n.includes('olimpicos') || n.includes('olímpicos')) {
-    return 'Claro. Los Juegos Olímpicos son el principal evento deportivo multidisciplinario del mundo. Reúnen atletas de muchos países en competencias como atletismo, natación, gimnasia, fútbol, baloncesto y más. Se celebran normalmente cada cuatro años en versión de verano, y también existen los Juegos Olímpicos de invierno para deportes sobre nieve y hielo. Más allá de las medallas, representan competencia internacional, preparación de alto nivel y proyección cultural del país sede. Si quieres, te puedo hablar de su historia, de cómo funcionan o de una edición específica.';
-  }
-
-  if (/^(si|sí|ok|dale|va|aja|aj[aá]|correcto|claro)\s*[.!?]*$/i.test(String(userMessage || '').trim())) {
-    return 'Sí. Dime qué quieres que haga o qué tema quieres que te explique y te respondo directo.';
-  }
-
-  if (/^(?:me\s+)?(?:puedes\s+)?ayuda(?:r|s|rme|me)?\s*[.!?]*$/i.test(String(userMessage || '').trim())) {
-    return 'Aquí estoy para ayudarte de verdad. Dime qué necesitas: conversación libre, productos, precios, imágenes, colores, stock o cotizaciones.';
-  }
-
-  return '';
+  return buildHumanFallbackReply(userMessage);
 }
 
 function buildOfflineGeneralDecision(userMessage = '') {
@@ -633,15 +604,8 @@ async function thinkRamiro(opts) {
 
   // Atajo conversacional por defecto: cualquier mensaje no operacional va por respuesta natural.
   if (!isLikelyOperationalMessage(userMessage)) {
-    const conversationalPrompt = `Eres Ramiro, asistente de ${storeName || 'MacStore'}.
-Responde en español, de forma natural, directa y coherente con lo que el usuario dice.
-No uses JSON. No menciones reglas internas. Responde exactamente sobre el tema del mensaje.
-${recentHistory ? `\nContexto reciente de la conversación:\n${recentHistory}\n` : ''}
-Usuario: ${userMessage}`;
-
     try {
-      const convText = await callGeminiBrain(conversationalPrompt, 0.8);
-      const text = String(convText || '').trim();
+      const text = await buildGeneralConversationText({ storeName, userMessage, recentHistory });
       if (text && !isLowValueConversationText(text)) {
         const fb = buildFallbackDecision(userMessage, null, text);
         fb.mode = 'general';
@@ -649,7 +613,15 @@ Usuario: ${userMessage}`;
         return { decision: fb, legacy: translateBrainToLegacy(fb) };
       }
     } catch {
-      // Si falla, continua con el brain completo
+      // Si falla, intentamos fallback humano seguro y luego continuamos con el brain completo.
+    }
+
+    const humanFallback = buildHumanFallbackReply(userMessage);
+    if (humanFallback) {
+      const fb = buildFallbackDecision(userMessage, null, humanFallback);
+      fb.mode = 'general';
+      fb.intent = 'general_chat_fallback';
+      return { decision: fb, legacy: translateBrainToLegacy(fb) };
     }
   }
 
@@ -674,11 +646,25 @@ Responde SOLO en JSON válido según el esquema indicado.`;
   } catch (e) {
     console.error('[RamiroBrain] Error llamando a Gemini:', e.message);
     if (!isLikelyOperationalMessage(userMessage)) {
-      const offlineDecision = buildOfflineGeneralDecision(userMessage);
-      if (offlineDecision) {
+      const generalText = await buildGeneralConversationText({ storeName, userMessage, recentHistory });
+      if (generalText && !isLowValueConversationText(generalText)) {
+        const fb = buildFallbackDecision(userMessage, null, generalText);
+        fb.mode = 'general';
+        fb.intent = 'general_chat';
         return {
-          decision: offlineDecision,
-          legacy: translateBrainToLegacy(offlineDecision),
+          decision: fb,
+          legacy: translateBrainToLegacy(fb),
+        };
+      }
+
+      const humanFallback = buildHumanFallbackReply(userMessage);
+      if (humanFallback) {
+        const fb = buildFallbackDecision(userMessage, null, humanFallback);
+        fb.mode = 'general';
+        fb.intent = 'general_chat_fallback';
+        return {
+          decision: fb,
+          legacy: translateBrainToLegacy(fb),
         };
       }
     }
@@ -695,7 +681,7 @@ Responde SOLO en JSON válido según el esquema indicado.`;
     if (!generalText || isLowValueConversationText(generalText)) {
       generalText = await buildGeneralConversationText({ storeName, userMessage, recentHistory });
       if ((!generalText || isLowValueConversationText(generalText)) && !isLikelyOperationalMessage(userMessage)) {
-        generalText = buildOfflineGeneralConversationText(userMessage);
+        generalText = buildHumanFallbackReply(userMessage);
       }
     }
     const rawCandidate = !isLowValueConversationText(rawText) ? rawText : '';
@@ -713,7 +699,7 @@ Responde SOLO en JSON válido según el esquema indicado.`;
     && (isLowValueConversationText(decision?.question || decision?.response) || isLikelyGeneralConversation(userMessage))) {
     let generalText = await buildGeneralConversationText({ storeName, userMessage, recentHistory });
     if (!generalText || isLowValueConversationText(generalText)) {
-      generalText = buildOfflineGeneralConversationText(userMessage);
+      generalText = buildHumanFallbackReply(userMessage);
     }
     if (generalText) {
       decision.mode = 'general';
