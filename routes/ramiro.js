@@ -2267,6 +2267,35 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         }
       }
 
+      // 7.5) Último catch para "quiero cambiar la imagen de ..." sin URL.
+      if (!response.action && !String(response.message || '').trim()) {
+        const wantsImageChange = /(quiero\s+cambiar|cambiar|actualizar|poner|editar|modificar).*(imagen|foto)|(imagen|foto).*(de|para)/i.test(msgNorm);
+        if (wantsImageChange) {
+          const refMatch = msgNorm.match(/(?:imagen|foto)\s+(?:de|para)\s+(.+)$/i)
+            || msgNorm.match(/(?:cambiar|actualizar|poner|editar|modificar)\s+la?\s*(?:imagen|foto)\s+(?:de|para)?\s*(.+)$/i);
+          const ref = cleanText(refMatch ? refMatch[1] : '', 120);
+
+          let imageTarget = ref ? resolveTargetProduct(allProducts, ref, null) : null;
+          if (!imageTarget) {
+            imageTarget = findProductMentionInText(allProducts, msg) || implicitTargetProduct;
+          }
+
+          if (imageTarget) {
+            ramiroPendingImageUpdate.set(adminKey, {
+              productId: imageTarget.id,
+              productSlug: imageTarget.slug || '',
+              productName: imageTarget.name,
+              expiresAt: Date.now() + RAMIRO_IMAGE_TTL_MS,
+            });
+            response = {
+              message: `¿Cuál es la URL de la imagen que quieres agregar a **${imageTarget.name}**?`,
+              action: null,
+              data: null,
+            };
+          }
+        }
+      }
+
       // Fallback final: si después de todo no hay acción ni mensaje útil, preguntar
       if (!response.action && !String(response.message || '').trim()) {
         response = {
