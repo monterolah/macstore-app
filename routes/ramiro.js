@@ -21,6 +21,8 @@ const RAMIRO_CLARIF_TTL_MS = 3 * 60 * 1000;
 
 const ramiroPendingProductDraft = new Map();
 const RAMIRO_DRAFT_TTL_MS = 10 * 60 * 1000;
+const ramiroPendingImageUpdate = new Map();
+const RAMIRO_IMAGE_TTL_MS = 10 * 60 * 1000;
 const ramiroSessionContext = new Map();
 const RAMIRO_SESSION_CTX_TTL_MS = 20 * 60 * 1000;
 
@@ -516,6 +518,31 @@ function splitColorTokens(value) {
     .split(/,|\sy\s|\se\s/i)
     .map(v => normalizeColorLabel(v))
     .filter(Boolean);
+}
+
+function isDirectImageUrl(value = '') {
+  return /https?:\/\/\S+\.(?:png|jpe?g|webp|gif|avif)(?:\?.*)?$/i.test(String(value || '').trim());
+}
+
+async function resolveImageUrlFromInput(rawUrl = '') {
+  const cleanUrl = String(rawUrl || '').trim().replace(/[),.;]+$/, '');
+  if (!cleanUrl) return '';
+  if (isDirectImageUrl(cleanUrl)) return cleanUrl;
+
+  try {
+    const page = await readUrlContent(cleanUrl);
+    const firstImage = (page?.images || []).find(img => String(img?.src || '').trim());
+    if (!firstImage) return cleanUrl;
+    const src = String(firstImage.src || '').trim();
+    if (!src) return cleanUrl;
+    try {
+      return new URL(src, cleanUrl).href;
+    } catch {
+      return cleanUrl;
+    }
+  } catch {
+    return cleanUrl;
+  }
 }
 
 function countTokenOverlap(a, b) {
@@ -1161,6 +1188,11 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         ramiroPendingProductDraft.delete(adminKey);
       }
 
+      const pendingImage = ramiroPendingImageUpdate.get(adminKey);
+      if (pendingImage && pendingImage.expiresAt < Date.now()) {
+        ramiroPendingImageUpdate.delete(adminKey);
+      }
+
       const activeDraft = ramiroPendingProductDraft.get(adminKey);
       if (!response.action && activeDraft) {
         const draftPrice = parsePriceFromText(msg)
@@ -1542,7 +1574,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       if (!response.action && /(imagen|foto)/i.test(msg)) {
         const urlMatch = msg.match(/https?:\/\/\S+/i);
         if (urlMatch) {
-          const imageUrl = urlMatch[0].replace(/[),.;]+$/, '');
+          const imageUrl = await resolveImageUrlFromInput(urlMatch[0]);
           const byTail = msg.match(/\b(?:a|para|en)\b\s+(.+)$/i);
           const targetCandidate = byTail ? byTail[1].replace(urlMatch[0], '').trim() : msg.replace(urlMatch[0], '').trim();
           const targetProd = targetFromRef(targetCandidate);
@@ -1563,7 +1595,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       if (!response.action && implicitTargetProduct) {
         const shortImageCmd = msg.match(/(?:ponle|cambiale|actualizale|pon|cambia).*(?:imagen|foto).*(https?:\/\/\S+)/i);
         if (shortImageCmd) {
-          const imageUrl = shortImageCmd[1].replace(/[),.;]+$/, '');
+          const imageUrl = await resolveImageUrlFromInput(shortImageCmd[1]);
           response = {
             message: `✅ imagen actualizada para ${implicitTargetProduct.name}`,
             action: 'PRODUCT_UPDATE',
@@ -1572,6 +1604,43 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
               updates: { image_url: imageUrl }
             }
           };
+          ramiroPendingImageUpdate.delete(adminKey);
+        } else if (/(?:ponle|cambiale|actualizale|pon|cambia|agrega|agregale).*(?:imagen|foto)/i.test(msg)) {
+          ramiroPendingImageUpdate.set(adminKey, {
+            productId: implicitTargetProduct.id,
+            productName: implicitTargetProduct.name,
+            expiresAt: Date.now() + RAMIRO_IMAGE_TTL_MS,
+          });
+          response = {
+            message: `¿Cuál es la URL de la imagen que quieres agregar a ${implicitTargetProduct.name}?`,
+            action: null,
+            data: null,
+          };
+        }
+      }
+
+      // 2.6) Seguimiento de imagen pendiente con solo URL
+      if (!response.action) {
+        const onlyUrl = msg.match(/^\s*(https?:\/\/\S+)\s*$/i);
+        const imagePending = ramiroPendingImageUpdate.get(adminKey);
+        const fallbackPendingProduct = imagePending
+          ? resolveProductByIdOrSlug(allProducts, imagePending.productId)
+          : null;
+
+        if (onlyUrl && (imagePending || implicitTargetProduct || fallbackPendingProduct)) {
+          const targetProd = fallbackPendingProduct || implicitTargetProduct;
+          if (targetProd) {
+            const imageUrl = await resolveImageUrlFromInput(onlyUrl[1]);
+            response = {
+              message: `✅ imagen actualizada para ${targetProd.name}`,
+              action: 'PRODUCT_UPDATE',
+              data: {
+                productId: targetProd.id,
+                updates: { image_url: imageUrl }
+              }
+            };
+            ramiroPendingImageUpdate.delete(adminKey);
+          }
         }
       }
 
@@ -1945,7 +2014,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       if (!hasImageUpdate) {
         const urlMatch = userMsg.match(/https?:\/\/\S+/i);
         if (urlMatch) {
-          const imageUrl = urlMatch[0].replace(/[),.;]+$/, '');
+          const imageUrl = await resolveImageUrlFromInput(urlMatch[0]);
           const byTail = userMsg.match(/\b(?:a|para|en)\b\s+(.+)$/i);
           const targetCandidate = byTail ? byTail[1].replace(urlMatch[0], '').trim() : userMsg.replace(urlMatch[0], '').trim();
           const targetProd = resolveTargetProduct(allProducts, targetCandidate, implicitTargetProduct);

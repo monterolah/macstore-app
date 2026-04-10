@@ -322,18 +322,25 @@ async function sendRamiro() {
     // Detectar si es una URL
     const urlMatch = text.match(/https?:\/\/[^\s]+/);
     if (urlMatch) {
-      const fetchR = await fetch('/api/ramiro/fetch-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _RT },
-        body: JSON.stringify({ url: urlMatch[0] })
-      });
-      const fetchData = await fetchR.json();
-      if (fetchData.ok) {
-        const augmentedMsg = `${text}\n\n[Contenido de la URL leído por Ramiro]:\n${fetchData.text}`;
-        const r = await callRamiroChat(augmentedMsg);
-        thinking.remove();
-        handleRamiroResponse(r);
-        return;
+      try {
+        const fetchR = await fetch('/api/ramiro/fetch-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _RT },
+          body: JSON.stringify({ url: urlMatch[0] })
+        });
+        const ct = (fetchR.headers.get('content-type') || '').toLowerCase();
+        if (fetchR.ok && ct.includes('application/json')) {
+          const fetchData = await fetchR.json();
+          if (fetchData.ok && fetchData.text) {
+            const augmentedMsg = `${text}\n\n[Contenido de la URL leído por Ramiro]:\n${fetchData.text}`;
+            const r = await callRamiroChat(augmentedMsg);
+            thinking.remove();
+            handleRamiroResponse(r);
+            return;
+          }
+        }
+      } catch (_) {
+        // Si falla la lectura previa de URL, seguimos con el chat normal sin romper la sesión.
       }
     }
 
