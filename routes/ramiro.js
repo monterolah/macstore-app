@@ -1582,6 +1582,19 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         }
       }
 
+      // Si el usuario pidió cambio de precio con referencia explícita y no se encontró producto,
+      // preferimos pedir precisión en lugar de responder algo ambiguo.
+      if (!response.action) {
+        const looksLikeExplicitPriceCmd = /(?:pon|poner|ponle|cambia|actualiza|sube|baja)\s+(?:el\s+)?precio|precio\s+(?:de|del)/i.test(msg);
+        if (looksLikeExplicitPriceCmd) {
+          response = {
+            message: 'No encontré ese producto para cambiar precio. Dime el nombre exacto como aparece en tu catálogo y lo actualizo.',
+            action: null,
+            data: null
+          };
+        }
+      }
+
       // 1.5) Capacidad por color: "habilita 512GB para iPhone 17 lavanda"
       if (!response.action) {
         const capCmd = msg.match(/(?:habilita|habilitar|activa|activar)\s+([0-9]{2,4}\s?gb)\s+para\s+(.+)$/i);
