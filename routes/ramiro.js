@@ -19,6 +19,9 @@ const RAMIRO_CONFIRM_TTL_MS = 5 * 60 * 1000;
 const ramiroLastClarification = new Map();
 const RAMIRO_CLARIF_TTL_MS = 3 * 60 * 1000;
 
+const ramiroPendingProductDraft = new Map();
+const RAMIRO_DRAFT_TTL_MS = 10 * 60 * 1000;
+
 const ramiroLearnedPatterns = new Map();
 
 function cleanText(value, max = 5000) {
@@ -193,6 +196,28 @@ function getAdminDisplayName(admin = {}) {
   const user = email.split('@')[0] || '';
   const clean = user.replace(/[._-]+/g, ' ').trim();
   return clean || user;
+}
+
+function getQuickConversationalReply(message = '', admin = {}) {
+  const msg = String(message || '').trim();
+  const n = normalizeForMatch(msg);
+  if (!n) return null;
+
+  const asksOwnName = /(sabes\s+como\s+me\s+llamo|como\s+me\s+llamo|cual\s+es\s+mi\s+nombre|cu[aá]l\s+es\s+mi\s+nombre|sabes\s+mi\s+nombre)/i.test(n);
+  if (asksOwnName) {
+    const displayName = getAdminDisplayName(admin);
+    return displayName
+      ? `Sí, te tengo como ${displayName}. Si quieres, te puedo llamar por otro nombre y lo uso en esta conversación.`
+      : 'No tengo un nombre visible para ti todavía. Si quieres, dime cómo prefieres que te llame y lo uso en esta conversación.';
+  }
+
+  const editHelpIntent = hasAnyStem(n, ['editar', 'edito', 'edit'])
+    && hasAnyStem(n, ['no se', 'nose', 'como', 'ayuda', 'explica']);
+  if (editHelpIntent) {
+    return 'Te guío rápido para editar un producto: 1) abre Admin > Productos, 2) entra al producto, 3) toca Editar, 4) cambia lo que necesites (precio, imagen, colores, stock) y 5) guarda. Si quieres, también puedes pedírmelo por chat con una frase directa, por ejemplo: "precio de iPhone 15 a $999" o "cambia imagen de MacBook Air a https://...".';
+  }
+
+  return null;
 }
 
 function getProductIdFromPageContext(pageContext) {
@@ -554,6 +579,27 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
     const projectContext = buildProjectContextSnapshot(path.join(__dirname, '..'));
 
+    // Atajos conversacionales estables: evita respuestas genéricas cuando el modelo falle.
+    const quickReply = getQuickConversationalReply(message, req.admin);
+    if (quickReply) {
+      await appendRamiroTranscript(db, {
+        role: 'user',
+        text: String(message || ''),
+        pageContext: pageContext || '',
+        conversationId,
+        adminEmail: req.admin?.email || ''
+      });
+      await appendRamiroTranscript(db, {
+        role: 'assistant',
+        text: quickReply,
+        conversationId,
+        action: null,
+        actionResult: null,
+        adminEmail: req.admin?.email || ''
+      });
+      return res.json({ ok: true, message: quickReply, conversationId });
+    }
+
     // ── NUEVO BRAIN: Gemini con prompt estructurado y schema JSON claro ──────────
     let plan = null;
     let brainLegacy = null;
@@ -782,6 +828,45 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
       const msgNorm = normalizeForMatch(msg);
       const adminDisplayName = getAdminDisplayName(req.admin);
       const targetFromRef = (ref) => resolveTargetProduct(allProducts, ref, implicitTargetProduct);
+
+      const pendingDraft = ramiroPendingProductDraft.get(adminKey);
+      if (pendingDraft && pendingDraft.expiresAt < Date.now()) {
+        ramiroPendingProductDraft.delete(adminKey);
+      }
+
+      const activeDraft = ramiroPendingProductDraft.get(adminKey);
+      if (!response.action && activeDraft) {
+        const draftPrice = parsePriceFromText(msg)
+          || (msg.match(/^\$?\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)$/)?.[1]
+            ? Number(String(msg.match(/^\$?\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)$/)[1]).replace(',', '.'))
+            : null);
+        const draftCap = msg.match(/([0-9]{2,4}\s?gb)/i);
+
+        if (Number.isFinite(draftPrice) && draftPrice > 0) {
+          const capLabel = draftCap ? String(draftCap[1]).replace(/\s+/g, '').toUpperCase() : '';
+          const variants = capLabel ? [{ label: capLabel, price: draftPrice, stock: 0 }] : [];
+          response = {
+            message: `✅ Entendido. Estoy creando ${activeDraft.name} por $${draftPrice}${capLabel ? ` con ${capLabel}` : ''}.`,
+            action: 'PRODUCT_CREATE',
+            data: {
+              product: {
+                name: activeDraft.name,
+                slug: activeDraft.slug,
+                category: activeDraft.category,
+                price: draftPrice,
+                variants
+              }
+            }
+          };
+          ramiroPendingProductDraft.delete(adminKey);
+        } else if (draftCap && !/significa|quiero decir|me refiero/.test(msgNorm)) {
+          response = {
+            message: `Perfecto, ${String(draftCap[1]).replace(/\s+/g, '').toUpperCase()} anotado para ${activeDraft.name}. Solo dime el precio y lo creo.`,
+            action: null,
+            data: null
+          };
+        }
+      }
 
       if (!response.action) {
         const asksOwnName = /(sabes\s+como\s+me\s+llamo|como\s+me\s+llamo|cual\s+es\s+mi\s+nombre|cu[aá]l\s+es\s+mi\s+nombre|sabes\s+mi\s+nombre)/i.test(msgNorm);
@@ -1228,8 +1313,15 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
       // 5) Crear producto (si incluye nombre claro y, de preferencia, precio)
       if (!response.action) {
-        const createCmd = msg.match(/^(?:(?:me|porfa|por favor)\s+)?(?:agrega|agregar|crea|crear|anade|añade|sube|subir|mete|pon)\s+(?:el\s+|un\s+|una\s+)?(?:producto\s+)?(.+)$/i);
+        const createCmd = msg.match(/^(?:y\s+)?(?:(?:me\s+)?(?:puedes?|podrias?|podr[ií]as?|pod[eé]s?)\s+)?(?:agrega|agregar|crea|crear|anade|añade|anadir|añadir|sube|subir|mete|meter|pon|poner)\s+(?:el\s+|un\s+|una\s+)?(?:producto\s+)?(.+)$/i);
         if (createCmd && !/(colores?|imagen|foto|precio)/i.test(msgNorm)) {
+          if (/significa|quiero decir|me refiero/.test(msgNorm)) {
+            response = {
+              message: 'Entendido. Cuando quieras crear uno, dime el nombre y precio en una sola frase o en dos pasos.',
+              action: null,
+              data: null
+            };
+          } else {
           const rawName = cleanText(createCmd[1], 160).replace(/[.,;]+$/, '').trim();
           const cleanName = stripTrailingPriceFromName(rawName.replace(/^(unos?|unas?)\s+/i, '').trim());
           if (!cleanName) {
@@ -1250,6 +1342,12 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
           } else {
             const price = parsePriceFromText(msg);
             if (!price) {
+              ramiroPendingProductDraft.set(adminKey, {
+                name: cleanName,
+                slug,
+                category: inferCategoryFromName(cleanName),
+                expiresAt: Date.now() + RAMIRO_DRAFT_TTL_MS
+              });
               response = {
                 message: `Listo, puedo crearlo como "${cleanName}". Solo dime el precio (ej: $249) y lo agrego.`,
                 action: null,
@@ -1270,6 +1368,7 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
               };
             }
             }
+          }
           }
         }
       }

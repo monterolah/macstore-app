@@ -390,7 +390,8 @@ function handleRamiroResponse(data) {
         create: '✅ Producto creado correctamente',
         sync: `🔄 Sincronización completa (${ar.updated || 0} actualizados, ${ar.created || 0} nuevos)`
       };
-      addRamiroMsg(msgs[ar.type] || '✅ Acción completada', 'action');
+      const actionMsg = msgs[ar.type];
+      if (actionMsg) addRamiroMsg(actionMsg, 'action');
     } else {
       addRamiroMsg('❌ Error ejecutando acción: ' + ar.error, 'error');
     }
@@ -440,7 +441,8 @@ function renderRamiroConversationMessages(messages) {
         create: '✅ Producto creado correctamente',
         sync: `🔄 Sincronización completa (${ar.updated || 0} actualizados, ${ar.created || 0} nuevos)`
       };
-      addRamiroMsg(msgs[ar.type] || '✅ Acción completada', 'action');
+      const actionMsg = msgs[ar.type];
+      if (actionMsg) addRamiroMsg(actionMsg, 'action');
     }
   }
 }
