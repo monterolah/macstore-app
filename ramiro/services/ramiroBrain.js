@@ -587,20 +587,8 @@ async function thinkRamiro(opts) {
   ).join('\n');
 
   const deterministicDecision = buildDeterministicOperationalDecision(userMessage, allProducts, implicitProduct);
-  if (deterministicDecision) {
-    return {
-      decision: deterministicDecision,
-      legacy: translateBrainToLegacy(deterministicDecision),
-    };
-  }
-
   const deterministicGuidanceDecision = buildDeterministicGuidanceDecision(userMessage, allProducts, implicitProduct);
-  if (deterministicGuidanceDecision) {
-    return {
-      decision: deterministicGuidanceDecision,
-      legacy: translateBrainToLegacy(deterministicGuidanceDecision),
-    };
-  }
+  const deterministicFallbackDecision = deterministicDecision || deterministicGuidanceDecision || null;
 
   // Atajo conversacional por defecto: cualquier mensaje no operacional va por respuesta natural.
   if (!isLikelyOperationalMessage(userMessage)) {
@@ -668,6 +656,14 @@ Responde SOLO en JSON válido según el esquema indicado.`;
         };
       }
     }
+
+    if (deterministicFallbackDecision) {
+      return {
+        decision: deterministicFallbackDecision,
+        legacy: translateBrainToLegacy(deterministicFallbackDecision),
+      };
+    }
+
     return {
       decision: buildFallbackDecision(userMessage),
       legacy: translateBrainToLegacy(buildFallbackDecision(userMessage)),
@@ -677,6 +673,13 @@ Responde SOLO en JSON válido según el esquema indicado.`;
   const parsed = safeJsonParse(rawText);
   if (!parsed.ok || !parsed.data || typeof parsed.data !== 'object') {
     console.warn('[RamiroBrain] JSON inválido de Gemini:', String(rawText).slice(0, 300));
+    if (deterministicFallbackDecision && isLikelyOperationalMessage(userMessage)) {
+      return {
+        decision: deterministicFallbackDecision,
+        legacy: translateBrainToLegacy(deterministicFallbackDecision),
+      };
+    }
+
     let generalText = String(rawText || '').trim();
     if (!generalText || isLowValueConversationText(generalText)) {
       generalText = await buildGeneralConversationText({ storeName, userMessage, recentHistory });
@@ -710,6 +713,16 @@ Responde SOLO en JSON válido según el esquema indicado.`;
       decision.question = null;
       decision.response = generalText;
     }
+  }
+
+  if (deterministicFallbackDecision
+    && isLikelyOperationalMessage(userMessage)
+    && (decision?.needsClarification || decision?.mode === 'clarification')
+    && isGenericClarificationText(decision?.question || decision?.response)) {
+    return {
+      decision: deterministicFallbackDecision,
+      legacy: translateBrainToLegacy(deterministicFallbackDecision),
+    };
   }
 
   // Guardar memoria en background si aplica
