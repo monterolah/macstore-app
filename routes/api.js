@@ -1867,6 +1867,82 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
         }
       }
 
+      // 1.5) Capacidad por color: "habilita 512GB para iPhone 17 lavanda"
+      if (!response.action) {
+        const capCmd = msg.match(/(?:habilita|habilitar|activa|activar)\s+([0-9]{2,4}\s?gb)\s+para\s+(.+)$/i);
+        if (capCmd) {
+          const capacity = String(capCmd[1]).replace(/\s+/g, '').toUpperCase();
+          const targetRaw = String(capCmd[2] || '').trim();
+
+          let targetProd = findProductByRef(allProducts, targetRaw);
+          let colorName = '';
+
+          if (targetProd) {
+            const rawNorm = normalizeForMatch(targetRaw);
+            const prodNorm = normalizeForMatch(targetProd.name);
+            colorName = rawNorm.replace(prodNorm, '').trim();
+          } else {
+            const genericColors = ['negro', 'blanco', 'azul', 'verde', 'lavanda', 'rosa', 'rojo', 'dorado', 'plata', 'morado', 'amarillo'];
+            const targetNorm = normalizeForMatch(targetRaw);
+            const colorTail = genericColors.find(c => targetNorm.endsWith(` ${c}`) || targetNorm === c);
+            if (colorTail) {
+              const productPart = targetRaw.slice(0, Math.max(0, targetRaw.length - colorTail.length)).trim();
+              targetProd = findProductByRef(allProducts, productPart);
+              colorName = colorTail;
+            }
+          }
+
+          if (targetProd) {
+            const updates = {};
+
+            // Asegurar variante global de capacidad
+            const currentVariants = Array.isArray(targetProd.variants) ? [...targetProd.variants] : [];
+            const hasCap = currentVariants.some(v => String(v?.label || '').toUpperCase() === capacity);
+            if (!hasCap) {
+              currentVariants.push({ label: capacity, price: Number(targetProd.price) || 1, stock: 0 });
+            }
+            updates.variants = currentVariants;
+
+            // Asegurar capacidad dentro del color solicitado
+            const currentColors = Array.isArray(targetProd.color_variants) ? [...targetProd.color_variants] : [];
+            const hasObjectColors = currentColors.some(c => c && typeof c === 'object');
+
+            if (hasObjectColors) {
+              const normalizedColor = colorName
+                ? colorName.charAt(0).toUpperCase() + colorName.slice(1).toLowerCase()
+                : '';
+              let found = false;
+              const updatedColors = currentColors.map(c => {
+                if (!c || typeof c !== 'object') return c;
+                const name = String(c.name || '').trim();
+                const nameNorm = normalizeForMatch(name);
+                if (normalizedColor && nameNorm === normalizeForMatch(normalizedColor)) {
+                  found = true;
+                  const caps = Array.isArray(c.available_caps) ? [...c.available_caps] : [];
+                  if (!caps.some(x => String(x).toUpperCase() === capacity)) caps.push(capacity);
+                  return { ...c, enabled: true, available_caps: caps };
+                }
+                return c;
+              });
+
+              if (!found && normalizedColor) {
+                updatedColors.push({ name: normalizedColor, enabled: true, available_caps: [capacity] });
+              }
+              updates.color_variants = updatedColors;
+            }
+
+            response = {
+              message: `✅ habilitado ${capacity}${colorName ? ` para ${colorName}` : ''} en ${targetProd.name}`,
+              action: 'PRODUCT_UPDATE',
+              data: {
+                productId: targetProd.id,
+                updates
+              }
+            };
+          }
+        }
+      }
+
       // 2) Imagen: "pon imagen https://... a X"
       if (!response.action && /(imagen|foto)/i.test(msg)) {
         const urlMatch = msg.match(/https?:\/\/\S+/i);
@@ -1973,20 +2049,35 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
             .map(c => c ? c.charAt(0).toUpperCase() + c.slice(1).toLowerCase() : '')
             .filter(Boolean);
 
-          const existingColors = Array.isArray(targetProd.color_variants)
-            ? targetProd.color_variants
-              .map(c => typeof c === 'string' ? c : String(c?.label || c?.name || ''))
-              .map(c => c ? c.charAt(0).toUpperCase() + c.slice(1).toLowerCase() : '')
-              .filter(Boolean)
-            : [];
+          const hasObjectColors = Array.isArray(targetProd.color_variants) && targetProd.color_variants.some(c => c && typeof c === 'object');
+          let merged;
+          if (hasObjectColors) {
+            const original = Array.isArray(targetProd.color_variants) ? [...targetProd.color_variants] : [];
+            const seen = new Set(original.map(c => normalizeForMatch(c?.name || c)));
+            merged = [...original];
+            for (const color of parsedColors) {
+              const key = normalizeForMatch(color);
+              if (!seen.has(key)) {
+                seen.add(key);
+                merged.push({ name: color, enabled: true, available_caps: [] });
+              }
+            }
+          } else {
+            const existingColors = Array.isArray(targetProd.color_variants)
+              ? targetProd.color_variants
+                .map(c => typeof c === 'string' ? c : String(c?.label || c?.name || ''))
+                .map(c => c ? c.charAt(0).toUpperCase() + c.slice(1).toLowerCase() : '')
+                .filter(Boolean)
+              : [];
 
-          const merged = [];
-          const seen = new Set();
-          for (const c of [...existingColors, ...parsedColors]) {
-            const k = c.toLowerCase();
-            if (!seen.has(k)) {
-              seen.add(k);
-              merged.push(c);
+            merged = [];
+            const seen = new Set();
+            for (const c of [...existingColors, ...parsedColors]) {
+              const k = c.toLowerCase();
+              if (!seen.has(k)) {
+                seen.add(k);
+                merged.push(c);
+              }
             }
           }
           response = {
@@ -2028,6 +2119,7 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
 
     if (response.action === 'PRODUCT_UPDATE' && response.data?.updates) {
       const intentFields =
+        /(?:habilita|habilitar|activa|activar)\s+[0-9]{2,4}\s?gb\s+para\s+/i.test(userMsg) ? ['variants', 'color_variants'] :
         /(colores?|color)/i.test(userMsgNorm) ? ['color_variants'] :
         /(imagen|foto)/i.test(userMsgNorm) ? ['image_url'] :
         /(precio|\$)/i.test(userMsgNorm) ? ['price'] :
@@ -2073,20 +2165,40 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
           if (key === 'variants' && !Array.isArray(val)) val = [];
           if (key === 'color_variants') {
             if (!Array.isArray(val)) val = [];
-            const normalized = val
-              .map(c => typeof c === 'string' ? c : String(c?.label || c?.name || ''))
-              .map(c => c ? c.charAt(0).toUpperCase() + c.slice(1).toLowerCase() : '')
-              .filter(Boolean);
-            const out = [];
-            const seen = new Set();
-            for (const c of normalized) {
-              const k = c.toLowerCase();
-              if (!seen.has(k)) {
-                seen.add(k);
-                out.push(c);
+            const hasObjectColors = val.some(c => c && typeof c === 'object');
+            if (hasObjectColors) {
+              const out = [];
+              const seen = new Set();
+              for (const c of val) {
+                if (!c || typeof c !== 'object') continue;
+                const name = String(c.name || c.label || '').trim();
+                if (!name) continue;
+                const normalizedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                const keyName = normalizedName.toLowerCase();
+                if (seen.has(keyName)) continue;
+                seen.add(keyName);
+                const caps = Array.isArray(c.available_caps)
+                  ? Array.from(new Set(c.available_caps.map(x => String(x).replace(/\s+/g, '').toUpperCase())))
+                  : [];
+                out.push({ ...c, name: normalizedName, available_caps: caps });
               }
+              val = out;
+            } else {
+              const normalized = val
+                .map(c => typeof c === 'string' ? c : String(c?.label || c?.name || ''))
+                .map(c => c ? c.charAt(0).toUpperCase() + c.slice(1).toLowerCase() : '')
+                .filter(Boolean);
+              const out = [];
+              const seen = new Set();
+              for (const c of normalized) {
+                const k = c.toLowerCase();
+                if (!seen.has(k)) {
+                  seen.add(k);
+                  out.push(c);
+                }
+              }
+              val = out;
             }
-            val = out;
           }
           if (key === 'specs' && typeof val !== 'object') val = {};
           cleanUpdates[key] = val;
