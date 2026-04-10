@@ -1246,6 +1246,53 @@ function cleanGeminiJson(rawText) {
   return text;
 }
 
+function normalizeForMatch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function findProductByRef(products, ref) {
+  const raw = String(ref || '').trim();
+  if (!raw) return null;
+
+  const byId = products.find(p => p.id === raw);
+  if (byId) return byId;
+
+  const slug = slugify(raw);
+  const bySlug = products.find(p => String(p.slug || '') === slug || String(p.slug || '') === raw);
+  if (bySlug) return bySlug;
+
+  const q = normalizeForMatch(raw);
+  const exactByName = products.find(p => normalizeForMatch(p.name) === q);
+  if (exactByName) return exactByName;
+
+  const containsByName = products.find(p => normalizeForMatch(p.name).includes(q));
+  if (containsByName) return containsByName;
+
+  return null;
+}
+
+function inferCategoryFromName(name) {
+  const n = normalizeForMatch(name);
+  if (n.includes('iphone')) return 'iphone';
+  if (n.includes('ipad')) return 'ipad';
+  if (n.includes('airpods')) return 'airpods';
+  return 'mac';
+}
+
+function parsePriceFromText(text) {
+  const m = String(text || '').match(/\$\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i)
+    || String(text || '').match(/(?:precio|en|a)\s*[:=]?\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i);
+  if (!m) return null;
+  const n = Number(String(m[1]).replace(',', '.'));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function buildFrontFilesSnapshot(target) {
   const rootDir = path.join(__dirname, '..');
   const selected = FRONT_TARGET_GROUPS[target] || FRONT_TARGET_GROUPS.todo;
@@ -1787,19 +1834,132 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
     try { response = JSON.parse(rawText); }
     catch(e) { response = { message: rawText || 'No pude responder.', action: null, data: null }; }
 
-    // Fallback: si Gemini no ejecuta acción para comando de colores, forzamos PRODUCT_UPDATE
+    // Fallback determinista: si Gemini no ejecuta acción, interpretamos comandos frecuentes
     if (!response.action) {
       const msg = String(message || '').trim();
+      const msgNorm = normalizeForMatch(msg);
+
+      // 1) Precio: "pon el precio de X a $249"
+      const pricePatterns = [
+        /precio\s+(?:de|del)\s+(.+?)\s+(?:a|en)\s*\$\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i,
+        /(?:pon|poner|ponle|cambia|actualiza|sube|baja)\s+(?:el\s+)?precio\s+(?:de|del)?\s*(.+?)\s*(?:a|en|,)\s*\$\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i
+      ];
+      for (const re of pricePatterns) {
+        if (response.action) break;
+        const m = msg.match(re);
+        if (!m) continue;
+        const targetProd = findProductByRef(allProducts, m[1]);
+        const price = Number(String(m[2]).replace(',', '.'));
+        if (targetProd && Number.isFinite(price) && price > 0) {
+          response = {
+            message: `✅ actualizado precio de ${targetProd.name} a $${price}`,
+            action: 'PRODUCT_UPDATE',
+            data: {
+              productId: targetProd.id,
+              updates: { price }
+            }
+          };
+        }
+      }
+
+      // 2) Imagen: "pon imagen https://... a X"
+      if (!response.action && /(imagen|foto)/i.test(msg)) {
+        const urlMatch = msg.match(/https?:\/\/\S+/i);
+        if (urlMatch) {
+          const imageUrl = urlMatch[0].replace(/[),.;]+$/, '');
+          const byTail = msg.match(/(?:a|para|en)\s+(.+)$/i);
+          const targetCandidate = byTail ? byTail[1].replace(urlMatch[0], '').trim() : msg.replace(urlMatch[0], '').trim();
+          const targetProd = findProductByRef(allProducts, targetCandidate);
+          if (targetProd) {
+            response = {
+              message: `✅ imagen actualizada para ${targetProd.name}`,
+              action: 'PRODUCT_UPDATE',
+              data: {
+                productId: targetProd.id,
+                updates: { image_url: imageUrl }
+              }
+            };
+          }
+        }
+      }
+
+      // 3) Activar/desactivar
+      if (!response.action && /(activa|activar|desactiva|desactivar|inactivo|inactiva)/i.test(msgNorm)) {
+        const active = !/(desactiva|desactivar|inactivo|inactiva)/i.test(msgNorm);
+        const targetCandidate = msg
+          .replace(/(?:pon|poner|deja|marcar|marca|activa|activar|desactiva|desactivar|como|en|estado|inactivo|activo)/gi, ' ')
+          .trim();
+        const targetProd = findProductByRef(allProducts, targetCandidate);
+        if (targetProd) {
+          response = {
+            message: `✅ ${targetProd.name} ahora está ${active ? 'activo' : 'inactivo'}`,
+            action: 'PRODUCT_UPDATE',
+            data: {
+              productId: targetProd.id,
+              updates: { active }
+            }
+          };
+        }
+      }
+
+      // 4) Borrar producto
+      if (!response.action && /(elimina|eliminar|borra|borrar)/i.test(msgNorm)) {
+        const targetCandidate = msg.replace(/(?:elimina|eliminar|borra|borrar|producto|por favor)/gi, ' ').trim();
+        const targetProd = findProductByRef(allProducts, targetCandidate);
+        if (targetProd) {
+          response = {
+            message: `✅ se eliminará ${targetProd.name}`,
+            action: 'PRODUCT_DELETE',
+            data: { productId: targetProd.id }
+          };
+        }
+      }
+
+      // 5) Crear producto (si incluye nombre claro y, de preferencia, precio)
+      if (!response.action) {
+        const createCmd = msg.match(/^(?:me\s+)?(?:agrega|agregar|crea|crear|anade|añade)\s+(?:producto\s+)?(.+)$/i);
+        if (createCmd && !/(colores?|imagen|foto|precio)/i.test(msgNorm)) {
+          const rawName = cleanText(createCmd[1], 160).replace(/[.,;]+$/, '').trim();
+          const cleanName = rawName.replace(/^(unos?|unas?)\s+/i, '').trim();
+          const slug = slugify(cleanName);
+          const existing = allProducts.find(p => p.slug === slug);
+          if (existing) {
+            response = {
+              message: `ℹ️ ${existing.name} ya existe. Dime qué le actualizo (precio, colores, imagen, stock).`,
+              action: null,
+              data: null
+            };
+          } else {
+            const price = parsePriceFromText(msg);
+            if (!price) {
+              response = {
+                message: `Listo, puedo crearlo como "${cleanName}". Solo dime el precio (ej: $249) y lo agrego.`,
+                action: null,
+                data: null
+              };
+            } else {
+              response = {
+                message: `✅ creado ${cleanName} por $${price}`,
+                action: 'PRODUCT_CREATE',
+                data: {
+                  product: {
+                    name: cleanName,
+                    slug,
+                    category: inferCategoryFromName(cleanName),
+                    price
+                  }
+                }
+              };
+            }
+          }
+        }
+      }
+
       const colorCmd = msg.match(/(?:agrega|agregar|anade|añade|pon|poner)\s+colores?\s+(.+?)\s+a\s+(.+)$/i);
-      if (colorCmd) {
+      if (!response.action && colorCmd) {
         const colorsRaw = colorCmd[1] || '';
         const targetRaw = (colorCmd[2] || '').trim();
-        const targetSlug = slugify(targetRaw);
-        const targetProd = allProducts.find(p =>
-          String(p.name || '').toLowerCase() === targetRaw.toLowerCase() ||
-          String(p.name || '').toLowerCase().includes(targetRaw.toLowerCase()) ||
-          String(p.slug || '') === targetSlug
-        );
+        const targetProd = findProductByRef(allProducts, targetRaw);
 
         if (targetProd) {
           const parsedColors = colorsRaw
@@ -1947,25 +2107,45 @@ ${recentHistory ? recentHistory + '\n' : ''}Admin: ${message}`;
 
         const slug = prod.slug || slugify(prod.name);
         const existing = allProducts.find(p => p.slug === slug);
-        if (existing) throw new Error(`Producto ya existe con slug: ${slug} (${existing.name})`);
+        if (existing) {
+          const updates = { updatedAt: new Date() };
+          if (Number.isFinite(price) && price > 0) updates.price = price;
+          if (prod.description) updates.description = String(prod.description).slice(0, 2000);
+          if (Array.isArray(prod.variants)) updates.variants = prod.variants;
+          if (Array.isArray(prod.color_variants)) {
+            const normalized = prod.color_variants
+              .map(c => typeof c === 'string' ? c : String(c?.label || c?.name || ''))
+              .map(c => c ? c.charAt(0).toUpperCase() + c.slice(1).toLowerCase() : '')
+              .filter(Boolean);
+            updates.color_variants = Array.from(new Set(normalized.map(c => c.toLowerCase())))
+              .map(k => normalized.find(c => c.toLowerCase() === k));
+          }
+          if (prod.image_url) updates.image_url = String(prod.image_url);
+          if (prod.specs && typeof prod.specs === 'object') updates.specs = prod.specs;
+          if (prod.badge) updates.badge = String(prod.badge);
+          if (prod.stock !== undefined) updates.stock = Number(prod.stock) || 0;
 
-        const ref = await db.collection('products').add({
-          name: String(prod.name || '').trim().slice(0, 160),
-          slug,
-          category: String(prod.category).toLowerCase(),
-          price,
-          description: String(prod.description || `${prod.name} disponible en MacStore.`).slice(0, 2000),
-          variants: Array.isArray(prod.variants) ? prod.variants : [],
-          color_variants: Array.isArray(prod.color_variants) ? prod.color_variants : [],
-          specs: typeof prod.specs === 'object' ? prod.specs : {},
-          stock: Number(prod.stock) || 0,
-          active: true,
-          badge: prod.badge || '',
-          image_url: prod.image_url || '',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-        actionResult = { ok: true, type: 'create', id: ref.id, name: prod.name, price };
+          await db.collection('products').doc(existing.id).update(updates);
+          actionResult = { ok: true, type: 'upsert-update', id: existing.id, name: existing.name, price: updates.price || existing.price };
+        } else {
+          const ref = await db.collection('products').add({
+            name: String(prod.name || '').trim().slice(0, 160),
+            slug,
+            category: String(prod.category).toLowerCase(),
+            price,
+            description: String(prod.description || `${prod.name} disponible en MacStore.`).slice(0, 2000),
+            variants: Array.isArray(prod.variants) ? prod.variants : [],
+            color_variants: Array.isArray(prod.color_variants) ? prod.color_variants : [],
+            specs: typeof prod.specs === 'object' ? prod.specs : {},
+            stock: Number(prod.stock) || 0,
+            active: true,
+            badge: prod.badge || '',
+            image_url: prod.image_url || '',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          actionResult = { ok: true, type: 'create', id: ref.id, name: prod.name, price };
+        }
       } catch(e) { actionResult = { ok: false, error: e.message }; }
     }
 
