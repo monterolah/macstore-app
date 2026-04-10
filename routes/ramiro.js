@@ -1577,7 +1577,30 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
     // Ejecutar acción si viene
     let actionResult = null;
-    const ALLOWED_UPDATE_FIELDS = ['price', 'active', 'description', 'variants', 'color_variants', 'stock', 'specs', 'badge', 'image_url'];
+    const ALLOWED_UPDATE_FIELDS = [
+      'name',
+      'slug',
+      'category',
+      'description',
+      'price',
+      'original_price',
+      'active',
+      'stock',
+      'badge',
+      'sort_order',
+      'image_url',
+      'image_urls',
+      'variants',
+      'color_variants',
+      'specs',
+      'logos',
+      'ficha',
+      'img_fit',
+      'img_pos',
+      'img_scale',
+      'detail_img_scale',
+      'enable_installments'
+    ];
 
     if (response.action === 'PRODUCT_UPDATE' && response.data?.productId) {
       try {

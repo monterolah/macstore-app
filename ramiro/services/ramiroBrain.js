@@ -79,8 +79,8 @@ function buildFallbackDecision(userMessage, question = null) {
     understood: 'No pude interpretar la intención con seguridad.',
     entity: { type: 'unknown', id: null, name: null, filters: {}, matches: [] },
     action: { type: 'ask', payload: {} },
-    question: question || '¿En qué te puedo ayudar?',
-    response: question || '¿En qué te puedo ayudar?',
+    question: question || 'No pude procesar bien ese mensaje. ¿Qué quieres hacer exactamente? Ejemplos: "editar precio", "cambiar imagen", "crear producto", "activar producto".',
+    response: question || 'No pude procesar bien ese mensaje. ¿Qué quieres hacer exactamente? Ejemplos: "editar precio", "cambiar imagen", "crear producto", "activar producto".',
     memory: { shouldRemember: false, facts: [] },
   };
 }

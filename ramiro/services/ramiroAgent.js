@@ -8,6 +8,7 @@ const {
   createCatalogProduct,
   deleteCatalogProduct,
   hideCatalogProduct,
+  showProduct,
   bulkCatalogAction,
 } = require('./ramiroCatalogTools');
 
@@ -74,6 +75,16 @@ async function runRamiroTool(decision, extra = {}) {
         type: 'action_done',
         ok: true,
         result: hidden,
+        decision,
+      };
+    }
+
+    case 'show': {
+      const shown = await showProduct(payload.productId);
+      return {
+        type: 'action_done',
+        ok: true,
+        result: shown,
         decision,
       };
     }
