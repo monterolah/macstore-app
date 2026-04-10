@@ -1126,7 +1126,13 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
         response.message = brainDecision.question || brainDecision.response || response.message;
       }
 
-      if (shouldAutoExecute(brainDecision, autonomousMode)) {
+      const forceDeterministicEarly =
+        /(?:habilita|habilitar|activa|activar)\s+[0-9]{2,4}\s?gb\s+para\s+/i.test(String(effectiveMessage || ''))
+        || /(?:pon|poner|ponle|cambia|actualiza|sube|baja)\s+(?:el\s+)?precio/i.test(String(effectiveMessage || ''))
+        || /precio\s+(?:de|del)\s+.+\s+(?:a|en)\s*\$?\s*[0-9]{2,6}/i.test(String(effectiveMessage || ''))
+        || (/(?:imagen|foto)/i.test(String(effectiveMessage || '')) && /https?:\/\//i.test(String(effectiveMessage || '')));
+
+      if (!forceDeterministicEarly && shouldAutoExecute(brainDecision, autonomousMode)) {
         try {
           const agentResult = await runRamiroTool(brainDecision, { userId: adminKey });
           if (agentResult?.ok) {
@@ -1536,15 +1542,31 @@ router.post('/chat', requireAdminAPI, async (req, res) => {
 
       // 1) Precio: "pon el precio de X a $249"
       const pricePatterns = [
-        /precio\s+(?:de|del)\s+(.+?)\s+(?:a|en)\s*\$\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i,
-        /(?:pon|poner|ponle|cambia|actualiza|sube|baja)\s+(?:el\s+)?precio\s+(?:de|del)?\s*(.+?)\s*(?:a|en|,)\s*\$\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i
+        /precio\s+(?:de|del)\s+(.+?)\s+(?:a|en)\s*\$?\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i,
+        /(?:pon|poner|ponle|cambia|actualiza|sube|baja)\s+(?:el\s+)?precio\s+(?:de|del)?\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)\s+(?:a|al|para)\s+(.+?)$/i,
+        /(?:pon|poner|ponle|cambia|actualiza|sube|baja)\s+(?:el\s+)?precio\s+(?:de|del)?\s*(.+?)\s*(?:a|en|,)\s*\$?\s*([0-9]{2,6}(?:[\.,][0-9]{1,2})?)/i
       ];
       for (const re of pricePatterns) {
         if (response.action) break;
         const m = msg.match(re);
         if (!m) continue;
-        const targetProd = targetFromRef(m[1]);
-        const price = Number(String(m[2]).replace(',', '.'));
+
+        let targetRef = '';
+        let price = NaN;
+        const num1 = Number(String(m[1]).replace(',', '.'));
+        const num2 = Number(String(m[2]).replace(',', '.'));
+
+        if (Number.isFinite(num1) && num1 > 0 && !Number.isFinite(num2)) {
+          price = num1;
+          targetRef = String(m[2] || '');
+        } else if (Number.isFinite(num2) && num2 > 0) {
+          price = num2;
+          targetRef = String(m[1] || '');
+        } else {
+          continue;
+        }
+
+        const targetProd = targetFromRef(targetRef);
         if (targetProd && Number.isFinite(price) && price > 0) {
           response = {
             message: `✅ actualizado precio de ${targetProd.name} a $${price}`,
