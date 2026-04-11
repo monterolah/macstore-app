@@ -102,8 +102,9 @@
       <div class="detail-img-box" style="position:relative;z-index:1;width:100%;height:100%;max-height:340px;transform-origin:center center;transition:opacity .4s ease,transform .4s ease">
       <% const mSrc = initialColor&&initialColor.image_url ? initialColor.image_url : (product.image_url||'');
          const isVid = String(mSrc).match(/\.(mp4|webm|ogg|mov)$/i); %>
-      <img id="mainImg" src="<%=mSrc%>" alt="<%=product.name%>" style="display:<%=isVid?'none':'block'%>;width:100%;height:100%;object-fit:<%=initialColor&&initialColor.img_fit ? initialColor.img_fit : (product.img_fit||'contain')%>;object-position:<%=initialColor&&initialColor.img_pos ? initialColor.img_pos : (product.img_pos||'center')%>" onerror="this.style.display='none'">
-      <video id="mainVid" src="<%=mSrc%>" style="display:<%=isVid?'block':'none'%>;width:100%;height:100%;object-fit:contain" autoplay loop muted playsinline></video>
+      <% const cScale = initialColor&&initialColor.img_scale ? initialColor.img_scale : (product.img_scale||1); %>
+      <img id="mainImg" src="<%=mSrc%>" alt="<%=product.name%>" style="display:<%=isVid?'none':'block'%>;width:100%;height:100%;object-fit:<%=initialColor&&initialColor.img_fit ? initialColor.img_fit : (product.img_fit||'contain')%>;object-position:<%=initialColor&&initialColor.img_pos ? initialColor.img_pos : (product.img_pos||'center')%>;transform:scale(<%=cScale%>);transform-origin:center center;transition:transform 0.4s ease, opacity 0.4s ease" onerror="this.style.display='none'">
+      <video id="mainVid" src="<%=mSrc%>" style="display:<%=isVid?'block':'none'%>;width:100%;height:100%;object-fit:contain;transform:scale(<%=cScale%>);transform-origin:center center;transition:transform 0.4s ease, opacity 0.4s ease" autoplay loop muted playsinline></video>
       </div>
       </div>
 
@@ -370,8 +371,31 @@ function changeColor(src, name, fit, pos, scale) {
   const isV = src.match(/\.(mp4|webm|ogg|mov)$/i);
   const im = document.getElementById('mainImg');
   const vi = document.getElementById('mainVid');
-  if(isV) { im.style.display='none'; vi.style.display='block'; vi.src=src; }
-  else { vi.style.display='none'; im.style.display='block'; im.src=src; im.style.objectFit=fit||'contain'; im.style.objectPosition=pos||'center'; }
+  const glow = document.getElementById('productGlow');
+  const targetScale = scale || 1;
+  
+  if(im) { im.style.opacity = '0'; im.style.transform = 'scale(' + (targetScale*0.95) + ')'; }
+  if(vi) { vi.style.opacity = '0'; vi.style.transform = 'scale(' + (targetScale*0.95) + ')'; }
+  if(glow) { glow.style.opacity = '0'; glow.style.transform = 'scale(0.9)'; }
+
+  setTimeout(() => {
+    if(isV) { 
+      im.style.display='none'; 
+      vi.style.display='block'; 
+      vi.src=src; 
+      vi.onloadeddata = () => { vi.style.opacity='1'; vi.style.transform='scale('+targetScale+')'; if(glow){glow.style.opacity='1';glow.style.transform='scale(1)';} };
+      vi.onerror = () => { vi.style.opacity='1'; vi.style.transform='scale('+targetScale+')'; };
+    } else { 
+      vi.style.display='none'; 
+      im.style.display='block'; 
+      im.src=src; 
+      im.style.objectFit=fit||'contain'; 
+      im.style.objectPosition=pos||'center'; 
+      const restore = () => { im.style.opacity='1'; im.style.transform='scale('+targetScale+')'; if(glow){glow.style.opacity='1';glow.style.transform='scale(1)';} };
+      im.onload = restore;
+      im.onerror = restore;
+    }
+  }, 200);
 }
 
 function selectColor(btn, imageUrl, colorName, imgFit, imgPos, imgScale, availCaps) {
@@ -404,18 +428,6 @@ function selectColor(btn, imageUrl, colorName, imgFit, imgPos, imgScale, availCa
 
   if(imageUrl) {
     changeColor(imageUrl, colorName, imgFit, imgPos, imgScale);
-    const glow = document.getElementById('productGlow');
-      img.src = imageUrl;
-      img.style.objectFit      = imgFit||'contain';
-      img.style.objectPosition = imgPos||'center';
-      const restore = () => {
-        img.style.opacity   = '1';
-        img.style.transform = 'scale('+targetScale+')';
-        if(glow){ glow.style.opacity='1'; glow.style.transform='scale(1)'; }
-      };
-      img.onload  = restore;
-      img.onerror = restore;
-    }, 200);
   }
 }
 </script>
