@@ -102,7 +102,7 @@
       <div class="detail-img-box" style="position:relative;z-index:1;width:100%;height:100%;max-height:340px;transform-origin:center center;transition:opacity .4s ease,transform .4s ease">
       <% const mSrc = initialColor&&initialColor.image_url ? initialColor.image_url : (product.image_url||'');
          const isVid = String(mSrc).match(/\.(mp4|webm|ogg|mov)$/i); %>
-      <% const cScale = initialColor&&initialColor.img_scale ? initialColor.img_scale : (product.img_scale||1); %>
+      <% const cScale = initialColor && (initialColor.detail_img_scale || initialColor.img_scale) ? (initialColor.detail_img_scale || initialColor.img_scale) : (product.detail_img_scale || product.img_scale || 1); %>
       <img id="mainImg" src="<%=mSrc%>" alt="<%=product.name%>" style="display:<%=isVid?'none':'block'%>;width:100%;height:100%;object-fit:<%=initialColor&&initialColor.img_fit ? initialColor.img_fit : (product.img_fit||'contain')%>;object-position:<%=initialColor&&initialColor.img_pos ? initialColor.img_pos : (product.img_pos||'center')%>;transform:scale(<%=cScale%>);transform-origin:center center;transition:transform 0.4s ease, opacity 0.4s ease" onerror="this.style.display='none'">
       <video id="mainVid" src="<%=mSrc%>" style="display:<%=isVid?'block':'none'%>;width:100%;height:100%;object-fit:contain;transform:scale(<%=cScale%>);transform-origin:center center;transition:transform 0.4s ease, opacity 0.4s ease" autoplay loop muted playsinline></video>
       </div>
