@@ -86,7 +86,7 @@
     <!-- IMAGEN -->
     <div class="product-media" style="position:sticky;top:90px">
       <!-- CONTENEDOR CON GLOW -->
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;padding:48px 40px;aspect-ratio:1;overflow:hidden">
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;padding:24px;aspect-ratio:1;overflow:visible">
         <!-- GLOW ANIMADO -->
         <div id="productGlow" style="
           position:absolute;inset:18%;border-radius:50%;
@@ -99,7 +99,7 @@
       <% const activeColors = colors.filter(c => c.enabled !== false); %>
       <% const initialColor = activeColors.length ? activeColors[0] : (colors.length ? colors[0] : null); %>
       <% const initialCaps = initialColor && Array.isArray(initialColor.available_caps) && initialColor.available_caps.length ? initialColor.available_caps : (product.variants||[]).map(v=>v.label); %>
-      <div class="detail-img-box" style="position:relative;z-index:1;width:100%;height:100%;max-height:340px;transform-origin:center center;transition:opacity .4s ease,transform .4s ease">
+      <div class="detail-img-box" style="position:relative;z-index:1;width:100%;height:100%;max-height:480px;transform-origin:center center;transition:opacity .4s ease,transform .4s ease">
       <% const mSrc = initialColor&&initialColor.image_url ? initialColor.image_url : (product.image_url||'');
          const isVid = String(mSrc).match(/\.(mp4|webm|ogg|mov)$/i); %>
       <% const cScale = initialColor && (initialColor.detail_img_scale || initialColor.img_scale) ? (initialColor.detail_img_scale || initialColor.img_scale) : (product.detail_img_scale || product.img_scale || 1); %>
@@ -165,7 +165,7 @@
     <!-- INFO -->
     <div>
       <% if(product.category){ %><% const _catLabel = (categories||[]).find(c=>c.slug===product.category); %><p style="font-size:12px;color:#86868b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;font-weight:500"><%=_catLabel?_catLabel.name:product.category%></p><% } %>
-      <% if(product.badge){ %><span style="display:inline-block;background:#1d1d1f;color:#fff;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px"><%=product.badge%></span><% } %>
+      <% if(product.badge){ %><span style="display:inline-flex;align-items:center;vertical-align:middle;background:#1d1d1f;color:#fff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:12px;line-height:1.2"><%=product.badge%></span><% } %>
       <h1 style="font-size:clamp(28px,3.8vw,44px);font-weight:700;letter-spacing:-.048em;line-height:1.03;margin-bottom:10px"><%=product.name%></h1>
       <p style="font-size:17px;color:#86868b;line-height:1.5;margin-bottom:22px"><%=product.description%></p>
 
