@@ -173,8 +173,11 @@ const prodByCat = {};
           </div>
           <% } %>
           <div class="ms-card-foot">
-            <span class="ms-card-price"><%=formatPrice(p.price)%></span>
-            <% if(p.original_price){ %><span class="ms-card-orig"><%=formatPrice(p.original_price)%></span><% } %>
+            <div>
+              <span class="ms-card-price"><%=formatPrice(p.price)%></span>
+              <% if(p.original_price){ %><span class="ms-card-orig"><%=formatPrice(p.original_price)%></span><% } %>
+            </div>
+            <a href="/producto/<%=p.slug%>" class="ms-card-buy" onclick="event.stopPropagation()">Comprar</a>
           </div>
         </div>
       </a>
