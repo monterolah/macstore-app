@@ -1,291 +1,369 @@
-<%- include('partials/header', {title:product.name, description:product.description}) %>
-
+<%- include('partials/header', {title:category.name, description:category.description||''}) %>
 <style>
-  .product-page {
+  .category-page {
     padding: 44px 22px 80px;
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
   }
-  .product-layout {
+  .category-product-grid {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 52px !important;
-    align-items: start !important;
-  }
-  .product-media {
-    position: sticky !important;
-    top: 90px !important;
-  }
-  .product-installments-grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
-  }
-  .product-specs-grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-    margin-bottom: 24px !important;
-  }
-  .product-related-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
     gap: 18px !important;
   }
   @media (max-width: 900px) {
-    .product-page { padding: 32px 16px 64px; }
-    .product-layout { grid-template-columns: 1fr !important; gap: 24px !important; }
-    .product-media { position: static !important; top: auto !important; }
+    .category-page {
+      padding: 32px 16px 64px;
+    }
+    .category-product-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 14px !important;
+    }
   }
   @media (max-width: 640px) {
-    .product-page { padding: 24px 14px 56px; }
-    .product-installments-grid, .product-specs-grid { grid-template-columns: 1fr !important; }
-    .product-related-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
-    .product-cta-row { display: flex !important; flex-direction: column !important; gap: 10px !important; margin: 18px 0 24px !important; }
-    .product-cta-row a { width: 100%; justify-content: center; }
+    .category-page {
+      padding: 24px 14px 56px;
+    }
+    .category-product-grid {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    .ms-card-img {
+      height: 240px;
+      padding: 10px;
+    }
+    .category-product-grid .ms-card-img img {
+      transform: scale(1) !important;
+      max-height: 100% !important;
+      object-fit: contain !important;
+      object-position: center !important;
+    }
   }
-  .variant-btn { transition: all 0.2s ease; }
-  .variant-btn:hover:not(:disabled) { border-color: #1d1d1f !important; }
 </style>
-
-<div class="product-page">
-  <div style="display:flex;gap:5px;font-size:13px;color:#86868b;margin-bottom:24px;flex-wrap:wrap;align-items:center">
-    <a href="/" style="color:#86868b;transition:color .2s" onmouseover="this.style.color='#1d1d1f'" onmouseout="this.style.color='#86868b'">MacStore</a>
-    <span style="margin:0 3px">/</span>
-    <% if(product.category){ %>
-      <% const _cat = (categories||[]).find(c=>c.slug===product.category); %>
-      <a href="/categoria/<%=product.category%>" style="color:#86868b;transition:color .2s" onmouseover="this.style.color='#1d1d1f'" onmouseout="this.style.color='#86868b'"><%=_cat?_cat.name:product.category%></a><span style="margin:0 3px">/</span>
+<div class="category-page" style="padding:44px 22px 80px;max-width:1100px;margin:0 auto">
+  
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:<%=category.description?'8px':'32px'%>">
+    <h1 style="font-size:clamp(32px,5vw,52px);font-weight:700;letter-spacing:-.045em;margin:0"><%=category.name%></h1>
+    <% if(category.share_whatsapp !== false) { %>
+    <button onclick="shareCategory()" id="shareCatBtn" style="display:flex;align-items:center;gap:8px;background:#25D366;color:#fff;border:none;border-radius:980px;padding:10px 20px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;flex-shrink:0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Compartir catálogo
+    </button>
     <% } %>
-    <span style="color:#1d1d1f"><%=product.name%></span>
   </div>
+  <% if(category.description){ %><p style="font-size:16px;color:#86868b;margin-bottom:20px"><%=category.description%></p><% } %>
 
-  <div class="product-layout">
-    <div class="product-media">
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;padding:24px;aspect-ratio:4/5;overflow:hidden;border-radius:32px">
-        <div id="productGlow" style="position:absolute;inset:18%;border-radius:50%;background:radial-gradient(ellipse at center, rgba(120,120,200,.22) 0%, rgba(100,180,255,.12) 40%, transparent 70%);filter:blur(28px);pointer-events:none;z-index:0;animation:productGlowPulse 3s ease-in-out infinite;"></div>
-        
-        <% const colors = (product.color_variants || []).filter(c => c); %>
-        <% const activeColors = colors.filter(c => c.enabled !== false); %>
-        <% const initialColor = activeColors.length ? activeColors[0] : (colors.length ? colors[0] : null); %>
-        <% const initialCaps = initialColor && Array.isArray(initialColor.available_caps) && initialColor.available_caps.length ? initialColor.available_caps : (product.variants||[]).map(v=>v.label); %>
-        
-        <div class="detail-img-box" style="position:relative;z-index:1;width:100%;height:100%;max-height:480px;transform-origin:center center;transition:opacity .4s ease,transform .4s ease">
-          <% const mSrc = initialColor&&initialColor.image_url ? initialColor.image_url : (product.image_url||'');
-             const isVid = String(mSrc).match(/\.(mp4|webm|ogg|mov)$/i); 
-             const cScale = initialColor && (initialColor.detail_img_scale || initialColor.img_scale) ? (initialColor.detail_img_scale || initialColor.img_scale) : (product.detail_img_scale || product.img_scale || 1); %>
-          <img id="mainImg" src="<%=mSrc%>" alt="<%=product.name%>" style="display:<%=isVid?'none':'block'%>;width:100%;height:100%;object-fit:<%=initialColor&&initialColor.img_fit ? initialColor.img_fit : (product.img_fit||'contain')%>;object-position:<%=initialColor&&initialColor.img_pos ? initialColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=cScale%>);transform-origin:center center;transition:transform 0.4s ease, opacity 0.4s ease" onerror="this.style.display='none'">
-          <video id="mainVid" src="<%=mSrc%>" style="display:<%=isVid?'block':'none'%>;width:100%;height:100%;object-fit:contain;transform:scale(<%=cScale%>);transform-origin:center center;transition:transform 0.4s ease, opacity 0.4s ease" autoplay loop muted playsinline></video>
-        </div>
-      </div>
-
-      <div id="galleryContainer" style="display:<%=initialColor&&(initialColor.gallery&&initialColor.gallery.length>0)?'flex':'none'%>;gap:16px;margin-top:24px;justify-content:center;overflow-x:auto">
-        <% if(initialColor) {
-           const gArr = [initialColor.image_url, ...(initialColor.gallery||[])].filter(Boolean);
-           if(gArr.length > 1) {
-             gArr.forEach((gUrl, idx) => { %>
-               <button onclick="changeColor('<%=gUrl%>', window._selectedColor || '', '<%=initialColor.img_fit||'contain'%>', '<%=initialColor.img_pos||'center'%>', <%=cScale%>); document.querySelectorAll('.gal-thumb').forEach(b=>b.style.borderColor='transparent'); this.style.borderColor='#0071e3'" class="gal-thumb" style="width:64px;height:64px;border-radius:12px;border:2px solid <%=idx===0?'#0071e3':'transparent'%>;background:#f5f5f7;padding:4px;cursor:pointer;flex-shrink:0;transition:border-color .2s">
-                 <img src="<%=gUrl%>" style="width:100%;height:100%;object-fit:cover;border-radius:6px" onerror="this.style.display='none'">
-               </button>
-             <% });
-           }
-        } %>
-      </div>
-
-      <% if(colors.length){ %>
-      <div style="text-align:center;margin-top:20px">
-        <p id="colorLabel" style="font-size:14px;color:#1d1d1f;font-weight:500;margin-bottom:14px;min-height:20px;letter-spacing:-.01em"><%=colors[0]&&colors[0].name?colors[0].name:''%></p>
-        <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;padding:2px 4px">
-          <% colors.forEach((c,i)=>{ %>
-            <button onclick="selectColor(this,this.dataset.img,this.dataset.name,this.dataset.fit,this.dataset.pos,this.dataset.scale,JSON.parse(decodeURIComponent(this.dataset.caps||'%5B%5D')), JSON.parse(decodeURIComponent(this.dataset.gallery||'%5B%5D')))"
-              data-img="<%=c.image_url||c.swatch_url||''%>" data-name="<%=c.name||''%>" data-fit="<%=c.img_fit||'contain'%>" data-pos="<%=c.img_pos||'center'%>" data-scale="<%=c.detail_img_scale || c.img_scale || 1%>"
-              data-caps="<%=encodeURIComponent(JSON.stringify(c.available_caps||[]))%>" data-gallery="<%=encodeURIComponent(JSON.stringify(c.gallery||[]))%>"
-              title="<%=c.name%>" class="color-swatch <%=i===0?'active':''%>"
-              style="width:48px;height:48px;border-radius:50%;border:none;padding:0;cursor:pointer;background:transparent;box-shadow:<%=i===0?'0 0 0 3px rgba(0,113,227,.22)':'0 0 0 1px rgba(0,0,0,.08)'%>;position:relative;flex-shrink:0;transition:all 0.2s;">
-              <img src="<%=c.swatch_url||c.image_url%>" alt="<%=c.name%>" style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block;">
-            </button>
-          <% }) %>
-        </div>
-      </div>
-      <% } %>
-    </div>
-
-    <div>
-      <% if(product.category){ %><% const _cl = (categories||[]).find(c=>c.slug===product.category); %><p style="font-size:12px;color:#86868b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;font-weight:600"><%=_cl?_cl.name:product.category%></p><% } %>
-      <% if(product.badge){ %><span style="display:inline-flex;background:#1d1d1f;color:#fff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:12px;"><%=product.badge%></span><% } %>
+  <% if(products&&products.length){ %>
+  <div id="prodGrid" class="category-product-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px">
+    <% products.forEach(p=>{ %>
+    <%
+      const pvars = Array.isArray(p.variants) ? p.variants : [];
+      const pcols = Array.isArray(p.color_variants) ? p.color_variants.filter(c=>c && c.enabled !== false) : [];
+      const allCaps = pvars.map(v=>v.label).filter(Boolean);
+      const firstColorCaps = pcols.length && Array.isArray(pcols[0].available_caps) && pcols[0].available_caps.length ? pcols[0].available_caps : allCaps;
+      const firstColor = pcols.length ? pcols[0] : null;
+      const pid = (p.id||p.slug||'').replace(/[^a-z0-9]/gi,'');
+    %>
+    <div class="ms-card" data-price="<%=p.price||0%>" data-name="<%=(p.name||'').toLowerCase()%>" data-order="<%=p.sort_order||0%>" style="padding:32px; display:flex; flex-direction:column; min-height: 540px; background:#fff; border-radius:28px; box-shadow:0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.05), 0 16px 40px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); transition:transform 0.7s, box-shadow 0.7s;">
       
-      <h1 style="font-size:clamp(28px,3.8vw,44px);font-weight:700;letter-spacing:-.048em;margin-bottom:10px"><%=product.name%></h1>
-      <p style="font-size:17px;color:#86868b;line-height:1.5;margin-bottom:22px"><%=product.description%></p>
+      <a href="/producto/<%=p.slug%>" style="display:block; text-decoration:none; color:inherit;">
+        <div class="ms-card-img" style="--img-scale:<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>; height: 240px; display: flex; align-items: center; justify-content: center; background: #f5f5f7; border-radius: 20px; margin-bottom: 24px; flex-shrink: 0;">
+          <% if(p.badge){ %><span class="ms-card-badge" style="position: absolute; top: 12px; left: 12px; background: #1d1d1f; color: #fff; font-size: 11px; font-weight: 600; padding: 5px 13px; border-radius: 20px;"><%=p.badge%></span><% } %>
+          <div class="ms-card-glow"></div>
+          <% const srcMed = firstColor&&firstColor.image_url ? firstColor.image_url : (p.image_url||'');
+             const isVM = String(srcMed).match(/\.(mp4|webm|ogg|mov)$/i); %>
+          <% if(isVM) { %>
+            <video id="cardvid_<%=pid%>" src="<%=srcMed%>" autoplay loop muted playsinline style="max-height:180px;width:100%;object-fit:contain;"></video>
+          <% } else { %>
+            <img id="cardimg_<%=pid%>" src="<%=srcMed%>" alt="<%=p.name%>" loading="lazy" style="max-height:180px;object-fit:<%=firstColor&&firstColor.img_fit ? firstColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstColor&&firstColor.img_pos ? firstColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
+          <% } %>
+        </div>
+      </a>
 
-      <div style="font-size:32px;font-weight:700;letter-spacing:-.04em;margin-bottom:4px" id="mainPrice"><%=formatPrice(product.price)%></div>
-      <div id="mainOrigPrice" style="font-size:16px;color:#86868b;text-decoration:line-through;margin-bottom:18px;display:<%=product.original_price ? 'block' : 'none'%>">
-        <%=product.original_price ? formatPrice(product.original_price) : ''%>
-      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <a href="/producto/<%=p.slug%>" style="text-decoration:none; color:inherit;">
+          <h3 style="font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.2;margin:0;color:#1d1d1f;"><%=p.name%></h3>
+        </a>
 
-      <% const variants = product.variants || []; %>
-      <% if(variants.length){ %>
-      <div style="margin:24px 0">
-        <div style="font-size:12px;font-weight:700;color:#86868b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Capacidad</div>
-        <div style="display:flex;flex-wrap:wrap;gap:10px">
-          <% variants.forEach((v,i)=>{ %>
-            <% const vAvail = initialCaps.length===0 || initialCaps.includes(v.label); %>
-            <% const vFirst = variants.find(vv => initialCaps.length===0 || initialCaps.includes(vv.label)); %>
-            <% const vIsFirst = vFirst && v.label === vFirst.label; %>
-            <button onclick="selectVariant(this,'<%=v.label%>',<%=v.price||0%>, <%=v.original_price||'null'%>)"
-              class="variant-btn <%=vIsFirst?'variant-active':''%>" <%=!vAvail?'disabled':''%>
-              style="padding:12px 20px;border-radius:14px;border:<%=vIsFirst?'2px solid #1d1d1f':'1.5px solid #d2d2d7'%>;background:<%=vIsFirst?'#1d1d1f':'#fff'%>;color:<%=vIsFirst?'#fff':'#1d1d1f'%>;font-size:14px;font-weight:600;cursor:pointer;flex:1;min-width:100px;opacity:<%=vAvail?'1':'0.35'%>">
-              <span><%=v.label%></span>
-              <% if(v.price){ %><span style="font-size:11px;display:block;opacity:.7"><%=formatPrice(v.price)%></span><% } %>
-            </button>
+        <% if(pcols.length){ %>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px;">
+          <% pcols.slice(0,6).forEach((c,ci)=>{
+            const sw = c.swatch_url||c.image_url||'';
+            const img = c.image_url||p.image_url||'';
+            const caps = Array.isArray(c.available_caps)&&c.available_caps.length ? c.available_caps : allCaps;
+            if(!sw) return;
+          %>
+          <span
+            class="ms-card-swatch <%=ci===0?'active':''%>"
+            style="background-image:url('<%=sw%>'); width:20px; height:20px; border-radius:50%; background-size:cover; border:1px solid rgba(0,0,0,0.1); cursor:pointer; display:inline-block;"
+            title="<%=c.name||''%>"
+            onclick="(function(el,e){e.preventDefault();e.stopPropagation();swatchClick(el,'<%=pid%>','<%=img%>',<%=JSON.stringify(caps)%>,'<%=c.img_fit||p.img_fit||'contain'%>','<%=c.img_pos||p.img_pos||'center'%>','<%=c.img_scale||p.img_scale||1%>')})(this,event)"
+          ></span>
+          <% }) %>
+          <% if(pcols.length>6){ %><span class="ms-card-swatch-more" style="width:20px;height:20px;border-radius:50%;background:#e8e8ed;color:#515154;font-size:10px;display:inline-flex;align-items:center;justify-content:center;">+<%=pcols.length-6%></span><% } %>
+        </div>
+        <% } %>
+
+        <% if(allCaps.length){ %>
+        <div id="caps_<%=pid%>" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;">
+          <% allCaps.forEach(cap=>{ const active=firstColorCaps.includes(cap); %>
+          <span data-cap="<%=cap%>" style="font-size:10px;border:1px solid <%=active?'#d2d2d7':'#e8e8ed'%>;border-radius:5px;padding:2px 8px;color:<%=active?'#515154':'#c0c0c0'%>;font-weight:<%=active?'500':'400'%>;text-decoration:<%=active?'none':'line-through'%>"><%=cap%></span>
           <% }) %>
         </div>
-      </div>
-      <% } %>
-
-      <% if(product.stock>0){ %>
-      <div style="font-size:13px;color:#1a7f37;font-weight:600;margin:16px 0;display:flex;align-items:center;gap:6px">
-        <span style="width:8px;height:8px;border-radius:50%;background:#1a7f37;box-shadow:0 0 0 3px rgba(26,127,55,0.1)"></span>
-        En stock — <%=product.stock%> disponibles
-      </div>
-      <% } %>
-
-      <% if(product.price > 150 && product.enable_installments !== false){ %>
-      <div style="background:#f5f5f7;border-radius:18px;padding:20px;margin:24px 0">
-        <div style="font-size:12px;color:#86868b;font-weight:700;text-transform:uppercase;margin-bottom:14px">Financiamiento sin intereses</div>
-        <div class="product-installments-grid">
-          <div style="background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.02)">
-            <div style="font-size:11px;color:#86868b;margin-bottom:4px">6 meses</div>
-            <div style="font-size:22px;font-weight:700;letter-spacing:-.03em" id="cuota6">$<%=(product.price/6).toFixed(2)%></div>
-          </div>
-          <div style="background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.02)">
-            <div style="font-size:11px;color:#86868b;margin-bottom:4px">10 meses</div>
-            <div style="font-size:22px;font-weight:700;letter-spacing:-.03em" id="cuota10">$<%=(product.price/10).toFixed(2)%></div>
-          </div>
-        </div>
-      </div>
-      <% } %>
-
-      <div class="product-cta-row" style="display:flex;gap:12px;margin:32px 0">
-        <% if(settings.store_whatsapp){ %>
-        <a id="buyBtn" href="https://wa.me/<%=settings.store_whatsapp%>?text=Hola%2C%20quiero%20comprar%20<%=encodeURIComponent(product.name)%>%20(<%=encodeURIComponent(formatPrice(product.price))%>)"
-           target="_blank"
-           style="background:#0071e3;color:#fff;padding:16px 32px;border-radius:980px;font-size:17px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;text-decoration:none;flex:1;box-shadow:0 8px 20px rgba(0,113,227,0.15)"
-           onmouseover="this.style.background='#005bb5';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#0071e3';this.style.transform='translateY(0)'">
-          Comprar ahora
-        </a>
         <% } %>
-        <% if(settings.store_phone){ %>
-        <a href="tel:<%=settings.store_phone%>" style="background:#fff;color:#0071e3;border:1.5px solid #0071e3;padding:16px 24px;border-radius:980px;font-size:16px;display:inline-flex;align-items:center;gap:8px;transition:all .2s;text-decoration:none;font-weight:600">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.08 6.08l.97-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        </a>
-        <% } %>
-      </div>
 
-      <% const sk = Object.keys(product.specs||{}); %>
-      <% if(sk.length){ %>
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;text-transform:uppercase;color:#86868b;letter-spacing:0.05em">Especificaciones</div>
-      <div class="product-specs-grid">
-        <% sk.forEach(k=>{ %>
-        <div style="background:#f5f5f7;border-radius:14px;padding:14px 18px;">
-          <div style="font-size:10px;color:#86868b;text-transform:uppercase;margin-bottom:4px;font-weight:600"><%=k%></div>
-          <div style="font-size:14px;font-weight:600;color:#1d1d1f"><%=product.specs[k]%></div>
-        </div>
-        <% }) %>
+          <div style="margin-top:auto; padding-top:20px;">
+            <% if((p.price||0) > 150 && p.enable_installments !== false){ %>
+            <div style="font-size:12px;color:#86868b;margin-bottom:12px;">
+              10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong>
+              <br>
+              6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong>
+            </div>
+            <% } %>
+            
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:20px;font-weight:700;letter-spacing:-.03em;color:#1d1d1f;"><%=formatPrice(p.price)%></span>
+                <% if(p.original_price){ %><span style="font-size:14px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+              </div>
+              
+              <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+                 target="_blank" 
+                 style="display:block; width:100%; padding:14px; background:#0071e3; color:#fff; text-align:center; border-radius:12px; font-weight:600; font-size:15px; transition:transform 0.2s, background 0.2s; text-decoration:none;"
+                 onmouseover="this.style.background='#005bb5'; this.style.transform='scale(1.02)';"
+                 onmouseout="this.style.background='#0071e3'; this.style.transform='scale(1)';">
+                Comprar
+              </a>
+            </div>
+          </div>
       </div>
-      <% } %>
     </div>
+    <% }) %>
   </div>
+  <% } else { %>
+  <div style="text-align:center;padding:80px 0;color:#86868b">
+    <p style="font-size:17px">No hay productos en esta categoría.</p>
+    <a href="/productos" style="display:inline-flex;margin-top:20px;background:#0071e3;color:#fff;padding:12px 22px;border-radius:980px;font-size:15px;text-decoration:none;">Ver catálogo</a>
+  </div>
+  <% } %>
 </div>
-
 <script>
-function selectVariant(btn, label, price, variantOrigPrice){
-  // 1. Resetear botones
-  document.querySelectorAll('.variant-btn').forEach(b=>{
-    b.style.background='#fff';b.style.color='#1d1d1f';
-    b.style.border='1.5px solid #d2d2d7';
-    b.classList.remove('variant-active');
-  });
-  // 2. Activar botón clickeado
-  btn.style.background='#1d1d1f';btn.style.color='#fff';
-  btn.style.border='2px solid #1d1d1f';
-  btn.classList.add('variant-active');
+// ── DATOS DEL SERVIDOR ──────────────────────────
+const _catName    = '<%=category.name%>';
+const _storeName  = '<%=settings.store_name||"MacStore"%>';
+const _storePhone = '<%=settings.phone||""%>';
+const _storeWeb   = '<%=settings.website||""%>';
+const _logoUrl    = '/images/logo.png';
 
-  if(price){
-    const fmt = (n) => '$' + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-    
-    // 3. Actualizar Precio Principal
-    document.getElementById('mainPrice').textContent = fmt(price);
-    
-    // 4. Lógica de Precio Tachado (CORREGIDA)
-    const origEl = document.getElementById('mainOrigPrice');
-    if(origEl) {
-      if(variantOrigPrice && variantOrigPrice > price) {
-        origEl.textContent = fmt(variantOrigPrice);
-        origEl.style.display = 'block';
-      } else {
-        // Si no hay precio de oferta en esta variante, ocultamos el tachado
-        origEl.style.display = 'none';
-      }
+const _catProducts = <%- JSON.stringify(products.map(p => ({
+  name: p.name,
+  price: p.price,
+  sort_order: p.sort_order || 0,
+  color_variants: (p.color_variants||[]).filter(c=>c&&c.enabled!==false).map(c=>({
+    name: c.name||'',
+    swatch_url: c.swatch_url||c.image_url||'',
+    image_url: c.image_url||''
+  })),
+  image_url: (p.color_variants && p.color_variants[0] && p.color_variants[0].image_url)
+    ? p.color_variants[0].image_url
+    : (p.image_url || '')
+}))) %>;
+
+
+// ── FLYER WHATSAPP ───────────────────────────────
+async function shareCategory() {
+  const btn = document.getElementById('shareCatBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Generando flyer...';
+
+  try {
+    const cols   = _catProducts.length === 1 ? 1 : _catProducts.length === 2 ? 2 : 3;
+    const rows   = Math.ceil(_catProducts.length / cols);
+    const CARD_W = cols === 1 ? 860 : cols === 2 ? 460 : 310;
+    const CARD_H = 360;
+    const PAD    = 32;
+    const GAP    = 20;
+    const W      = PAD * 2 + cols * CARD_W + (cols - 1) * GAP;
+    const H      = 180 + rows * (CARD_H + GAP) + 100;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Fondo
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#1a1a1e');
+    bg.addColorStop(1, '#111114');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Logo / nombre tienda
+    let logoH = 52;
+    try {
+      const logoImg = await loadImg(_logoUrl);
+      const logoW   = (logoImg.width / logoImg.height) * logoH;
+      ctx.drawImage(logoImg, (W - logoW) / 2, 28, logoW, logoH);
+    } catch {
+      ctx.fillStyle = '#fff';
+      ctx.font      = `700 ${cols===1?32:28}px -apple-system,Arial,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(_storeName, W / 2, 64);
+      logoH = 52;
     }
 
-    // 5. Actualizar Cuotas
-    const c6 = document.getElementById('cuota6');
-    const c10 = document.getElementById('cuota10');
-    if(c6) c6.textContent = '$'+(price/6).toFixed(2);
-    if(c10) c10.textContent = '$'+(price/10).toFixed(2);
+    // Nombre de categoría
+    ctx.fillStyle = '#f5f5f7';
+    ctx.font      = `700 ${cols===1?44:36}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText(_catName, W / 2, logoH + 72);
 
-    window._selectedPrice = price;
-    window._selectedVariant = label;
+    // Línea
+    ctx.strokeStyle = '#2a2a2e';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD, logoH + 90);
+    ctx.lineTo(W - PAD, logoH + 90);
+    ctx.stroke();
+
+    const startY = logoH + 108;
+
+    // Cards de productos
+    for (let i = 0; i < _catProducts.length; i++) {
+      const p   = _catProducts[i];
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x   = PAD + col * (CARD_W + GAP);
+      const y   = startY + row * (CARD_H + GAP);
+
+      // Card bg
+      ctx.fillStyle = '#242428';
+      roundRect(ctx, x, y, CARD_W, CARD_H, 18);
+      ctx.fill();
+
+      // Imagen del producto
+      const imgH = CARD_H - 110;
+      try {
+        const img  = await loadImg(p.image_url);
+        const asp  = img.width / img.height;
+        let dw = CARD_W - 40, dh = imgH - 16;
+        if (asp > dw / dh) dh = dw / asp; else dw = dh * asp;
+        ctx.drawImage(img, x + (CARD_W - dw) / 2, y + 16, dw, dh);
+      } catch { /* sin imagen */ }
+
+      // Burbujas de colores
+      const swatches = p.color_variants || [];
+      if (swatches.length) {
+        const SR   = 11; // radio swatch
+        const SW   = swatches.length * (SR * 2 + 6) - 6;
+        let sx     = x + (CARD_W - SW) / 2;
+        const sy   = y + CARD_H - 78;
+
+        for (const sw of swatches.slice(0, 6)) {
+          const swSrc = sw.swatch_url || sw.image_url || '';
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(sx + SR, sy + SR, SR, 0, Math.PI * 2);
+          ctx.clip();
+          if (swSrc) {
+            try {
+              const swImg = await loadImg(swSrc);
+              ctx.drawImage(swImg, sx, sy, SR * 2, SR * 2);
+            } catch {
+              ctx.fillStyle = '#555'; ctx.fill();
+            }
+          } else {
+            ctx.fillStyle = '#555'; ctx.fill();
+          }
+          ctx.restore();
+          // Borde sutil
+          ctx.strokeStyle = 'rgba(255,255,255,.15)';
+          ctx.lineWidth   = 1;
+          ctx.beginPath();
+          ctx.arc(sx + SR, sy + SR, SR, 0, Math.PI * 2);
+          ctx.stroke();
+          sx += SR * 2 + 6;
+        }
+        if(swatches.length > 6) {
+          ctx.fillStyle = '#86868b';
+          ctx.font      = '11px Arial';
+          ctx.textAlign = 'left';
+          ctx.fillText(`+${swatches.length-6}`, sx, sy + SR + 4);
+        }
+      }
+
+      // Nombre
+      const fontSize = cols === 1 ? 20 : cols === 2 ? 17 : 14;
+      ctx.fillStyle  = '#f5f5f7';
+      ctx.font       = `600 ${fontSize}px Arial`;
+      ctx.textAlign  = 'center';
+      wrapText(ctx, p.name, x + CARD_W / 2, y + CARD_H - (swatches.length ? 52 : 44), CARD_W - 32, fontSize + 4, 2);
+
+      // Precio
+      ctx.fillStyle = '#0a84ff';
+      ctx.font      = `700 ${cols===1?22:18}px Arial`;
+      ctx.fillText(p.price ? '$' + Number(p.price).toLocaleString('en-US') : '', x + CARD_W / 2, y + CARD_H - 18);
+    }
+
+    // Footer
+    const footY = startY + rows * (CARD_H + GAP) + 10;
+    ctx.strokeStyle = '#2a2a2e'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, footY); ctx.lineTo(W - PAD, footY); ctx.stroke();
+    ctx.fillStyle  = '#515154';
+    ctx.font       = '16px Arial';
+    ctx.textAlign  = 'center';
+    let footLine   = _storeName;
+    if (_storePhone) footLine += '  ·  ' + _storePhone;
+    if (_storeWeb)   footLine += '  ·  ' + _storeWeb;
+    ctx.fillText(footLine, W / 2, footY + 36);
+
+    // Descargar
+    const link    = document.createElement('a');
+    link.download = 'catalogo-' + _catName.toLowerCase().replace(/\s+/g, '-') + '.png';
+    link.href     = canvas.toDataURL('image/png');
+    link.click();
+
+  } catch(e) {
+    alert('Error generando el flyer: ' + e.message);
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Compartir catálogo';
   }
 }
 
-const PRODUCT_DATA = <%- JSON.stringify({
-  name: product.name,
-  price: product.price,
-  original_price: product.original_price||null
-}) %>;
-
-function changeColor(src, name, fit, pos, scale) {
-  const im = document.getElementById('mainImg');
-  const vi = document.getElementById('mainVid');
-  const glow = document.getElementById('productGlow');
-  const isV = src.match(/\.(mp4|webm|ogg|mov)$/i);
-  const targetScale = scale || 1;
-
-  if(im) { im.style.opacity = '0'; im.style.transform = 'scale(' + (targetScale*0.9) + ')'; }
-  if(vi) { vi.style.opacity = '0'; vi.style.transform = 'scale(' + (targetScale*0.9) + ')'; }
-
-  setTimeout(() => {
-    if(isV) {
-      im.style.display='none'; vi.style.display='block'; vi.src=src;
-      vi.onloadeddata = () => { vi.style.opacity='1'; vi.style.transform='scale('+targetScale+')'; };
-    } else {
-      vi.style.display='none'; im.style.display='block'; im.src=src;
-      im.style.objectFit=fit||'contain'; im.style.objectPosition=pos||'center';
-      im.onload = () => { im.style.opacity='1'; im.style.transform='scale('+targetScale+')'; };
-    }
-  }, 200);
+function loadImg(src) {
+  return new Promise((resolve, reject) => {
+    const img    = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => resolve(img);
+    img.onerror = () => reject(new Error('No cargó: ' + src));
+    img.src     = src;
+    setTimeout(() => reject(new Error('Timeout')), 8000);
+  });
 }
 
-function selectColor(btn, imageUrl, colorName, imgFit, imgPos, imgScale, availCaps, galleryArr=[]) {
-  document.querySelectorAll('.color-swatch').forEach(s => {
-    s.style.boxShadow = '0 0 0 1px rgba(0,0,0,.08)';
-    s.style.transform = 'scale(1)';
-  });
-  btn.style.boxShadow = '0 0 0 3px rgba(0,113,227,.22)';
-  btn.style.transform = 'scale(1.08)';
-  if(document.getElementById('colorLabel')) document.getElementById('colorLabel').textContent = colorName||'';
-  
-  // Filtrar almacenamiento según disponibilidad del color
-  const caps = Array.isArray(availCaps) ? availCaps : [];
-  document.querySelectorAll('.variant-btn').forEach(vb => {
-    const label = vb.querySelector('span').textContent.trim();
-    const ok = caps.length===0 || caps.includes(label);
-    vb.style.opacity = ok ? '1' : '0.35';
-    vb.disabled = !ok;
-  });
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
 
-  if(imageUrl) changeColor(imageUrl, colorName, imgFit, imgPos, imgScale);
+function wrapText(ctx, text, x, y, maxW, lineH, maxLines) {
+  const words = text.split(' ');
+  let line = '', lines = 0;
+  for (const w of words) {
+    const test = line + (line ? ' ' : '') + w;
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, y + lines * lineH);
+      line = w; lines++;
+      if (lines >= maxLines - 1) { line += '…'; break; }
+    } else { line = test; }
+  }
+  ctx.fillText(line, x, y + lines * lineH);
 }
 </script>
-
 <%- include('partials/footer') %>
