@@ -96,7 +96,7 @@
       const firstColor = pcols.length ? pcols[0] : null;
       const pid = (p.id||p.slug||'').replace(/[^a-z0-9]/gi,'');
     %>
-    <a href="/producto/<%=p.slug%>" class="ms-card" data-price="<%=p.price||0%>" data-name="<%=(p.name||'').toLowerCase()%>" data-order="<%=p.sort_order||0%>" style="text-decoration:none;color:inherit">
+    <a href="/producto/<%=p.slug%>" class="ms-card" data-price="<%=p.price||0%>" data-name="<%=(p.name||'').toLowerCase()%>" data-order="<%=p.sort_order||0%>" style="text-decoration:none;color:inherit;padding:44px 40px 52px">
       <div class="ms-card-img" style="--img-scale:<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>">
         <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
         <div class="ms-card-glow"></div>
@@ -146,18 +146,20 @@
               6 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong>
             </div>
             <% } %>
-            <div style="display:flex;align-items:baseline;gap:8px">
-              <span style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
-              <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
-            </div>
-            <div style="margin-top:10px">
-              <a href="/producto/<%=p.slug%>" class="ms-card-link">Más información</a>
-              <span class="ms-card-link-sep"></span>
-              <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
-                 target="_blank" 
-                 class="ms-card-link">
-                Comprar
-              </a>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
+                <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <a href="/producto/<%=p.slug%>" class="ms-card-link" style="font-size:14px">Más información</a>
+                <span class="ms-card-link-sep" style="height:16px"></span>
+                <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+                   target="_blank" 
+                   class="ms-card-link" style="font-size:14px">
+                  Comprar
+                </a>
+              </div>
             </div>
           </div>
       </div>

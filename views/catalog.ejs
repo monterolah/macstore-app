@@ -44,7 +44,7 @@
     </div>
     <div class="catalog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
       <% (products||[]).forEach(p=>{ %>
-      <a href="/producto/<%=p.slug%>" class="ms-card" style="text-decoration:none;color:inherit">
+      <a href="/producto/<%=p.slug%>" class="ms-card" style="text-decoration:none;color:inherit;padding:44px 40px 52px">
         <% const firstCatalogColor = (p.color_variants&&p.color_variants.length)?p.color_variants[0]:null; %>
         <div class="ms-card-img" style="--img-scale:<%=firstCatalogColor&&firstCatalogColor.img_scale ? firstCatalogColor.img_scale : (p.img_scale||1)%>">
           <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
@@ -78,18 +78,20 @@
             <div style="font-size:13px;color:#86868b;margin-bottom:3px">10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong></div>
             <div style="font-size:13px;color:#86868b">6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong></div>
           </div><% } %>
-           <div style="display:flex;align-items:baseline;gap:8px">
-             <span style="font-size:17px;font-weight:700"><%=formatPrice(p.price)%></span>
-             <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
-           </div>
-           <div style="margin-top:12px">
-             <a href="/producto/<%=p.slug%>" class="ms-card-link">Más información</a>
-             <span class="ms-card-link-sep"></span>
-             <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
-                target="_blank" 
-                class="ms-card-link">
-               Comprar
-             </a>
+           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px">
+             <div style="display:flex;flex-direction:column;gap:2px">
+               <span style="font-size:17px;font-weight:700"><%=formatPrice(p.price)%></span>
+               <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+             </div>
+             <div style="display:flex;align-items:center;gap:12px">
+               <a href="/producto/<%=p.slug%>" class="ms-card-link" style="font-size:14px">Más información</a>
+               <span class="ms-card-link-sep" style="height:16px"></span>
+               <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+                  target="_blank" 
+                  class="ms-card-link" style="font-size:14px">
+                 Comprar
+               </a>
+             </div>
            </div>
         </div>
       </a>

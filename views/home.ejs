@@ -118,7 +118,7 @@ const slugOrder = (categories||[]).map(c => c.slug);
     </div>
     <div class="ms-catalog-grid">
       <% (featured||[]).forEach((p,i)=>{ %>
-      <a href="/producto/<%=p.slug%>" class="ms-card" data-reveal data-delay="<%=i*80%>" data-ms-kind="product" data-ms-id="<%=p.id%>" data-ms-page="home">
+      <a href="/producto/<%=p.slug%>" class="ms-card" data-reveal data-delay="<%=i*80%>" data-ms-kind="product" data-ms-id="<%=p.id%>" data-ms-page="home" style="padding:44px 40px 52px">
         <% const cardColors = Array.isArray(p.color_variants) ? p.color_variants.filter(c=>c && c.enabled !== false) : []; %>
         <% const firstCardColor = cardColors.length ? cardColors[0] : null; %>
         <div class="ms-card-img">
@@ -168,18 +168,20 @@ const slugOrder = (categories||[]).map(c => c.slug);
             <div style="font-size:12px;color:#86868b">6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong></div>
           </div>
           <% } %>
-          <div class="ms-card-foot">
-            <span class="ms-card-price" data-ms-field="product.price"><%=formatPrice(p.price)%></span>
-            <% if(p.original_price){ %><span class="ms-card-orig"><%=formatPrice(p.original_price)%></span><% } %>
-          </div>
-          <div style="margin-top:12px">
-            <a href="/producto/<%=p.slug%>" class="ms-card-link">Más información</a>
-            <span class="ms-card-link-sep"></span>
-            <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
-               target="_blank" 
-               class="ms-card-link">
-              Comprar
-            </a>
+          <div class="ms-card-foot" style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span class="ms-card-price" data-ms-field="product.price" style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
+              <% if(p.original_price){ %><span class="ms-card-orig" style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <a href="/producto/<%=p.slug%>" class="ms-card-link" style="font-size:14px">Más información</a>
+              <span class="ms-card-link-sep" style="height:16px"></span>
+              <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+                 target="_blank" 
+                 class="ms-card-link" style="font-size:14px">
+                Comprar
+              </a>
+            </div>
           </div>
         </div>
       </a>
