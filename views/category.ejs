@@ -72,7 +72,6 @@
   </div>
   <% if(category.description){ %><p style="font-size:16px;color:#86868b;margin-bottom:20px"><%=category.description%></p><% } %>
 
-  <!-- Ordenamiento -->
   <div class="category-sort-row" style="display:flex;align-items:center;gap:10px;margin-bottom:28px;flex-wrap:wrap">
     <span style="font-size:13px;color:#86868b">Ordenar por:</span>
     <button onclick="sortProducts('default')" class="sort-btn active" id="sort-default">Destacados</button>
@@ -96,23 +95,29 @@
       const firstColor = pcols.length ? pcols[0] : null;
       const pid = (p.id||p.slug||'').replace(/[^a-z0-9]/gi,'');
     %>
-    <a href="/producto/<%=p.slug%>" class="ms-card" data-price="<%=p.price||0%>" data-name="<%=(p.name||'').toLowerCase()%>" data-order="<%=p.sort_order||0%>" style="text-decoration:none;color:inherit;padding:44px 40px 52px">
-      <div class="ms-card-img" style="--img-scale:<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>">
-        <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
-        <div class="ms-card-glow"></div>
-        <% const srcMed = firstColor&&firstColor.image_url ? firstColor.image_url : (p.image_url||'');
-           const isVM = String(srcMed).match(/\.(mp4|webm|ogg|mov)$/i); %>
-        <% if(isVM) { %>
-          <video id="cardvid_<%=pid%>" src="<%=srcMed%>" autoplay loop muted playsinline style="max-height:220px;width:100%;object-fit:contain;"></video>
-        <% } else { %>
-          <img id="cardimg_<%=pid%>" src="<%=srcMed%>" alt="<%=p.name%>" loading="lazy" style="object-fit:<%=firstColor&&firstColor.img_fit ? firstColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstColor&&firstColor.img_pos ? firstColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
-        <% } %>
-      </div>
-      <div style="padding:12px 14px 16px;flex:1;display:flex;flex-direction:column;gap:8px">
-        <h3 style="font-size:15px;font-weight:600;letter-spacing:-.02em;line-height:1.2;margin:0"><%=p.name%></h3>
+    <div class="ms-card" data-price="<%=p.price||0%>" data-name="<%=(p.name||'').toLowerCase()%>" data-order="<%=p.sort_order||0%>" style="padding:32px; display:flex; flex-direction:column; min-height: 540px; background:#fff; border-radius:28px; box-shadow:0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.05), 0 16px 40px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); transition:transform 0.7s, box-shadow 0.7s;">
+      
+      <a href="/producto/<%=p.slug%>" style="display:block; text-decoration:none; color:inherit;">
+        <div class="ms-card-img" style="--img-scale:<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>; height: 240px; display: flex; align-items: center; justify-content: center; background: #f5f5f7; border-radius: 20px; margin-bottom: 24px; flex-shrink: 0;">
+          <% if(p.badge){ %><span class="ms-card-badge" style="position: absolute; top: 12px; left: 12px; background: #1d1d1f; color: #fff; font-size: 11px; font-weight: 600; padding: 5px 13px; border-radius: 20px;"><%=p.badge%></span><% } %>
+          <div class="ms-card-glow"></div>
+          <% const srcMed = firstColor&&firstColor.image_url ? firstColor.image_url : (p.image_url||'');
+             const isVM = String(srcMed).match(/\.(mp4|webm|ogg|mov)$/i); %>
+          <% if(isVM) { %>
+            <video id="cardvid_<%=pid%>" src="<%=srcMed%>" autoplay loop muted playsinline style="max-height:180px;width:100%;object-fit:contain;"></video>
+          <% } else { %>
+            <img id="cardimg_<%=pid%>" src="<%=srcMed%>" alt="<%=p.name%>" loading="lazy" style="max-height:180px;object-fit:<%=firstColor&&firstColor.img_fit ? firstColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstColor&&firstColor.img_pos ? firstColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
+          <% } %>
+        </div>
+      </a>
+
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <a href="/producto/<%=p.slug%>" style="text-decoration:none; color:inherit;">
+          <h3 style="font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.2;margin:0;color:#1d1d1f;"><%=p.name%></h3>
+        </a>
 
         <% if(pcols.length){ %>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px;">
           <% pcols.slice(0,6).forEach((c,ci)=>{
             const sw = c.swatch_url||c.image_url||'';
             const img = c.image_url||p.image_url||'';
@@ -121,56 +126,55 @@
           %>
           <span
             class="ms-card-swatch <%=ci===0?'active':''%>"
-            style="background-image:url('<%=sw%>')"
+            style="background-image:url('<%=sw%>'); width:20px; height:20px; border-radius:50%; background-size:cover; border:1px solid rgba(0,0,0,0.1); cursor:pointer; display:inline-block;"
             title="<%=c.name||''%>"
             onclick="(function(el,e){e.preventDefault();e.stopPropagation();swatchClick(el,'<%=pid%>','<%=img%>',<%=JSON.stringify(caps)%>,'<%=c.img_fit||p.img_fit||'contain'%>','<%=c.img_pos||p.img_pos||'center'%>','<%=c.img_scale||p.img_scale||1%>')})(this,event)"
           ></span>
           <% }) %>
-          <% if(pcols.length>6){ %><span class="ms-card-swatch-more">+<%=pcols.length-6%></span><% } %>
+          <% if(pcols.length>6){ %><span class="ms-card-swatch-more" style="width:20px;height:20px;border-radius:50%;background:#e8e8ed;color:#515154;font-size:10px;display:inline-flex;align-items:center;justify-content:center;">+<%=pcols.length-6%></span><% } %>
         </div>
         <% } %>
 
         <% if(allCaps.length){ %>
-        <div id="caps_<%=pid%>" style="display:flex;flex-wrap:wrap;gap:5px">
+        <div id="caps_<%=pid%>" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;">
           <% allCaps.forEach(cap=>{ const active=firstColorCaps.includes(cap); %>
-          <span data-cap="<%=cap%>" style="font-size:11px;border:1px solid <%=active?'#d2d2d7':'#e8e8ed'%>;border-radius:6px;padding:2px 8px;color:<%=active?'#515154':'#c0c0c0'%>;font-weight:<%=active?'500':'400'%>;text-decoration:<%=active?'none':'line-through'%>"><%=cap%></span>
+          <span data-cap="<%=cap%>" style="font-size:10px;border:1px solid <%=active?'#d2d2d7':'#e8e8ed'%>;border-radius:5px;padding:2px 8px;color:<%=active?'#515154':'#c0c0c0'%>;font-weight:<%=active?'500':'400'%>;text-decoration:<%=active?'none':'line-through'%>"><%=cap%></span>
           <% }) %>
         </div>
         <% } %>
 
-          <div style="margin-top:auto">
+          <div style="margin-top:auto; padding-top:20px;">
             <% if((p.price||0) > 150 && p.enable_installments !== false){ %>
-            <div style="font-size:11px;color:#86868b;margin-bottom:4px">
-              10 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong>
-              &nbsp;·&nbsp;
-              6 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong>
+            <div style="font-size:12px;color:#86868b;margin-bottom:12px;">
+              10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong>
+              <br>
+              6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong>
             </div>
             <% } %>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px">
-              <div style="display:flex;flex-direction:column;gap:2px">
-                <span style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
-                <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+            
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:20px;font-weight:700;letter-spacing:-.03em;color:#1d1d1f;"><%=formatPrice(p.price)%></span>
+                <% if(p.original_price){ %><span style="font-size:14px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
               </div>
-              <div style="display:flex;align-items:center;gap:12px">
-                <a href="/producto/<%=p.slug%>" class="ms-card-link" style="font-size:14px">Más información</a>
-                <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
-                   target="_blank" 
-                   style="background:#0071e3;color:#fff;padding:8px 16px;border-radius:980px;font-size:14px;font-weight:600;text-decoration:none;transition:background .2s;white-space:nowrap"
-                   onmouseover="this.style.background='#005bb5'" 
-                   onmouseout="this.style.background='#0071e3'">
-                  Comprar
-                </a>
-              </div>
+              
+              <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+                 target="_blank" 
+                 style="display:block; width:100%; padding:14px; background:#00d084; color:#fff; text-align:center; border-radius:12px; font-weight:600; font-size:15px; transition:transform 0.2s, background 0.2s; text-decoration:none;"
+                 onmouseover="this.style.background='#00b975'; this.style.transform='scale(1.02)';"
+                 onmouseout="this.style.background='#00d084'; this.style.transform='scale(1)';">
+                Comprar
+              </a>
             </div>
           </div>
       </div>
-    </a>
+    </div>
     <% }) %>
   </div>
   <% } else { %>
   <div style="text-align:center;padding:80px 0;color:#86868b">
     <p style="font-size:17px">No hay productos en esta categoría.</p>
-    <a href="/productos" style="display:inline-flex;margin-top:20px;background:#0071e3;color:#fff;padding:12px 22px;border-radius:980px;font-size:15px">Ver catálogo</a>
+    <a href="/productos" style="display:inline-flex;margin-top:20px;background:#0071e3;color:#fff;padding:12px 22px;border-radius:980px;font-size:15px;text-decoration:none;">Ver catálogo</a>
   </div>
   <% } %>
 </div>
