@@ -128,7 +128,7 @@ router.get('/categoria/:slug', async (req, res) => {
     const category = categories.find(c => c.slug === slug);
     if (!category) return res.status(404).render('404', { title: 'No encontrado', description: '', settings, categories, announcements });
 
-    const products = productsSnap.docs.map(docToObj).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    const products = productsSnap.docs.map(docToObj).sort((a, b) => (b.sort_order || 0) - (a.sort_order || 0));
     res.render('category', { req, title: category.name, description: category.description || '', settings, categories, category, products, announcements, formatPrice: fmt });
   } catch (e) { console.error(e); res.status(500).send('Error interno del servidor'); }
 });

@@ -42,12 +42,6 @@
       <h2 style="font-size:clamp(28px,4vw,48px);font-weight:700;letter-spacing:-.045em;margin-bottom:8px">Catálogo completo</h2>
       <p style="font-size:17px;color:#86868b">Todo el ecosistema Apple</p>
     </div>
-    <div class="catalog-filter-row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:36px">
-      <a href="/productos" style="background:#1d1d1f;color:#fff;padding:9px 20px;border-radius:980px;font-size:14px;font-weight:500">Todo</a>
-      <% (categories||[]).forEach(c=>{ %>
-        <a href="/categoria/<%=c.slug%>" style="background:transparent;color:#0071e3;border:1px solid #0071e3;padding:8px 18px;border-radius:980px;font-size:14px;transition:all .2s" onmouseover="this.style.background='#0071e3';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#0071e3'"><%=c.name%></a>
-      <% }) %>
-    </div>
     <div class="catalog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
       <% (products||[]).forEach(p=>{ %>
       <a href="/producto/<%=p.slug%>" class="ms-card" style="text-decoration:none;color:inherit">
