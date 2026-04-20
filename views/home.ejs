@@ -113,13 +113,12 @@ const slugOrder = (categories||[]).map(c => c.slug);
 </section>
 <% }) %>
 
-<!-- ══ GRID DE CATEGORÍAS ══ -->
+<!-- ══ EXPLORAR POR CATEGORÍA ══ -->
 <% if((categories||[]).length){ %>
 <section class="ms-cat-grid-section" data-reveal>
   <div class="ms-inner">
     <div class="ms-section-head" data-reveal>
       <h2>Explorar por categoría</h2>
-      <p>Encuentra el producto Apple que buscas</p>
     </div>
     <div class="ms-cat-grid">
       <% (categories||[]).forEach((cat,i)=>{ %>
@@ -130,8 +129,6 @@ const slugOrder = (categories||[]).map(c => c.slug);
         <% } %>
         <div class="ms-cat-card-body">
           <h3 class="ms-cat-card-name"><%=cat.name%></h3>
-          <% if(cat.description){ %><p class="ms-cat-card-desc"><%=cat.description%></p><% } %>
-          <span class="ms-cat-card-cta">Ver modelos →</span>
         </div>
       </a>
       <% }) %>
