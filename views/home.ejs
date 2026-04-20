@@ -168,14 +168,14 @@ const slugOrder = (categories||[]).map(c => c.slug);
             <div style="font-size:12px;color:#86868b">6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong></div>
           </div>
           <% } %>
-          <div class="ms-card-foot">
-            <span class="ms-card-price" data-ms-field="product.price"><%=formatPrice(p.price)%></span>
-            <% if(p.original_price){ %><span class="ms-card-orig"><%=formatPrice(p.original_price)%></span><% } %>
-          </div>
-          <div style="margin-top:12px">
+          <div class="ms-card-foot" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span class="ms-card-price" data-ms-field="product.price" style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
+              <% if(p.original_price){ %><span class="ms-card-orig" style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+            </div>
             <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
                target="_blank" 
-               style="display:inline-block;background:#0071e3;color:#fff;padding:8px 16px;border-radius:980px;font-size:14px;font-weight:600;text-decoration:none;transition:background .2s"
+               style="background:#0071e3;color:#fff;padding:8px 16px;border-radius:980px;font-size:14px;font-weight:600;text-decoration:none;transition:background .2s;white-space:nowrap"
                onmouseover="this.style.background='#005bb5'" 
                onmouseout="this.style.background='#0071e3'">
               Comprar
