@@ -558,7 +558,7 @@ button { font-family: var(--font); cursor: pointer; }
   gap: 28px;
 }
 
-/* Card — sombras en 3 capas */
+/* Card */
 .ms-card {
   background: #fff;
   border-radius: 28px;
@@ -632,6 +632,7 @@ button { font-family: var(--font); cursor: pointer; }
 }
 
 .ms-card-body { flex: 1; display: flex; flex-direction: column; padding: 0; }
+
 .ms-card-cat {
   font-size: 12px;
   color: var(--g4);
@@ -653,22 +654,17 @@ button { font-family: var(--font); cursor: pointer; }
   color: var(--g5);
   line-height: 1.56;
   flex: 1;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   letter-spacing: -0.01em;
 }
 
-.ms-card-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid var(--g2);
+/* Precio dentro del body, antes del footer */
+.ms-card-price-wrap {
+  margin-bottom: 24px;
 }
 .ms-card-price {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
   letter-spacing: -0.025em;
   color: var(--black);
 }
@@ -677,30 +673,57 @@ button { font-family: var(--font); cursor: pointer; }
   color: var(--g4);
   text-decoration: line-through;
   font-weight: 400;
-  margin-top: 1px;
+  margin-left: 7px;
 }
 
-.ms-card-buy {
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  border-radius: 980px;
-  padding: 9px 20px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s var(--ease);
-  font-family: var(--font);
-  white-space: nowrap;
+/* Footer con links textuales estilo Apple */
+.ms-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--g2);
+  flex-wrap: wrap;
+}
+
+/* Links textuales — exactamente como apple.com */
+.ms-card-link {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--blue);
+  letter-spacing: -0.01em;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  letter-spacing: -0.01em;
+  gap: 1px;
+  transition: opacity 0.2s var(--ease);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font);
+  padding: 0;
+  line-height: 1.4;
+  white-space: nowrap;
 }
-.ms-card-buy:hover {
-  background: var(--blue-h);
-  transform: scale(1.04);
-  box-shadow: 0 6px 20px rgba(0,113,227,0.25);
+.ms-card-link::after {
+  content: ' ›';
+  font-size: 19px;
+  line-height: 1;
+  display: inline-block;
+  margin-left: 1px;
+  transition: transform 0.25s var(--ease);
+}
+.ms-card-link:hover { opacity: 0.65; }
+.ms-card-link:hover::after { transform: translateX(3px); }
+
+/* Separador entre los dos links */
+.ms-card-link-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--g3);
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .ms-card-swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
@@ -1114,7 +1137,9 @@ footer {
   .ms-card { padding: 22px; border-radius: 22px; }
   .ms-card-img { height: 180px; margin-bottom: 22px; }
   .ms-card-name { font-size: 18px; }
-  .ms-card-price { font-size: 16px; }
+  .ms-card-price { font-size: 15px; }
+  .ms-card-link { font-size: 14px; }
+  .ms-card-link::after { font-size: 17px; }
   .ms-section-head { margin-bottom: 52px; }
   .ms-section-head h2 { font-size: clamp(32px, 6vw, 42px); }
   .ms-showcase { padding: 88px 24px; }
