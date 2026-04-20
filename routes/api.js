@@ -777,8 +777,9 @@ router.post('/inventory-entries/:id/cancel', requireAdminAPI, async (req, res) =
 // ── CATEGORIES ────────────────────────────────────────────────────────────────
 router.get('/categories', async (req, res) => {
   try {
-    const snap = await getFirestore().collection('categories').where('active','==',true).orderBy('sort_order','asc').get();
-    res.json(snap.docs.map(docToObj));
+    const snap = await getFirestore().collection('categories').orderBy('sort_order','asc').get();
+    const categories = snap.docs.map(docToObj).filter(c => c.active !== false);
+    res.json(categories);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

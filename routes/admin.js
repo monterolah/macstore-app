@@ -28,10 +28,9 @@ async function getCategories() {
   try {
     const snap = await getFirestore()
       .collection('categories')
-      .where('active','==',true)
       .orderBy('sort_order','asc')
       .get();
-    return snap.docs.map(docToObj);
+    return snap.docs.map(docToObj).filter(c => c.active !== false);
   } catch(e) { return []; }
 }
 
