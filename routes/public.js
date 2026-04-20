@@ -92,6 +92,8 @@ router.get('/', async (req, res) => {
       setCache('homeProducts', allProducts);
     }
     const featured    = allProducts.filter(p => p.featured);
+    // Productos no destacados para el catálogo general
+    const nonFeatured = allProducts.filter(p => !p.featured);
 
     // Solo mostrar categorías que tienen productos (o forzadas)
     const activeCatSlugs = new Set(allProducts.map(p => p.category));
@@ -101,7 +103,7 @@ router.get('/', async (req, res) => {
       req, announcements,
       title: settings.store_name || 'MacStore',
       description: settings.store_tagline || '',
-      settings, categories: visibleCats, banners, featured, formatPrice: fmt
+      settings, categories: visibleCats, banners, featured, products: nonFeatured, formatPrice: fmt
     });
   } catch (e) { console.error(e); res.status(500).send('Error interno del servidor'); }
 });
