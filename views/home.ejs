@@ -172,6 +172,15 @@ const slugOrder = (categories||[]).map(c => c.slug);
             <span class="ms-card-price" data-ms-field="product.price"><%=formatPrice(p.price)%></span>
             <% if(p.original_price){ %><span class="ms-card-orig"><%=formatPrice(p.original_price)%></span><% } %>
           </div>
+          <div style="margin-top:12px">
+            <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+               target="_blank" 
+               style="display:inline-block;background:#25d366;color:#fff;padding:8px 16px;border-radius:980px;font-size:14px;font-weight:600;text-decoration:none;transition:background .2s"
+               onmouseover="this.style.background='#128c7e'" 
+               onmouseout="this.style.background='#25d366'">
+              Comprar
+            </a>
+          </div>
         </div>
       </a>
       <% }) %>

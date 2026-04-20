@@ -138,19 +138,28 @@
         </div>
         <% } %>
 
-        <div style="margin-top:auto">
-          <% if((p.price||0) > 150 && p.enable_installments !== false){ %>
-          <div style="font-size:11px;color:#86868b;margin-bottom:4px">
-            10 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong>
-            &nbsp;·&nbsp;
-            6 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong>
+          <div style="margin-top:auto">
+            <% if((p.price||0) > 150 && p.enable_installments !== false){ %>
+            <div style="font-size:11px;color:#86868b;margin-bottom:4px">
+              10 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong>
+              &nbsp;·&nbsp;
+              6 cuotas: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong>
+            </div>
+            <% } %>
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
+              <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+            </div>
+            <div style="margin-top:10px">
+              <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+                 target="_blank" 
+                 style="display:inline-block;background:#25d366;color:#fff;padding:8px 16px;border-radius:980px;font-size:14px;font-weight:600;text-decoration:none;transition:background .2s"
+                 onmouseover="this.style.background='#128c7e'" 
+                 onmouseout="this.style.background='#25d366'">
+                Comprar
+              </a>
+            </div>
           </div>
-          <% } %>
-          <div style="display:flex;align-items:baseline;gap:8px">
-            <span style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
-            <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
-          </div>
-        </div>
       </div>
     </a>
     <% }) %>

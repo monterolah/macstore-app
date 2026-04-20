@@ -78,10 +78,19 @@
             <div style="font-size:13px;color:#86868b;margin-bottom:3px">10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong></div>
             <div style="font-size:13px;color:#86868b">6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong></div>
           </div><% } %>
-          <div style="display:flex;align-items:baseline;gap:8px">
-            <span style="font-size:17px;font-weight:700"><%=formatPrice(p.price)%></span>
-            <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
-          </div>
+           <div style="display:flex;align-items:baseline;gap:8px">
+             <span style="font-size:17px;font-weight:700"><%=formatPrice(p.price)%></span>
+             <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+           </div>
+           <div style="margin-top:12px">
+             <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+                target="_blank" 
+                style="display:inline-block;background:#25d366;color:#fff;padding:8px 16px;border-radius:980px;font-size:14px;font-weight:600;text-decoration:none;transition:background .2s"
+                onmouseover="this.style.background='#128c7e'" 
+                onmouseout="this.style.background='#25d366'">
+               Comprar
+             </a>
+           </div>
         </div>
       </a>
       <% }) %>
