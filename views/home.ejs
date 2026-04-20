@@ -5,7 +5,6 @@ const heroBanners = banners && banners.length ? banners : [];
 const heroProduct = featured && featured[0];
 %>
 
-<!-- ══ HERO — full screen con imagen de fondo ══ -->
 <section class="ms-hero-wrap">
   <% if(heroBanners.length){ %>
     <% heroBanners.forEach((b,i)=>{ %>
@@ -67,7 +66,6 @@ const heroProduct = featured && featured[0];
   <% } %>
 </section>
 
-<!-- ══ SHOWCASES ══ -->
 <%
 const catMap = {};
 (categories||[]).forEach(c => catMap[c.slug] = c);
@@ -88,7 +86,6 @@ const slugOrder = (categories||[]).map(c => c.slug);
 <section class="ms-showcase <%=dark?'ms-dark':'ms-light'%>" data-ms-kind="category" data-ms-id="<%=cat.id%>" data-ms-page="home" data-reveal data-delay="<%=i*60%>" style="<%=cat&&cat.bg_color&&!dark?'background:'+cat.bg_color:''%>">
   <div class="ms-showcase-inner ms-showcase-horiz <%=reverse?'ms-showcase-reverse':''%>">
 
-    <!-- TEXTO -->
     <div class="ms-showcase-text">
       <p class="ms-eyebrow" style="color:<%=dark?'rgba(255,255,255,.45)':'#86868b'%>">Categoría</p>
       <h2 class="ms-showcase-title" style="color:<%=dark?'#fff':'#1d1d1f'%>"><%=cat.name%></h2>
@@ -98,7 +95,6 @@ const slugOrder = (categories||[]).map(c => c.slug);
       </div>
     </div>
 
-    <!-- IMAGEN -->
     <% if(showcaseImg){ %>
     <div class="ms-showcase-img">
       <img src="<%=showcaseImg%>" alt="<%=cat.name%>" loading="lazy" onerror="this.parentNode.style.display='none'">
@@ -109,7 +105,6 @@ const slugOrder = (categories||[]).map(c => c.slug);
 </section>
 <% }) %>
 
-<!-- ══ CATÁLOGO ══ -->
 <section class="ms-catalog-section" id="catalogo">
   <div class="ms-inner">
     <div class="ms-section-head" data-reveal>
@@ -118,24 +113,33 @@ const slugOrder = (categories||[]).map(c => c.slug);
     </div>
     <div class="ms-catalog-grid">
       <% (featured||[]).forEach((p,i)=>{ %>
-      <a href="/producto/<%=p.slug%>" class="ms-card" data-reveal data-delay="<%=i*80%>" data-ms-kind="product" data-ms-id="<%=p.id%>" data-ms-page="home" style="padding:44px 40px 52px">
+      
+      <div class="ms-card" data-reveal data-delay="<%=i*80%>" data-ms-kind="product" data-ms-id="<%=p.id%>" data-ms-page="home">
         <% const cardColors = Array.isArray(p.color_variants) ? p.color_variants.filter(c=>c && c.enabled !== false) : []; %>
         <% const firstCardColor = cardColors.length ? cardColors[0] : null; %>
-        <div class="ms-card-img">
-          <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
-          <div class="ms-card-glow"></div>
-          <% const hpid = (p.id||p.slug||'').replace(/[^a-z0-9]/gi,'');
-             const cMedia = firstCardColor&&firstCardColor.image_url ? firstCardColor.image_url : (p.image_url||'');
-             const isCVid = String(cMedia).match(/\.(mp4|webm|ogg|mov)$/i); %>
-          <% if(isCVid) { %>
-             <video id="cardvid_<%=hpid%>" src="<%=cMedia%>" autoplay loop muted playsinline style="max-height:220px;width:100%;object-fit:contain;"></video>
-          <% } else { %>
-             <img id="cardimg_<%=hpid%>" src="<%=cMedia%>" alt="<%=p.name%>" loading="lazy" style="object-fit:<%=firstCardColor&&firstCardColor.img_fit ? firstCardColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstCardColor&&firstCardColor.img_pos ? firstCardColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstCardColor&&firstCardColor.img_scale ? firstCardColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
-          <% } %>
-        </div>
+        
+        <a href="/producto/<%=p.slug%>" style="display:block; text-decoration:none; color:inherit;">
+          <div class="ms-card-img">
+            <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
+            <div class="ms-card-glow"></div>
+            <% const hpid = (p.id||p.slug||'').replace(/[^a-z0-9]/gi,'');
+               const cMedia = firstCardColor&&firstCardColor.image_url ? firstCardColor.image_url : (p.image_url||'');
+               const isCVid = String(cMedia).match(/\.(mp4|webm|ogg|mov)$/i); %>
+            <% if(isCVid) { %>
+               <video id="cardvid_<%=hpid%>" src="<%=cMedia%>" autoplay loop muted playsinline style="max-height:220px;width:100%;object-fit:contain;"></video>
+            <% } else { %>
+               <img id="cardimg_<%=hpid%>" src="<%=cMedia%>" alt="<%=p.name%>" loading="lazy" style="object-fit:<%=firstCardColor&&firstCardColor.img_fit ? firstCardColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstCardColor&&firstCardColor.img_pos ? firstCardColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstCardColor&&firstCardColor.img_scale ? firstCardColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
+            <% } %>
+          </div>
+        </a>
+
         <div class="ms-card-body">
           <p class="ms-card-cat" data-ms-field="product.cat_name"><%=p.cat_name||p.category||''%></p>
-          <h3 class="ms-card-name" data-ms-field="product.name"><%=p.name%></h3>
+          
+          <a href="/producto/<%=p.slug%>" style="text-decoration:none; color:inherit;">
+            <h3 class="ms-card-name" data-ms-field="product.name"><%=p.name%></h3>
+          </a>
+
           <% const cardAllCaps = Array.isArray(p.variants) ? p.variants.map(v=>v.label).filter(Boolean) : []; %>
           <% if(cardColors.length){ %>
           <div class="ms-card-swatches">
@@ -154,6 +158,7 @@ const slugOrder = (categories||[]).map(c => c.slug);
             <% if(cardColors.length>5){ %><span class="ms-card-swatch-more">+<%=cardColors.length-5%></span><% } %>
           </div>
           <% } %>
+          
           <% if(cardAllCaps.length){ %>
           <div id="caps_<%=hpid%>" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
             <% const hFirstCaps = cardColors.length&&Array.isArray(cardColors[0].available_caps)&&cardColors[0].available_caps.length ? cardColors[0].available_caps : cardAllCaps; %>
@@ -162,30 +167,36 @@ const slugOrder = (categories||[]).map(c => c.slug);
             <% }) %>
           </div>
           <% } %>
+
           <% if((p.price||0) > 150 && p.enable_installments !== false){ %>
           <div style="margin:8px 0 4px">
             <div style="font-size:12px;color:#86868b">10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong></div>
             <div style="font-size:12px;color:#86868b">6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong></div>
           </div>
           <% } %>
-          <div class="ms-card-foot" style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px">
-            <div style="display:flex;flex-direction:column;gap:2px">
-              <span class="ms-card-price" data-ms-field="product.price" style="font-size:18px;font-weight:700;letter-spacing:-.03em"><%=formatPrice(p.price)%></span>
-              <% if(p.original_price){ %><span class="ms-card-orig" style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+          
+          <div class="ms-card-foot" style="margin-top:auto; padding-top:16px; border-top:1px solid #e8e8ed;">
+            
+            <div style="margin-bottom: 12px;">
+              <span class="ms-card-price" data-ms-field="product.price" style="font-size:18px;font-weight:700;letter-spacing:-.03em;color:#1d1d1f;"><%=formatPrice(p.price)%></span>
+              <% if(p.original_price){ %><span class="ms-card-orig" style="font-size:13px;color:#86868b;text-decoration:line-through;margin-left:8px;"><%=formatPrice(p.original_price)%></span><% } %>
             </div>
-            <div style="display:flex;align-items:center;gap:12px">
-              <a href="/producto/<%=p.slug%>" class="ms-card-link" style="font-size:14px">Más información</a>
-              <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
-                 target="_blank" 
-                 style="background:#0071e3;color:#fff;padding:8px 16px;border-radius:980px;font-size:14px;font-weight:600;text-decoration:none;transition:background .2s;white-space:nowrap"
-                 onmouseover="this.style.background='#005bb5'" 
-                 onmouseout="this.style.background='#0071e3'">
-                Comprar
-              </a>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+              <a href="/producto/<%=p.slug%>" class="ms-card-link" style="font-size:14px;">Más información</a>
             </div>
+
+            <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+               target="_blank" 
+               style="display:block; width:100%; padding:14px; background:#00d084; color:#fff; text-align:center; border-radius:12px; font-weight:600; font-size:15px; transition:transform 0.2s, background 0.2s; text-decoration:none;"
+               onmouseover="this.style.background='#00b975'; this.style.transform='scale(1.02)';"
+               onmouseout="this.style.background='#00d084'; this.style.transform='scale(1)';">
+              Comprar
+            </a>
+
           </div>
         </div>
-      </a>
+      </div>
       <% }) %>
     </div>
     <div style="text-align:center;margin-top:48px" data-reveal>
@@ -194,7 +205,6 @@ const slugOrder = (categories||[]).map(c => c.slug);
   </div>
 </section>
 
-<!-- ══ DISTRIBUIDOR AUTORIZADO ══ -->
 <% if(settings.auth_section_active!==false){ %>
 <section class="ms-auth-section" data-reveal style="background:#f5f5f7; border-radius: 24px; padding: 48px 24px; margin: 40px auto; max-width: 1200px; text-align: center;">
   <div class="ms-inner ms-auth-inner" style="display: flex; flex-direction: column; align-items: center; gap: 24px;">
@@ -207,7 +217,6 @@ const slugOrder = (categories||[]).map(c => c.slug);
 </section>
 <% } %>
 
-<!-- ══ SOPORTE ══ -->
 <% if(settings.support_section_active!==false){ %>
 <section class="ms-catalog-section" id="soporte" style="background:#fff">
   <div class="ms-inner">
@@ -229,7 +238,6 @@ const slugOrder = (categories||[]).map(c => c.slug);
 </section>
 <% } %>
 
-<!-- ══ ANUNCIOS / PROMOCIONES ══ -->
 <% if(announcements && announcements.length){ %>
 <section class="home-promos-section">
   <div class="ms-inner">
