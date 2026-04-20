@@ -82,60 +82,32 @@ const slugOrder = (categories||[]).map(c => c.slug);
   if(!cat) return;
   const dark    = i % 2 !== 0;
   const reverse = i % 2 !== 0;
-  const showcaseImg = (prod && prod.image_url) ? prod.image_url : (cat && cat.image_url) ? cat.image_url : null;
+  // Usar siempre la imagen de la categoría, no del producto
+  const showcaseImg = (cat && cat.image_url) ? cat.image_url : (prod && prod.image_url) ? prod.image_url : null;
 %>
-<section class="ms-showcase <%=dark?'ms-dark':'ms-light'%>" <%=cat ? `data-ms-kind="category" data-ms-id="${cat.id}" data-ms-page="home"` : ""%> data-reveal data-delay="<%=i*60%>" style="<%=cat&&cat.bg_color&&!dark?'background:'+cat.bg_color:''%>">
+<section class="ms-showcase <%=dark?'ms-dark':'ms-light'%>" data-ms-kind="category" data-ms-id="<%=cat.id%>" data-ms-page="home" data-reveal data-delay="<%=i*60%>" style="<%=cat&&cat.bg_color&&!dark?'background:'+cat.bg_color:''%>">
   <div class="ms-showcase-inner ms-showcase-horiz <%=reverse?'ms-showcase-reverse':''%>">
 
     <!-- TEXTO -->
-    <div class="ms-showcase-text" <%=prod ? `data-ms-kind="product" data-ms-id="${prod.id}" data-ms-page="home"` : ""%>>
-      <% if(prod){ %><p class="ms-eyebrow" data-ms-field="category.name" style="color:<%=dark?'rgba(255,255,255,.45)':'#86868b'%>"><%=cat?cat.name:''%></p><% } %>
-      <h2 class="ms-showcase-title" <%=prod ? 'data-ms-field="product.name"' : 'data-ms-field="category.name"'%> style="color:<%=dark?'#fff':'#1d1d1f'%>"><%=prod?prod.name:(cat?cat.name:'')%></h2>
-      <p class="ms-showcase-desc" <%=prod ? 'data-ms-field="product.description"' : 'data-ms-field="category.description"'%> style="color:<%=dark?'rgba(255,255,255,.65)':'#515154'%>"><%=prod?prod.description:(cat?cat.description:'')%></p>
+    <div class="ms-showcase-text">
+      <p class="ms-eyebrow" style="color:<%=dark?'rgba(255,255,255,.45)':'#86868b'%>">Categoría</p>
+      <h2 class="ms-showcase-title" style="color:<%=dark?'#fff':'#1d1d1f'%>"><%=cat.name%></h2>
+      <p class="ms-showcase-desc" style="color:<%=dark?'rgba(255,255,255,.65)':'#515154'%>"><%=cat.description||''%></p>
       <div class="ms-showcase-btns" style="justify-content:flex-start">
-        <% if(prod){ %>
-        <a href="/producto/<%=prod.slug%>" class="ms-btn-primary" style="<%=dark?'background:#fff;color:#1d1d1f':''%>">Más información</a>
-        <a href="/categoria/<%=slug%>" class="ms-btn-outline" style="<%=dark?'border-color:rgba(255,255,255,.4);color:#fff':''%>">Ver modelos</a>
-        <% } else { %>
-        <a href="/categoria/<%=slug%>" class="ms-btn-primary" style="<%=dark?'background:#fff;color:#1d1d1f':''%>">Ver <%=cat?cat.name:slug%></a>
-        <% } %>
+        <a href="/categoria/<%=slug%>" class="ms-btn-primary" style="<%=dark?'background:#fff;color:#1d1d1f':''%>">Ver <%=cat.name%></a>
       </div>
     </div>
 
     <!-- IMAGEN -->
     <% if(showcaseImg){ %>
     <div class="ms-showcase-img">
-      <img src="<%=showcaseImg%>" alt="<%=prod?prod.name:(cat?cat.name:'')%>" loading="lazy" onerror="this.parentNode.style.display='none'">
+      <img src="<%=showcaseImg%>" alt="<%=cat.name%>" loading="lazy" onerror="this.parentNode.style.display='none'">
     </div>
     <% } %>
 
   </div>
 </section>
 <% }) %>
-
-<!-- ══ EXPLORAR POR CATEGORÍA ══ -->
-<% if((categories||[]).length){ %>
-<section class="ms-cat-grid-section" data-reveal>
-  <div class="ms-inner">
-    <div class="ms-section-head" data-reveal>
-      <h2>Explorar por categoría</h2>
-    </div>
-    <div class="ms-cat-grid">
-      <% (categories||[]).forEach((cat,i)=>{ %>
-      <a href="/categoria/<%=cat.slug%>" class="ms-cat-card" data-reveal data-delay="<%=i*60%>"
-         style="<%= cat.bg_color ? 'background:'+cat.bg_color : '' %>">
-        <% if(cat.image_url){ %>
-        <img class="ms-cat-card-img" src="<%=cat.image_url%>" alt="<%=cat.name%>" loading="lazy" onerror="this.style.display='none'">
-        <% } %>
-        <div class="ms-cat-card-body">
-          <h3 class="ms-cat-card-name"><%=cat.name%></h3>
-        </div>
-      </a>
-      <% }) %>
-    </div>
-  </div>
-</section>
-<% } %>
 
 <!-- ══ CATÁLOGO ══ -->
 <section class="ms-catalog-section" id="catalogo">
