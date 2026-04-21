@@ -49,21 +49,27 @@ async function openQuotationModal(initialProduct) {
       <div style="padding:24px 28px">
 
         <!-- DATOS DEL CLIENTE -->
-        <div style="margin-bottom:20px">
-          <div style="font-size:13px;font-weight:600;color:#1d1d1f;margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em">Datos del cliente</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="margin-bottom:24px">
+          <div style="font-size:13px;font-weight:600;color:#1d1d1f;margin-bottom:12px;text-transform:uppercase;letter-spacing:.03em">Datos del cliente</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
             <div>
               <label style="font-size:11px;color:#86868b;font-weight:500;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em">Nombre *</label>
-              <input id="q_client" placeholder="Nombre completo" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#d2d2d7'">
+              <input id="q_client" placeholder="Nombre completo" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:10px 12px;font-size:14px;outline:none;font-family:inherit;transition:border-color .2s" onfocus="this.style.borderColor='#0071e3'" onblur="this.style.borderColor='#d2d2d7'">
             </div>
             <div>
               <label style="font-size:11px;color:#86868b;font-weight:500;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em">Teléfono</label>
-              <input id="q_phone" placeholder="Número de teléfono" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#d2d2d7'">
+              <input id="q_phone" placeholder="Número de teléfono" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:10px 12px;font-size:14px;outline:none;font-family:inherit;transition:border-color .2s" onfocus="this.style.borderColor='#0071e3'" onblur="this.style.borderColor='#d2d2d7'">
             </div>
           </div>
-          <div style="margin-top:10px">
-            <label style="font-size:11px;color:#86868b;font-weight:500;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em">Empresa (opcional)</label>
-            <input id="q_company" placeholder="Empresa o negocio" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#d2d2d7'">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="font-size:11px;color:#86868b;font-weight:500;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em">Empresa (opcional)</label>
+              <input id="q_company" placeholder="Empresa o negocio" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:10px 12px;font-size:14px;outline:none;font-family:inherit;transition:border-color .2s" onfocus="this.style.borderColor='#0071e3'" onblur="this.style.borderColor='#d2d2d7'">
+            </div>
+            <div>
+              <label style="font-size:11px;color:#86868b;font-weight:500;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em">Email</label>
+              <input id="q_email" type="email" placeholder="correo@ejemplo.com" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:10px 12px;font-size:14px;outline:none;font-family:inherit;transition:border-color .2s" onfocus="this.style.borderColor='#0071e3'" onblur="this.style.borderColor='#d2d2d7'">
+            </div>
           </div>
         </div>
 
@@ -77,22 +83,31 @@ async function openQuotationModal(initialProduct) {
         </div>
 
         <!-- IVA -->
-        <div style="background:#f5f5f7;border-radius:12px;padding:14px;margin-bottom:20px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:10px">Impuestos</div>
-          <div style="display:flex;gap:8px">
-            <button id="btn_sin_iva" onclick="setIVA('sin')" style="flex:1;padding:9px;border-radius:9px;border:2px solid #1d1d1f;background:#1d1d1f;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">Sin IVA</button>
-            <button id="btn_con_iva" onclick="setIVA('con')" style="flex:1;padding:9px;border-radius:9px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">Con IVA (13%)</button>
-            <button id="btn_exento" onclick="setIVA('exento')" style="flex:1;padding:9px;border-radius:9px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">Exento de IVA</button>
+        <div style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:12px;padding:16px;margin-bottom:24px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:#1d1d1f">Impuestos</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <button id="btn_sin_iva" onclick="setIVA('sin')" style="padding:12px 8px;border-radius:10px;border:2px solid #0071e3;background:#0071e3;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">
+              <div style="font-size:12px;color:#e3f2fd;margin-bottom:2px">Sin IVA</div>
+              <div style="font-size:11px;color:#e3f2fd;opacity:.9">Precio neto</div>
+            </button>
+            <button id="btn_con_iva" onclick="setIVA('con')" style="padding:12px 8px;border-radius:10px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s">
+              <div style="font-size:12px;margin-bottom:2px">Con IVA</div>
+              <div style="font-size:11px;color:#86868b">+13% incluido</div>
+            </button>
+            <button id="btn_exento" onclick="setIVA('exento')" style="padding:12px 8px;border-radius:10px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s">
+              <div style="font-size:12px;margin-bottom:2px">Exento</div>
+              <div style="font-size:11px;color:#86868b">Sin IVA</div>
+            </button>
           </div>
-          <div id="q_total_preview" style="margin-top:12px;text-align:right;font-size:15px;font-weight:600"></div>
+          <div id="q_total_preview" style="margin-top:16px;text-align:center;font-size:16px;font-weight:600;color:#1d1d1f;padding:12px;background:#fff;border-radius:8px;border:1px solid #e9ecef"></div>
         </div>
 
-        <div style="display:flex;gap:10px">
-          <button onclick="generateQuotationFromModal()" style="flex:1;background:#1d1d1f;color:#fff;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar cotización PDF
+        <div style="display:flex;gap:12px">
+          <button onclick="generateQuotationFromModal()" style="flex:1;background:#0071e3;color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#0071e3'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Generar cotización PDF
           </button>
-          <button onclick="document.getElementById('quotModal').remove()" style="padding:13px 20px;border-radius:12px;border:1px solid #d2d2d7;background:none;font-size:15px;cursor:pointer;font-family:inherit">Cancelar</button>
+          <button onclick="document.getElementById('quotModal').remove()" style="padding:14px 20px;border-radius:12px;border:1px solid #d2d2d7;background:#fff;color:#6c757d;font-size:15px;cursor:pointer;font-family:inherit;font-weight:500;transition:all .2s" onmouseover="this.style.background='#f8f9fa';this.style.borderColor='#adb5bd'" onmouseout="this.style.background='#fff';this.style.borderColor='#d2d2d7'">Cancelar</button>
         </div>
       </div>
     </div>`;
@@ -111,9 +126,15 @@ function setIVA(mode) {
     const btn = document.getElementById('btn_'+m+'_iva');
     if(!btn) return;
     const active = m === mode;
-    btn.style.background = active ? '#1d1d1f' : '#fff';
-    btn.style.color = active ? '#fff' : '#1d1d1f';
-    btn.style.border = active ? '2px solid #1d1d1f' : '1px solid #d2d2d7';
+    if (m === 'sin') {
+      btn.style.background = active ? '#0071e3' : '#fff';
+      btn.style.borderColor = active ? '#0071e3' : '#d2d2d7';
+      btn.style.color = active ? '#fff' : '#1d1d1f';
+    } else {
+      btn.style.background = active ? '#0071e3' : '#fff';
+      btn.style.borderColor = active ? '#0071e3' : '#d2d2d7';
+      btn.style.color = active ? '#fff' : '#1d1d1f';
+    }
   });
   updateTotal();
 }
@@ -126,18 +147,18 @@ function renderQuotItems() {
     return;
   }
   container.innerHTML = _quotationItems.map((item, i) => `
-    <div style="display:grid;grid-template-columns:36px 1fr auto auto;gap:10px;align-items:center;padding:10px;background:#f5f5f7;border-radius:10px;margin-bottom:8px">
-      <img src="${item.image_url||''}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:#fff" onerror="this.style.display='none'">
-      <div>
-        <div style="font-size:13px;font-weight:600">${item.name}${item.variant?' — '+item.variant:''}</div>
-        <div style="font-size:12px;color:#86868b">$${parseFloat(item.price).toFixed(2)} c/u</div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:10px;margin-bottom:8px;position:relative">
+      <img src="${item.image_url||''}" style="width:48px;height:48px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #dee2e6" onerror="this.style.display='none'">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600;color:#1d1d1f;margin-bottom:2px">${item.name}${item.variant?' — '+item.variant:''}</div>
+        <div style="font-size:13px;color:#86868b">$${parseFloat(item.price).toFixed(2)} c/u × ${item.qty} = $${(parseFloat(item.price)*item.qty).toFixed(2)}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <button onclick="changeQty(${i},-1)" style="width:24px;height:24px;border-radius:50%;border:1px solid #d2d2d7;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">-</button>
-        <span style="font-size:14px;font-weight:600;min-width:20px;text-align:center">${item.qty}</span>
-        <button onclick="changeQty(${i},1)" style="width:24px;height:24px;border-radius:50%;border:1px solid #d2d2d7;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">+</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="changeQty(${i},-1)" style="width:28px;height:28px;border-radius:50%;border:1px solid #d2d2d7;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#6c757d;font-weight:600">-</button>
+        <span style="font-size:14px;font-weight:600;min-width:24px;text-align:center">${item.qty}</span>
+        <button onclick="changeQty(${i},1)" style="width:28px;height:28px;border-radius:50%;border:1px solid #d2d2d7;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#6c757d;font-weight:600">+</button>
       </div>
-      <button onclick="removeQuotItem(${i})" style="color:#c0392b;background:none;border:none;cursor:pointer;font-size:18px;padding:4px">×</button>
+      <button onclick="removeQuotItem(${i})" style="position:absolute;top:8px;right:8px;color:#dc3545;background:none;border:none;cursor:pointer;font-size:16px;padding:4px;border-radius:4px" onmouseover="this.style.background='#f8d7da'" onmouseout="this.style.background='none'">×</button>
     </div>`).join('');
   updateTotal();
 }
@@ -154,20 +175,26 @@ function removeQuotItem(i) {
 
 function addProductToQuot() {
   const select = document.createElement('div');
-  select.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+  select.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
   select.innerHTML = `
-    <div style="background:#fff;border-radius:18px;width:100%;max-width:480px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column">
-      <div style="padding:18px 20px;border-bottom:1px solid #e8e8ed;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-weight:600">Seleccionar producto</span>
-        <button onclick="this.closest('div[style*=\"fixed\"]').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#86868b">×</button>
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:70vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="padding:20px 24px;border-bottom:1px solid #e9ecef;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:18px;color:#1d1d1f">Seleccionar producto</span>
+        <button onclick="this.closest('div[style*=\"fixed\"]').remove()" style="width:32px;height:32px;border-radius:50%;border:1px solid #d2d2d7;background:none;cursor:pointer;font-size:18px;color:#6c757d;display:flex;align-items:center;justify-content:center">×</button>
       </div>
-      <input placeholder="Buscar..." oninput="filterQProd(this.value)" style="margin:12px 16px;border:1px solid #d2d2d7;border-radius:8px;padding:8px 12px;font-size:14px;outline:none;font-family:inherit">
-      <div id="qProdList" style="overflow-y:auto;padding:0 12px 12px">
+      <div style="padding:0 16px">
+        <input placeholder="Buscar productos..." oninput="filterQProd(this.value)" style="width:100%;border:1px solid #d2d2d7;border-radius:10px;padding:12px 16px;font-size:14px;outline:none;font-family:inherit;margin:16px 0 12px" onfocus="this.style.borderColor='#0071e3'" onblur="this.style.borderColor='#d2d2d7'">
+      </div>
+      <div id="qProdList" style="overflow-y:auto;padding:0 12px 16px;flex:1">
         ${_allProducts.map(p=>`
         <div onclick="selectQuotProd(${JSON.stringify(p).replace(/"/g,'&quot;')});this.closest('div[style*=\"fixed\"]').remove()"
-          style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#f5f5f7'" onmouseout="this.style.background=''">
-          <img src="${p.image_url||''}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;background:#f5f5f7" onerror="this.style.display='none'">
-          <div><div style="font-size:14px;font-weight:500">${p.name}</div><div style="font-size:12px;color:#86868b">$${parseFloat(p.price).toFixed(2)}</div></div>
+          style="display:flex;align-items:center;gap:14px;padding:12px;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:4px" onmouseover="this.style.background='#f8f9fa';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='';this.style.transform=''">
+          <img src="${p.image_url||''}" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#f8f9fa;border:1px solid #e9ecef" onerror="this.style.display='none'">
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:600;color:#1d1d1f;margin-bottom:2px">${p.name}</div>
+            <div style="font-size:13px;color:#86868b">$${parseFloat(p.price).toFixed(2)}</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2" style="flex-shrink:0"><path d="M9 12l2 2 4-4"/><path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/><path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/><path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3"/><path d="M12 21c0-1-1-3-3-3s-3 2-3 3 1 3 3 3 3-2 3-3"/></svg>
         </div>`).join('')}
       </div>
     </div>`;
@@ -193,17 +220,27 @@ function updateTotal() {
   const mode = window._ivaMode || 'sin';
   let total = subtotal;
   let ivaText = '';
-  if (mode === 'con') { total = subtotal * 1.13; ivaText = ` <span style="font-size:12px;color:#86868b;font-weight:400">(IVA 13% incluido)</span>`; }
-  else if (mode === 'exento') { ivaText = ` <span style="font-size:12px;color:#86868b;font-weight:400">(Exento de IVA)</span>`; }
-  preview.innerHTML = `Total: <strong>$${total.toFixed(2)}</strong>${ivaText}`;
+  if (mode === 'con') {
+    total = subtotal * 1.13;
+    ivaText = `<div style="font-size:12px;color:#86868b;margin-top:4px">Subtotal: $${subtotal.toFixed(2)} + IVA 13%: $${(subtotal * 0.13).toFixed(2)}</div>`;
+  } else if (mode === 'exento') {
+    ivaText = `<div style="font-size:12px;color:#86868b;margin-top:4px">Exento de IVA</div>`;
+  } else {
+    ivaText = `<div style="font-size:12px;color:#86868b;margin-top:4px">Sin IVA incluido</div>`;
+  }
+  preview.innerHTML = `<div>Total: <strong style="font-size:18px">$${total.toFixed(2)}</strong></div>${ivaText}`;
 }
 
 async function generateQuotationFromModal() {
+  // Reset previous validation
+  document.getElementById('q_client').style.borderColor = '#d2d2d7';
+
   const client = document.getElementById('q_client')?.value.trim();
   if (!client) {
     const input = document.getElementById('q_client');
     input.focus();
-    input.style.borderColor = '#c0392b';
+    input.style.borderColor = '#dc3545';
+    input.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
     return;
   }
   if (!_quotationItems.length) {
@@ -222,6 +259,7 @@ async function generateQuotationFromModal() {
   try {
     const company = document.getElementById('q_company')?.value.trim();
     const phone = document.getElementById('q_phone')?.value.trim();
+    const email = document.getElementById('q_email')?.value.trim();
     const mode = window._ivaMode || 'sin';
     const subtotal = _quotationItems.reduce((s, i) => s + (parseFloat(i.price) * i.qty), 0);
     const iva = mode === 'con' ? subtotal * 0.13 : 0;
@@ -232,6 +270,7 @@ async function generateQuotationFromModal() {
       client,
       company,
       client_phone: phone,
+      client_email: email,
       seller: window.currentSellerName || '',
       notes: '',
       validity: '7',
