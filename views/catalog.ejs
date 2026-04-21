@@ -1,103 +1,196 @@
 <%- include('partials/header', {title:'Catálogo', description:'Todos los productos Apple disponibles'}) %>
 <style>
   .catalog-page {
-    padding: 44px 22px 80px;
+    padding: 64px 24px 100px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
   .catalog-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
-    gap: 20px !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 24px !important;
   }
   @media (max-width: 900px) {
     .catalog-page {
-      padding: 32px 16px 64px;
+      padding: 48px 20px 80px;
     }
     .catalog-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      gap: 14px !important;
+      gap: 16px !important;
     }
   }
   @media (max-width: 640px) {
     .catalog-page {
-      padding: 24px 14px 56px;
+      padding: 32px 16px 64px;
     }
     .catalog-grid {
       grid-template-columns: 1fr !important;
-      gap: 12px !important;
+      gap: 16px !important;
     }
-    .catalog-filter-row {
-      justify-content: flex-start !important;
-      gap: 6px !important;
-      margin-bottom: 24px !important;
-    }
-    .catalog-filter-row a {
-      font-size: 13px;
-      padding: 8px 14px !important;
+    .ms-card-img {
+      height: 240px;
+      padding: 10px;
     }
   }
 </style>
-<div class="catalog-page" style="padding:44px 22px 80px">
-  <div style="max-width:1024px;margin:0 auto">
-    <div style="text-align:center;margin-bottom:40px">
-      <h2 style="font-size:clamp(28px,4vw,48px);font-weight:700;letter-spacing:-.045em;margin-bottom:8px">Catálogo completo</h2>
-      <p style="font-size:17px;color:#86868b">Todo el ecosistema Apple</p>
+<div class="catalog-page">
+  <div style="max-width:1200px;margin:0 auto">
+    
+    <div style="text-align:center;margin-bottom:56px">
+      <h1 style="font-size:clamp(48px, 8vw, 84px);font-weight:700;letter-spacing:-.05em;line-height:1.05;margin-bottom:12px;color:#1d1d1f;">
+        Catálogo completo
+      </h1>
+      <p style="font-size:clamp(19px, 2.5vw, 24px);color:#515154;letter-spacing:-.015em;">Todo el ecosistema Apple</p>
     </div>
-    <div class="catalog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">
+
+    <div class="catalog-grid">
       <% (products||[]).forEach(p=>{ %>
-      <a href="/producto/<%=p.slug%>" class="ms-card" style="text-decoration:none;color:inherit;padding:44px 40px 52px">
-        <% const firstCatalogColor = (p.color_variants&&p.color_variants.length)?p.color_variants[0]:null; %>
-        <div class="ms-card-img" style="--img-scale:<%=firstCatalogColor&&firstCatalogColor.img_scale ? firstCatalogColor.img_scale : (p.img_scale||1)%>">
-          <% if(p.badge){ %><span class="ms-card-badge"><%=p.badge%></span><% } %>
-          <div class="ms-card-glow"></div>
-          <% const srcMed = firstCatalogColor&&firstCatalogColor.image_url ? firstCatalogColor.image_url : (p.image_url||'');
-             const isVM = String(srcMed).match(/\.(mp4|webm|ogg|mov)$/i); %>
-          <% if(isVM) { %>
-            <video src="<%=srcMed%>" autoplay loop muted playsinline style="max-height:220px;width:100%;object-fit:contain;"></video>
-          <% } else { %>
-            <img src="<%=srcMed%>" alt="<%=p.name%>" loading="lazy" style="object-fit:<%=firstCatalogColor&&firstCatalogColor.img_fit ? firstCatalogColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstCatalogColor&&firstCatalogColor.img_pos ? firstCatalogColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstCatalogColor&&firstCatalogColor.img_scale ? firstCatalogColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
-          <% } %>
-        </div>
-        <div style="padding:16px 18px 20px;flex:1;display:flex;flex-direction:column">
-          <p style="font-size:11px;color:#86868b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px"><%=p.category||''%></p>
-          <h3 style="font-size:16px;font-weight:600;letter-spacing:-.025em;line-height:1.2;margin-bottom:8px"><%=p.name%></h3>
-          <% const enabledCatalogColors = (p.color_variants||[]).filter(c=>c && c.enabled !== false); if(enabledCatalogColors.length){ %>
-          <div class="ms-card-swatches" style="margin-bottom:10px" onclick="event.preventDefault()">
-            <% enabledCatalogColors.slice(0,5).forEach((c,ci)=>{ const sw=c.swatch_url||''; const img=c.image_url||''; if(sw||img){ %>
-            <span class="ms-card-swatch <%=ci===0?'active':''%>"
-              style="background-image:url('<%=sw||img%>')"
+      <% 
+        const pvars = Array.isArray(p.variants) ? p.variants : [];
+        const pcols = Array.isArray(p.color_variants) ? p.color_variants.filter(c=>c && c.enabled !== false) : [];
+        const allCaps = pvars.map(v=>v.label).filter(Boolean);
+        const firstColorCaps = pcols.length && Array.isArray(pcols[0].available_caps) && pcols[0].available_caps.length ? pcols[0].available_caps : allCaps;
+        const firstColor = pcols.length ? pcols[0] : null;
+        const pid = (p.id||p.slug||'').replace(/[^a-z0-9]/gi,'');
+      %>
+      
+      <div class="ms-card" style="padding:32px; display:flex; flex-direction:column; min-height: 560px; background:#fff; border-radius:28px; box-shadow:0 2px 4px rgba(0,0,0,0.03), 0 8px 24px rgba(0,0,0,0.05), 0 32px 64px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); transition:transform 0.6s, box-shadow 0.6s;">
+        
+        <a href="/producto/<%=p.slug%>" style="display:block; text-decoration:none; color:inherit;">
+          <div class="ms-card-img" style="--img-scale:<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>; height: 260px; display: flex; align-items: center; justify-content: center; background: #f5f5f7; border-radius: 20px; margin-bottom: 28px; flex-shrink: 0; position:relative; overflow:hidden;">
+            <% if(p.badge){ %><span class="ms-card-badge" style="position: absolute; top: 14px; left: 14px; background: #1d1d1f; color: #fff; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 20px;"><%=p.badge%></span><% } %>
+            <div class="ms-card-glow"></div>
+            <% const srcMed = firstColor&&firstColor.image_url ? firstColor.image_url : (p.image_url||'');
+               const isVM = String(srcMed).match(/\.(mp4|webm|ogg|mov)$/i); %>
+            <% if(isVM) { %>
+              <video id="cardvid_<%=pid%>" src="<%=srcMed%>" autoplay loop muted playsinline style="max-height:200px;width:100%;object-fit:contain;"></video>
+            <% } else { %>
+              <img id="cardimg_<%=pid%>" src="<%=srcMed%>" alt="<%=p.name%>" loading="lazy" style="max-height:200px;object-fit:<%=firstColor&&firstColor.img_fit ? firstColor.img_fit : (p.img_fit||'contain')%>;object-position:<%=firstColor&&firstColor.img_pos ? firstColor.img_pos : (p.img_pos||'center')%>;transform:scale(<%=firstColor&&firstColor.img_scale ? firstColor.img_scale : (p.img_scale||1)%>);transform-origin:center center" onerror="this.style.display='none'">
+            <% } %>
+          </div>
+        </a>
+
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          
+          <a href="/producto/<%=p.slug%>" style="text-decoration:none; color:inherit;">
+            <p style="font-size:12px;color:#86868b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;font-weight:600;"><%=p.category||''%></p>
+            <h3 style="font-size:clamp(22px, 2.5vw, 26px);font-weight:700;letter-spacing:-.035em;line-height:1.2;margin:0;color:#1d1d1f;"><%=p.name%></h3>
+          </a>
+
+          <% if(pcols.length){ %>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;">
+            <% pcols.slice(0,6).forEach((c,ci)=>{
+              const sw = c.swatch_url||c.image_url||'';
+              const img = c.image_url||p.image_url||'';
+              const caps = Array.isArray(c.available_caps)&&c.available_caps.length ? c.available_caps : allCaps;
+              if(!sw) return;
+            %>
+            <span
+              class="ms-card-swatch <%=ci===0?'active':''%>"
+              style="background-image:url('<%=sw%>'); width:22px; height:22px; border-radius:50%; background-size:cover; border:1px solid rgba(0,0,0,0.1); cursor:pointer; display:inline-block;"
               title="<%=c.name||''%>"
-              data-img="<%=img%>"
-              data-scale="<%=c.img_scale||p.img_scale||1%>"
-              data-fit="<%=c.img_fit||p.img_fit||'contain'%>"
-              data-pos="<%=c.img_pos||p.img_pos||'center'%>"
-              onclick="cardSwatchClick(this,event)"></span>
-            <% } }) %>
+              onclick="(function(el,e){e.preventDefault();e.stopPropagation();swatchClick(el,'<%=pid%>','<%=img%>',<%=JSON.stringify(caps)%>,'<%=c.img_fit||p.img_fit||'contain'%>','<%=c.img_pos||p.img_pos||'center'%>','<%=c.img_scale||p.img_scale||1%>')})(this,event)"
+            ></span>
+            <% }) %>
+            <% if(pcols.length>6){ %><span class="ms-card-swatch-more" style="width:22px;height:22px;border-radius:50%;background:#e8e8ed;color:#515154;font-size:11px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">+<%=pcols.length-6%></span><% } %>
           </div>
           <% } %>
-          <% if((p.price||0) > 150 && p.enable_installments !== false){ %><div style="margin-bottom:12px">
-            <div style="font-size:13px;color:#86868b;margin-bottom:3px">10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong></div>
-            <div style="font-size:13px;color:#86868b">6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong></div>
-          </div><% } %>
-           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px">
-             <div style="display:flex;flex-direction:column;gap:2px">
-               <span style="font-size:17px;font-weight:700"><%=formatPrice(p.price)%></span>
-               <% if(p.original_price){ %><span style="font-size:13px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
-             </div>
-             <div style="display:flex;align-items:center;gap:12px">
-               <a href="/producto/<%=p.slug%>" class="ms-card-link" style="font-size:14px">Más información</a>
-               <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
-                  target="_blank" 
-                  style="background:#0071e3;color:#fff;padding:8px 16px;border-radius:980px;font-size:14px;font-weight:600;text-decoration:none;transition:background .2s;white-space:nowrap"
-                  onmouseover="this.style.background='#005bb5'" 
-                  onmouseout="this.style.background='#0071e3'">
-                 Comprar
-               </a>
-             </div>
-           </div>
+
+          <% if(allCaps.length){ %>
+          <div id="caps_<%=pid%>" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+            <% allCaps.forEach(cap=>{ const active=firstColorCaps.includes(cap); %>
+            <span data-cap="<%=cap%>" style="font-size:11px;border:1px solid <%=active?'#d2d2d7':'#e8e8ed'%>;border-radius:6px;padding:4px 10px;color:<%=active?'#1d1d1f':'#86868b'%>;font-weight:<%=active?'600':'400'%>;text-decoration:<%=active?'none':'line-through'%>;background:<%=active?'#fff':'#f5f5f7'%>"><%=cap%></span>
+            <% }) %>
+          </div>
+          <% } %>
+
+          <div style="margin-top:auto; padding-top:24px;">
+            <% if((p.price||0) > 150 && p.enable_installments !== false){ %>
+            <div style="font-size:13px;color:#515154;margin-bottom:14px;line-height:1.4;">
+              10 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/10).toFixed(2)%></strong>
+              <br>
+              6 cuotas de: <strong style="color:#1d1d1f">$<%=(p.price/6).toFixed(2)%></strong>
+            </div>
+            <% } %>
+            
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:22px;font-weight:700;letter-spacing:-.035em;color:#1d1d1f;"><%=formatPrice(p.price)%></span>
+                <% if(p.original_price){ %><span style="font-size:15px;color:#86868b;text-decoration:line-through"><%=formatPrice(p.original_price)%></span><% } %>
+              </div>
+              
+              <a href="https://wa.me/50372940134?text=Hola,%20me%20interesa%20el%20producto%20<%=encodeURIComponent(p.name)%>" 
+                 target="_blank" 
+                 style="display:block; width:100%; padding:16px; background:#0071e3; color:#fff; text-align:center; border-radius:14px; font-weight:600; font-size:16px; transition:transform 0.2s, background 0.2s, box-shadow 0.2s; text-decoration:none;"
+                 onmouseover="this.style.background='#005bb5'; this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(0,113,227,0.2)';"
+                 onmouseout="this.style.background='#0071e3'; this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                Comprar
+              </a>
+            </div>
+          </div>
+
         </div>
-      </a>
+      </div>
       <% }) %>
     </div>
   </div>
 </div>
+
+<script>
+// Script para cambiar las imágenes al hacer click en los colores (swatches) en la vista del catálogo
+function cardSwatchClick(el, pid, imgUrl, availCaps, fit, pos, scale) {
+  const card = el.closest('.ms-card');
+  if(!card) return;
+
+  // Actualizar estado visual de los swatches
+  card.querySelectorAll('.ms-card-swatch').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+
+  // Actualizar imagen
+  if(imgUrl) {
+    const isV = imgUrl.match(/\.(mp4|webm|ogg|mov)$/i);
+    const im = document.getElementById('cardimg_'+pid);
+    const vi = document.getElementById('cardvid_'+pid);
+    
+    if(im) { im.style.opacity = '0.5'; }
+    if(vi) { vi.style.opacity = '0.5'; }
+
+    setTimeout(() => {
+      if(isV) {
+        if(im) im.style.display = 'none';
+        if(vi) {
+          vi.style.display = 'block';
+          vi.src = imgUrl;
+          vi.onloadeddata = () => { vi.style.opacity = '1'; };
+        }
+      } else {
+        if(vi) vi.style.display = 'none';
+        if(im) {
+          im.style.display = 'block';
+          im.src = imgUrl;
+          im.style.objectFit = fit || 'contain';
+          im.style.objectPosition = pos || 'center';
+          im.style.transform = `scale(${scale || 1})`;
+          im.onload = () => { im.style.opacity = '1'; };
+        }
+      }
+    }, 150);
+  }
+
+  // Actualizar capacidades (tachado) si existen
+  const capsContainer = document.getElementById('caps_'+pid);
+  if(capsContainer && Array.isArray(availCaps)) {
+    capsContainer.querySelectorAll('span[data-cap]').forEach(span => {
+      const capVal = span.dataset.cap;
+      const ok = availCaps.length === 0 || availCaps.includes(capVal);
+      span.style.color = ok ? '#1d1d1f' : '#86868b';
+      span.style.fontWeight = ok ? '600' : '400';
+      span.style.textDecoration = ok ? 'none' : 'line-through';
+      span.style.background = ok ? '#fff' : '#f5f5f7';
+      span.style.borderColor = ok ? '#d2d2d7' : '#e8e8ed';
+    });
+  }
+}
+</script>
+
 <%- include('partials/footer') %>
