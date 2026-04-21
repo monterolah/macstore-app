@@ -148,7 +148,9 @@ function renderQuotItems() {
   }
   container.innerHTML = _quotationItems.map((item, i) => `
     <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:10px;margin-bottom:8px;position:relative">
-      <img src="${item.image_url||''}" style="width:48px;height:48px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #dee2e6" onerror="this.style.display='none'">
+      <div style="width:48px;height:48px;border-radius:8px;background:#fff;border:1px solid #dee2e6;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${item.image_url ? `<img src="${item.image_url}" style="width:100%;height:100%;object-fit:contain;border-radius:6px" onerror="this.parentElement.innerHTML='<div style=font-size:20px;color:#adb5bd>📦</div>'">` : '<div style="font-size:20px;color:#adb5bd">📦</div>'}
+      </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:600;color:#1d1d1f;margin-bottom:2px">${item.name}${item.variant?' — '+item.variant:''}</div>
         <div style="font-size:13px;color:#86868b">$${parseFloat(item.price).toFixed(2)} c/u × ${item.qty} = $${(parseFloat(item.price)*item.qty).toFixed(2)}</div>
@@ -189,7 +191,9 @@ function addProductToQuot() {
         ${_allProducts.map(p=>`
         <div onclick="selectQuotProd(${JSON.stringify(p).replace(/"/g,'&quot;')});this.closest('div[style*=\"fixed\"]').remove()"
           style="display:flex;align-items:center;gap:14px;padding:12px;border-radius:12px;cursor:pointer;transition:all .2s;margin-bottom:4px" onmouseover="this.style.background='#f8f9fa';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='';this.style.transform=''">
-          <img src="${p.image_url||''}" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#f8f9fa;border:1px solid #e9ecef" onerror="this.style.display='none'">
+          <div style="width:44px;height:44px;border-radius:8px;background:#f8f9fa;border:1px solid #e9ecef;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            ${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:contain;border-radius:6px" onerror="this.parentElement.innerHTML='<div style=font-size:18px;color:#adb5bd>📦</div>'">` : '<div style="font-size:18px;color:#adb5bd">📦</div>'}
+          </div>
           <div style="flex:1">
             <div style="font-size:15px;font-weight:600;color:#1d1d1f;margin-bottom:2px">${p.name}</div>
             <div style="font-size:13px;color:#86868b">$${parseFloat(p.price).toFixed(2)}</div>
