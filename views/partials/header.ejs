@@ -19,9 +19,9 @@
   <div class="nav-inner">
     <a href="/" class="nav-logo">
       <% if(settings.logo_url){ %>
-        <img src="<%=settings.logo_url%>" alt="<%=settings.store_name||'MacStore'%>" style="height:36px;width:auto">
+        <img src="<%=settings.logo_url%>" alt="<%=settings.store_name||'MacStore'%>" style="height:40px;width:auto">
       <% } else { %>
-        <span style="font-size:22px;font-weight:700;letter-spacing:-.04em;color:#1d1d1f">Mac<span style="color:#1d1d1f">Store</span></span>
+        <span style="font-size:24px;font-weight:700;letter-spacing:-.04em;color:#1d1d1f">Mac<span style="color:#1d1d1f">Store</span></span>
       <% } %>
     </a>
     <nav class="nav-links">
@@ -52,6 +52,95 @@
     <input type="search" id="searchInput" placeholder="Buscar en MacStore…" autocomplete="off">
   </div>
 </header>
+
+<!-- ══ ESTILOS PERSONALIZABLES ══ -->
+<style>
+  /* Control del header completo */
+  .apple-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px; /* Altura de la barra - AJUSTABLE */
+  }
+
+  /* Control del logo */
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .nav-logo img {
+    height: 40px; /* Tamaño del logo - AJUSTABLE */
+    width: auto;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-logo span {
+    font-size: 24px; /* Tamaño del texto del logo - AJUSTABLE */
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: #1d1d1f;
+  }
+
+  /* Control de la navegación */
+  .nav-links {
+    display: flex;
+    gap: 24px; /* Espaciado entre categorías - AJUSTABLE */
+    align-items: center;
+  }
+  
+  .nav-links a {
+    font-size: 16px; /* Tamaño de las letras de categorías - AJUSTABLE */
+    font-weight: 600;
+    color: #515154;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-links a:hover {
+    color: #1d1d1f;
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  /* Control de la derecha */
+  .nav-search-btn, .nav-links a:last-child {
+    font-size: 16px; /* Tamaño de las letras de la derecha - AJUSTABLE */
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .nav-inner { height: 64px; padding: 0 16px; }
+    .nav-logo img { height: 36px; } /* Tamaño del logo en tablet - AJUSTABLE */
+    .nav-logo span { font-size: 20px; } /* Tamaño del texto en tablet - AJUSTABLE */
+    .nav-links { gap: 16px; } /* Espaciado en tablet - AJUSTABLE */
+    .nav-links a { font-size: 15px; } /* Tamaño en tablet - AJUSTABLE */
+  }
+  
+  @media (max-width: 640px) {
+    .nav-inner { height: 56px; padding: 0 14px; }
+    .nav-logo img { height: 32px; } /* Tamaño del logo en móvil - AJUSTABLE */
+    .nav-logo span { font-size: 18px; } /* Tamaño del texto en móvil - AJUSTABLE */
+    .nav-links { display: none; } /* Ocultar categorías en móvil */
+    .nav-links a { font-size: 14px; } /* Tamaño en móvil - AJUSTABLE */
+  }
+</style>
 <div class="mob-nav" id="mobNav">
   <button class="mob-close" id="mobClose">×</button>
   <% (categories||[]).forEach(c=>{ %><a href="/categoria/<%=c.slug%>"><%=c.name%></a><% }) %>
