@@ -5,7 +5,6 @@
   <button class="adm-btn-s" onclick="clearFilters()">Limpiar filtros</button>
 </div>
 
-<!-- FILTROS -->
 <div class="adm-fc" style="margin-bottom:16px">
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
     <div class="adm-f" style="margin:0">
@@ -59,10 +58,8 @@
   </div>
 </div>
 
-<!-- STATS RÁPIDAS -->
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px" id="quotStats"></div>
 
-<!-- TABLA -->
 <div class="adm-card" style="overflow:hidden">
   <div style="overflow-x:auto">
     <table class="adm-tbl">
@@ -87,7 +84,6 @@
   </div>
 </div>
 
-<!-- MODAL VER COTIZACIÓN -->
 <div id="quotViewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px)">
   <div style="background:#fff;border-radius:20px;width:100%;max-width:920px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 32px 100px rgba(0,0,0,.3)">
     <div style="padding:16px 22px;border-bottom:1px solid #e8e8ed;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
@@ -272,6 +268,7 @@ function buildPDFHTML(q){
   const items=q.items||[];
   const ivaMode=q.ivaMode||'con';
   let sub=0,iva=0,total=0;
+  
   items.forEach(item=>{
     const price=parseFloat(item.price)||0,qty=parseInt(item.qty)||1,disc=parseFloat(item.discount)||0;
     const gross=price*qty,discAmt=gross*(disc/100),net=gross-discAmt;
@@ -280,6 +277,7 @@ function buildPDFHTML(q){
     else{sub+=net;}
   });
   total=sub+iva;
+  
   const d=q.createdAt?new Date(q.createdAt._seconds*1000):new Date();
   const date=d.toLocaleDateString('es-SV',{year:'numeric',month:'long',day:'numeric'});
   const validText=q.validity==='0'?'Sin vencimiento':`Válida por ${q.validity||7} días`;
@@ -292,46 +290,188 @@ function buildPDFHTML(q){
     const unitShow=ivaMode==='exento'?price/1.13:price;
     const lineTotal=ivaMode==='exento'?net/1.13:net;
     const specs=Object.entries(item.specs||{});
-    return `<tr>
-      <td style="padding:14px 16px;border-bottom:1px solid #f0f0f2;vertical-align:top">
-        <div style="display:flex;gap:14px">
-          ${item.image_url?`<img src="${item.image_url}" style="width:70px;height:70px;object-fit:contain;border-radius:10px;background:#f5f5f7;flex-shrink:0" onerror="this.style.display='none'">`:'<div style="width:70px;height:70px;background:#f5f5f7;border-radius:10px;flex-shrink:0"></div>'}
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:14px;margin-bottom:6px">${item.name}${item.variant?' — '+item.variant:''}</div>
-            ${specs.length?`<table style="width:100%;border-collapse:collapse;margin-top:4px">${specs.map(([k,v],si)=>`<tr style="background:${si%2===0?'#f9f9f9':'#fff'}"><td style="padding:3px 8px;font-size:11px;font-weight:600;color:#515154;width:38%;border:1px solid #ebebeb">${k}</td><td style="padding:3px 8px;font-size:11px;border:1px solid #ebebeb">${v}</td></tr>`).join('')}</table>`:''}
-            ${disc>0?`<div style="margin-top:5px;font-size:11px;color:#1a7f37">Descuento ${disc}% aplicado (−$${discAmt.toFixed(2)})</div>`:''}
+    
+    return `
+    <tr>
+      <td class="td-prod">
+        <div class="prod-flex">
+          ${item.image_url?`<img src="${item.image_url}" class="prod-img" onerror="this.style.display='none'">`:'<div class="prod-img-placeholder"></div>'}
+          <div class="prod-info">
+            <div class="prod-name">${item.name} ${item.variant?'<span style="color:#86868b;font-weight:400;">— '+item.variant+'</span>':''}</div>
+            ${specs.length?`<div class="specs-grid">${specs.map(([k,v])=>`<div class="spec-item"><span class="sk">${k}:</span> ${v}</div>`).join('')}</div>`:''}
+            ${disc>0?`<div class="prod-discount">Descuento ${disc}% aplicado (−$${discAmt.toFixed(2)})</div>`:''}
           </div>
         </div>
       </td>
-      <td style="padding:14px 16px;border-bottom:1px solid #f0f0f2;text-align:center;vertical-align:middle">${qty}</td>
-      <td style="padding:14px 16px;border-bottom:1px solid #f0f0f2;text-align:right;vertical-align:middle">$${unitShow.toFixed(2)}</td>
-      <td style="padding:14px 16px;border-bottom:1px solid #f0f0f2;text-align:right;vertical-align:middle;font-weight:700">$${lineTotal.toFixed(2)}</td>
+      <td class="center">${qty}</td>
+      <td class="right">$${unitShow.toFixed(2)}</td>
+      <td class="right bold">$${lineTotal.toFixed(2)}</td>
     </tr>`;
   }).join('');
 
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${q.qNum||''}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;color:#1d1d1f;background:#fff}.page{max-width:820px;margin:0 auto;padding:48px 44px}.hdr{display:flex;justify-content:space-between;padding-bottom:22px;border-bottom:3px solid #1d1d1f;margin-bottom:28px}.brand{font-size:30px;font-weight:800;letter-spacing:-.07em}.tag{font-size:12px;color:#86868b;margin-top:3px}.ct{text-align:right;font-size:12px;color:#515154;line-height:2}.meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px}.mc{background:#f5f5f7;border-radius:12px;padding:14px 16px}.ml{font-size:9px;font-weight:700;color:#86868b;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}.mv{font-size:15px;font-weight:700}.ms{font-size:12px;color:#515154;margin-top:2px}table.main{width:100%;border-collapse:collapse;margin-bottom:6px}.th th{background:#1d1d1f;color:#fff;padding:10px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left}.th th:nth-child(2){text-align:center}.th th:nth-child(3),.th th:nth-child(4){text-align:right}.tots{display:flex;justify-content:flex-end;margin:16px 0 24px}.tb{min-width:270px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#515154}.tr.grand{font-size:20px;font-weight:800;color:#1d1d1f;border-top:2px solid #1d1d1f;padding-top:10px;margin-top:5px}.cuotas{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}.cc{border:2px solid #e8e8ed;border-radius:12px;padding:14px;text-align:center}.cn{font-size:11px;color:#86868b;margin-bottom:4px}.cp{font-size:22px;font-weight:800;letter-spacing:-.04em}.cs{font-size:10px;color:#86868b;margin-top:3px}.seller-badge{display:inline-block;background:#e8f0fe;color:#0071e3;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:4px}.exento-badge{display:inline-block;background:#e8f4e8;color:#1a7f37;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}.foot{margin-top:24px;padding-top:16px;border-top:1px solid #e8e8ed;display:flex;justify-content:space-between}.note{background:#f5f5f7;border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:#515154;line-height:1.6}@media print{.page{padding:24px}}</style>
-</head><body><div class="page">
-<div class="hdr"><div><div class="brand">MacStore</div><div class="tag">Distribuidor Autorizado Apple</div></div><div class="ct"></div></div>
-<div class="meta">
-  <div class="mc"><div class="ml">Cotización para</div><div class="mv">${q.client||''}</div>${q.company?`<div class="ms">${q.company}</div>`:''}</div>
-  <div class="mc"><div class="ml">Información</div><div class="mv">${q.qNum||''}</div><div class="ms">Emitida: ${date}</div><div class="ms">${validText}</div>${q.seller?`<div><span class="seller-badge">Vendedor: ${q.seller}</span></div>`:''}</div>
-</div>
-<table class="main"><thead class="th"><tr><th>Producto y especificaciones</th><th style="text-align:center">Cant.</th><th style="text-align:right">${ivaHeader}</th><th style="text-align:right">Total</th></tr></thead><tbody>${rows}</tbody></table>
-<div class="tots"><div class="tb">
-  ${ivaMode!=='con'?`<div class="tr"><span>Subtotal sin IVA</span><span>$${sub.toFixed(2)}</span></div>`:''}
-  ${ivaMode==='desglosado'?`<div class="tr"><span>IVA (13%)</span><span>$${iva.toFixed(2)}</span></div>`:''}
-  ${ivaMode==='exento'?`<div class="tr"><span>IVA</span><span class="exento-badge">EXENTO</span></div>`:''}
-  <div class="tr grand"><span>Total</span><span>$${total.toFixed(2)}</span></div>
-</div></div>
-<div style="font-size:11px;font-weight:700;color:#515154;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Opciones de financiamiento</div>
-<div class="cuotas">
-  <div class="cc"><div class="cn">${q.lbl1||'6 cuotas sin intereses'}</div><div class="cp">$${(total/div1).toFixed(2)}</div><div class="cs">por mes</div></div>
-  <div class="cc"><div class="cn">${q.lbl2||'10 cuotas sin intereses'}</div><div class="cp">$${(total/div2).toFixed(2)}</div><div class="cs">por mes</div></div>
-</div>
-${q.notes?`<div class="note"><strong>Notas:</strong><br>${q.notes}</div>`:''}
-<div class="foot"><div style="font-size:11px;color:#86868b;line-height:1.8">• Precios en USD<br>• Cuotas con tarjetas participantes<br>• ${validText} a partir de emisión</div><div style="font-size:11px;color:#86868b">${q.qNum||''}</div></div>
-</div><script>window.onload=()=>{}<\/script></body></html>`;
+  return `<!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <title>${q.qNum||'Cotización'}</title>
+    <style>
+      :root {
+        --text: #1d1d1f;
+        --sec: #86868b;
+        --bg: #ffffff;
+        --line: #d2d2d7;
+        --light: #f5f5f7;
+        --blue: #0071e3;
+      }
+      * { margin:0; padding:0; box-sizing:border-box; }
+      body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif; color: var(--text); background: var(--bg); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+      .page { max-width: 800px; margin: 0 auto; padding: 60px 50px; background: white; }
+      
+      /* CABECERA */
+      .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 50px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+      .brand h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.04em; color: var(--text); }
+      .brand p { color: var(--sec); font-size: 13px; margin-top: 4px; font-weight: 500;}
+      .doc-type { text-align: right; }
+      .doc-type h2 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
+      .doc-type p { color: var(--sec); margin-top: 6px; font-family: ui-monospace, monospace; font-size: 14px; letter-spacing: 0.05em;}
+      
+      /* CLIENTE Y FECHA */
+      .meta { display: flex; justify-content: space-between; margin-bottom: 48px; }
+      .meta-box { width: 48%; }
+      .meta-box.right { text-align: right; }
+      .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sec); font-weight: 600; margin-bottom: 8px; }
+      .meta-val { font-size: 18px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.02em;}
+      .meta-sub { font-size: 14px; color: var(--sec); }
+      .seller-badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; color: var(--blue); border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 10px; }
+
+      /* TABLA DE PRODUCTOS */
+      table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+      th { padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--sec); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; text-align: left; }
+      th.center, td.center { text-align: center; }
+      th.right, td.right { text-align: right; }
+      td { padding: 24px 0; border-bottom: 1px solid var(--light); vertical-align: top; }
+      
+      .td-prod { width: 55%; }
+      .prod-flex { display: flex; gap: 16px; }
+      .prod-img { width: 72px; height: 72px; object-fit: contain; background: var(--light); border-radius: 14px; padding: 6px; }
+      .prod-img-placeholder { width: 72px; height: 72px; background: var(--light); border-radius: 14px; }
+      .prod-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.01em;}
+      .specs-grid { font-size: 12px; color: var(--sec); display: grid; grid-template-columns: 1fr; gap: 2px; }
+      .sk { font-weight: 500; color: var(--text); }
+      .prod-discount { color: #1a7f37; font-size: 12px; margin-top: 8px; font-weight: 500; }
+      .bold { font-weight: 600; color: var(--text); }
+
+      /* TOTALES */
+      .totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 48px; }
+      .totals { width: 340px; }
+      .tot-row { display: flex; justify-content: space-between; padding: 10px 0; color: var(--sec); font-size: 15px; }
+      .tot-row.grand { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 10px; color: var(--text); font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
+      .exento-badge { background: #e8f4e8; color: #1a7f37; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
+
+      /* CUOTAS */
+      .fin-title { font-size: 11px; font-weight: 700; color: var(--sec); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+      .finance { display: flex; gap: 16px; margin-bottom: 40px; }
+      .fin-box { flex: 1; background: var(--light); border-radius: 16px; padding: 20px; text-align: center; }
+      .fin-lbl { font-size: 12px; color: var(--sec); font-weight: 500; margin-bottom: 6px; }
+      .fin-val { font-size: 24px; font-weight: 700; letter-spacing: -0.04em; color: var(--text); }
+      .fin-sub { font-size: 11px; color: var(--sec); margin-top: 4px; }
+
+      /* FOOTER */
+      .notes { background: var(--light); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; font-size: 13px; color: var(--sec); line-height: 1.6; }
+      .footer { border-top: 1px solid var(--line); padding-top: 24px; font-size: 12px; color: var(--sec); display: flex; justify-content: space-between; line-height: 1.6; }
+      
+      @media print { 
+        body { background: white; } 
+        .page { padding: 0; } 
+        .fin-box { border: 1px solid var(--line); background: white; }
+        .prod-img { border: 1px solid var(--line); background: white; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      
+      <div class="header">
+        <div class="brand">
+          <h1>MacStore</h1>
+          <p>Distribuidor Autorizado Apple</p>
+        </div>
+        <div class="doc-type">
+          <h2>Cotización</h2>
+          <p>${q.qNum||''}</p>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="meta-box">
+          <div class="meta-label">Preparado para</div>
+          <div class="meta-val">${q.client||''}</div>
+          ${q.company?`<div class="meta-sub">${q.company}</div>`:''}
+          ${q.seller?`<div class="seller-badge">Atendido por: ${q.seller}</div>`:''}
+        </div>
+        <div class="meta-box right">
+          <div class="meta-label">Detalles de emisión</div>
+          <div class="meta-val">${date}</div>
+          <div class="meta-sub">${validText}</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Producto y especificaciones</th>
+            <th class="center">Cant.</th>
+            <th class="right">${ivaHeader}</th>
+            <th class="right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+
+      <div class="totals-wrap">
+        <div class="totals">
+          ${ivaMode!=='con'?`<div class="tot-row"><span>Subtotal sin IVA</span><span>$${sub.toFixed(2)}</span></div>`:''}
+          ${ivaMode==='desglosado'?`<div class="tot-row"><span>IVA (13%)</span><span>$${iva.toFixed(2)}</span></div>`:''}
+          ${ivaMode==='exento'?`<div class="tot-row"><span>IVA</span><span class="exento-badge">EXENTO</span></div>`:''}
+          <div class="tot-row grand">
+            <span>Total</span>
+            <span>$${total.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fin-title">Opciones de financiamiento</div>
+      <div class="finance">
+        <div class="fin-box">
+          <div class="fin-lbl">${q.lbl1||'6 cuotas sin intereses'}</div>
+          <div class="fin-val">$${(total/div1).toFixed(2)}</div>
+          <div class="fin-sub">mensuales</div>
+        </div>
+        <div class="fin-box">
+          <div class="fin-lbl">${q.lbl2||'10 cuotas sin intereses'}</div>
+          <div class="fin-val">$${(total/div2).toFixed(2)}</div>
+          <div class="fin-sub">mensuales</div>
+        </div>
+      </div>
+
+      ${q.notes?`<div class="notes"><strong style="color:var(--text)">Notas adicionales:</strong><br>${q.notes}</div>`:''}
+      <div class="footer">
+        <div>
+          • Precios expresados en Dólares Estadounidenses (USD).<br>
+          • Cuotas aplicables con tarjetas de crédito participantes.<br>
+          • ${validText} a partir de la fecha de emisión.
+        </div>
+        <div style="text-align:right">
+          <strong>MacStore El Salvador</strong><br>
+          ${q.qNum||''}
+        </div>
+      </div>
+
+    </div>
+  </body>
+  </html>`;
 }
 
 function flash(msg,type='ok'){
