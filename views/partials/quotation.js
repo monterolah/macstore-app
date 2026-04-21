@@ -82,24 +82,76 @@ async function openQuotationModal(initialProduct) {
           <div id="q_items"></div>
         </div>
 
-        <!-- IVA -->
-        <div style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:12px;padding:16px;margin-bottom:24px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:#1d1d1f">Impuestos</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-            <button id="btn_sin_iva" onclick="setIVA('sin')" style="padding:12px 8px;border-radius:10px;border:2px solid #0071e3;background:#0071e3;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">
-              <div style="font-size:12px;color:#e3f2fd;margin-bottom:2px">Sin IVA</div>
-              <div style="font-size:11px;color:#e3f2fd;opacity:.9">Precio neto</div>
+        <!-- IMPUESTOS -->
+        <div style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:14px;padding:20px;margin-bottom:24px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:#1d1d1f;text-transform:uppercase;letter-spacing:.02em">③ Impuestos y totales</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+            <button id="btn_sin_iva" onclick="setIVA('sin')" style="padding:14px 10px;border-radius:12px;border:2px solid #0071e3;background:#0071e3;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s">
+              <div style="font-size:13px;font-weight:600;margin-bottom:4px">Sin IVA</div>
+              <div style="font-size:11px;color:#e3f2fd;opacity:.85">Precio neto</div>
             </button>
-            <button id="btn_con_iva" onclick="setIVA('con')" style="padding:12px 8px;border-radius:10px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s">
-              <div style="font-size:12px;margin-bottom:2px">Con IVA</div>
+            <button id="btn_con_iva" onclick="setIVA('con')" style="padding:14px 10px;border-radius:12px;border:1.5px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s">
+              <div style="font-size:13px;font-weight:600;margin-bottom:4px">Con IVA</div>
               <div style="font-size:11px;color:#86868b">+13% incluido</div>
             </button>
-            <button id="btn_exento" onclick="setIVA('exento')" style="padding:12px 8px;border-radius:10px;border:1px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s">
-              <div style="font-size:12px;margin-bottom:2px">Exento</div>
-              <div style="font-size:11px;color:#86868b">Sin IVA</div>
+            <button id="btn_exento" onclick="setIVA('exento')" style="padding:14px 10px;border-radius:12px;border:1.5px solid #d2d2d7;background:#fff;color:#1d1d1f;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s">
+              <div style="font-size:13px;font-weight:600;margin-bottom:4px">Exento</div>
+              <div style="font-size:11px;color:#86868b">0% IVA</div>
             </button>
           </div>
-          <div id="q_total_preview" style="margin-top:16px;text-align:center;font-size:16px;font-weight:600;color:#1d1d1f;padding:12px;background:#fff;border-radius:8px;border:1px solid #e9ecef"></div>
+          <div id="q_total_preview" style="margin-top:16px;text-align:center;font-size:17px;font-weight:600;color:#1d1d1f;padding:14px 16px;background:#fff;border-radius:10px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.06)"></div>
+        </div>
+
+        <!-- MÉTODOS DE PAGO -->
+        <div style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:14px;padding:20px;margin-bottom:24px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:#1d1d1f;text-transform:uppercase;letter-spacing:.02em">④ Métodos de pago</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-radius:12px;border:1.5px solid #e9ecef;transition:border-color .2s">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#1a365d,#2c5282);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#1d1d1f">Banco Agrícola</div>
+                <div style="font-size:11px;color:#86868b">Transferencia y tarjetas</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-radius:12px;border:1.5px solid #e9ecef;transition:border-color .2s">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#c53030,#c0392b);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#1d1d1f">Credomatic</div>
+                <div style="font-size:11px;color:#86868b">Todas las tarjetas</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-radius:12px;border:1.5px solid #e9ecef;transition:border-color .2s">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#1a365d,#2b6cb0);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#1d1d1f">Banco Cuscatlán</div>
+                <div style="font-size:11px;color:#86868b">Débito y crédito</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-radius:12px;border:1.5px solid #e9ecef;transition:border-color .2s">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#dd6b20,#c05621);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#1d1d1f">Davivienda</div>
+                <div style="font-size:11px;color:#86868b">Todas las modalidades</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding:14px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border-radius:12px;border:1px solid #bae6fd">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <span style="font-size:13px;font-weight:600;color:#0071e3">Financiamiento disponible</span>
+            </div>
+            <div style="font-size:12px;color:#0c4a6e;line-height:1.5;padding-left:24px">
+              Aceptamos todas las tarjetas de crédito y débito. Consultar opciones de financiamiento a plazos sin intereses con tarjetas participantes.
+            </div>
+          </div>
         </div>
 
         <div style="display:flex;gap:12px">
