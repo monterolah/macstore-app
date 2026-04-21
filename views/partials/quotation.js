@@ -57,9 +57,13 @@ async function openQuotationModal(initialProduct) {
               <input id="q_client" placeholder="Nombre completo" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#d2d2d7'">
             </div>
             <div>
-              <label style="font-size:11px;color:#86868b;font-weight:500;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em">Empresa (opcional)</label>
-              <input id="q_company" placeholder="Empresa o negocio" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#d2d2d7'">
+              <label style="font-size:11px;color:#86868b;font-weight:500;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em">Teléfono</label>
+              <input id="q_phone" placeholder="Número de teléfono" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#d2d2d7'">
             </div>
+          </div>
+          <div style="margin-top:10px">
+            <label style="font-size:11px;color:#86868b;font-weight:500;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em">Empresa (opcional)</label>
+            <input id="q_company" placeholder="Empresa o negocio" style="width:100%;border:1px solid #d2d2d7;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit" onfocus="this.style.borderColor='#1d1d1f'" onblur="this.style.borderColor='#d2d2d7'">
           </div>
         </div>
 
@@ -217,6 +221,7 @@ async function generateQuotationFromModal() {
 
   try {
     const company = document.getElementById('q_company')?.value.trim();
+    const phone = document.getElementById('q_phone')?.value.trim();
     const mode = window._ivaMode || 'sin';
     const subtotal = _quotationItems.reduce((s, i) => s + (parseFloat(i.price) * i.qty), 0);
     const iva = mode === 'con' ? subtotal * 0.13 : 0;
@@ -226,6 +231,7 @@ async function generateQuotationFromModal() {
     const payload = {
       client,
       company,
+      client_phone: phone,
       seller: window.currentSellerName || '',
       notes: '',
       validity: '7',
