@@ -362,19 +362,24 @@ function buildPDFHTML(q){
       .bold { font-weight: 600; color: var(--text); }
 
       /* TOTALES */
-      .totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 48px; }
+      .totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 40px; }
       .totals { width: 340px; }
       .tot-row { display: flex; justify-content: space-between; padding: 10px 0; color: var(--sec); font-size: 15px; }
       .tot-row.grand { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 10px; color: var(--text); font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
       .exento-badge { background: #e8f4e8; color: #1a7f37; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
 
-      /* CUOTAS */
+      /* CUOTAS Y PAGOS */
       .fin-title { font-size: 11px; font-weight: 700; color: var(--sec); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
-      .finance { display: flex; gap: 16px; margin-bottom: 40px; }
+      .finance { display: flex; gap: 16px; margin-bottom: 24px; }
       .fin-box { flex: 1; background: var(--light); border-radius: 16px; padding: 20px; text-align: center; }
       .fin-lbl { font-size: 12px; color: var(--sec); font-weight: 500; margin-bottom: 6px; }
       .fin-val { font-size: 24px; font-weight: 700; letter-spacing: -0.04em; color: var(--text); }
       .fin-sub { font-size: 11px; color: var(--sec); margin-top: 4px; }
+      
+      /* CAJA DE MÉTODOS DE PAGO CORREGIDA */
+      .pay-box { background: var(--light); border-radius: 14px; padding: 16px 20px; margin-bottom: 30px; display: block; }
+      .pay-banks { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block; }
+      .pay-sub { font-size: 13px; color: var(--sec); display: block; }
 
       /* FOOTER */
       .notes { background: var(--light); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; font-size: 13px; color: var(--sec); line-height: 1.6; }
@@ -383,7 +388,7 @@ function buildPDFHTML(q){
       @media print { 
         body { background: white; } 
         .page { padding: 0; } 
-        .fin-box { border: 1px solid var(--line); background: white; }
+        .fin-box, .pay-box, .notes { border: 1px solid var(--line); background: white; }
         .prod-img { border: 1px solid var(--line); background: white; }
       }
     </style>
@@ -456,11 +461,16 @@ function buildPDFHTML(q){
         </div>
       </div>
 
+      <div class="fin-title">Métodos de pago</div>
+      <div class="pay-box">
+        <span class="pay-banks">Banco Agrícola, BAC Credomatic, Banco Cuscatlán, Davivienda</span>
+        <span class="pay-sub">Aplica hasta 6 meses sin intereses con tarjetas de crédito participantes.</span>
+      </div>
+
       ${q.notes?`<div class="notes"><strong style="color:var(--text)">Notas adicionales:</strong><br>${q.notes}</div>`:''}
       <div class="footer">
         <div>
           • Precios expresados en Dólares Estadounidenses (USD).<br>
-          • Cuotas aplicables con tarjetas de crédito participantes.<br>
           • ${validText} a partir de la fecha de emisión.
         </div>
         <div style="text-align:right">
@@ -473,16 +483,3 @@ function buildPDFHTML(q){
   </body>
   </html>`;
 }
-
-function flash(msg,type='ok'){
-  const el=document.createElement('div');
-  el.style.cssText=`position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:${type==='error'?'#c0392b':'#1d1d1f'};color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)`;
-  el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),2800);
-}
-
-document.addEventListener('keydown',e=>{if(e.key==='Escape') closeQuotModal();});
-document.getElementById('quotViewModal').addEventListener('click',e=>{if(e.target===document.getElementById('quotViewModal')) closeQuotModal();});
-
-loadQuotes();
-</script>
-</body></html>
