@@ -337,11 +337,10 @@ function buildPDFHTML(q){
       
       /* CLIENTE Y FECHA */
       .meta { display: flex; justify-content: space-between; margin-bottom: 48px; }
-      .meta-box { width: 48%; }
-      .meta-box.right { text-align: right; }
-      .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sec); font-weight: 600; margin-bottom: 8px; }
-      .meta-val { font-size: 18px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.02em;}
-      .meta-sub { font-size: 14px; color: var(--sec); }
+      .meta-box { width: 48%; background: var(--light); padding: 16px 20px; border-radius: 12px; }
+      .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sec); font-weight: 700; margin-bottom: 6px; }
+      .meta-val { font-size: 18px; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.02em;}
+      .meta-sub { font-size: 13px; color: var(--sec); }
       .seller-badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; color: var(--blue); border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 10px; }
 
       /* TABLA DE PRODUCTOS */
@@ -349,23 +348,23 @@ function buildPDFHTML(q){
       th { padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--sec); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; text-align: left; }
       th.center, td.center { text-align: center; }
       th.right, td.right { text-align: right; }
-      td { padding: 24px 0; border-bottom: 1px solid var(--light); vertical-align: top; }
+      td { padding: 24px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
       
       .td-prod { width: 55%; }
       .prod-flex { display: flex; gap: 16px; }
       .prod-img { width: 72px; height: 72px; object-fit: contain; background: var(--light); border-radius: 14px; padding: 6px; }
       .prod-img-placeholder { width: 72px; height: 72px; background: var(--light); border-radius: 14px; }
-      .prod-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.01em;}
+      .prod-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.01em;}
       .specs-grid { font-size: 12px; color: var(--sec); display: grid; grid-template-columns: 1fr; gap: 2px; }
-      .sk { font-weight: 500; color: var(--text); }
+      .sk { font-weight: 500; color: var(--text); display: inline-block; width: 60px;}
       .prod-discount { color: #1a7f37; font-size: 12px; margin-top: 8px; font-weight: 500; }
-      .bold { font-weight: 600; color: var(--text); }
+      .bold { font-weight: 700; color: var(--text); font-size: 14px; }
 
       /* TOTALES */
       .totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 40px; }
       .totals { width: 340px; }
       .tot-row { display: flex; justify-content: space-between; padding: 10px 0; color: var(--sec); font-size: 15px; }
-      .tot-row.grand { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 10px; color: var(--text); font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
+      .tot-row.grand { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 10px; color: var(--text); font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
       .exento-badge { background: #e8f4e8; color: #1a7f37; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
 
       /* CUOTAS Y PAGOS */
@@ -373,13 +372,14 @@ function buildPDFHTML(q){
       .finance { display: flex; gap: 16px; margin-bottom: 24px; }
       .fin-box { flex: 1; background: var(--light); border-radius: 16px; padding: 20px; text-align: center; }
       .fin-lbl { font-size: 12px; color: var(--sec); font-weight: 500; margin-bottom: 6px; }
-      .fin-val { font-size: 24px; font-weight: 700; letter-spacing: -0.04em; color: var(--text); }
+      .fin-val { font-size: 24px; font-weight: 800; letter-spacing: -0.04em; color: var(--text); }
       .fin-sub { font-size: 11px; color: var(--sec); margin-top: 4px; }
       
-      /* CAJA DE MÉTODOS DE PAGO CORREGIDA */
-      .pay-box { background: var(--light); border-radius: 14px; padding: 16px 20px; margin-bottom: 30px; display: block; }
-      .pay-banks { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block; }
-      .pay-sub { font-size: 13px; color: var(--sec); display: block; }
+      /* CAJA DE MÉTODOS DE PAGO (NUEVO GRID DE 2 COLUMNAS) */
+      .pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 30px; }
+      .pay-box { background: var(--light); border-radius: 14px; padding: 16px 20px; }
+      .pay-banks { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; line-height: 1.3; }
+      .pay-sub { font-size: 12px; color: var(--sec); line-height: 1.3; }
 
       /* FOOTER */
       .notes { background: var(--light); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; font-size: 13px; color: var(--sec); line-height: 1.6; }
@@ -388,7 +388,7 @@ function buildPDFHTML(q){
       @media print { 
         body { background: white; } 
         .page { padding: 0; } 
-        .fin-box, .pay-box, .notes { border: 1px solid var(--line); background: white; }
+        .fin-box, .pay-box, .notes, .meta-box { border: 1px solid var(--line); background: white; }
         .prod-img { border: 1px solid var(--line); background: white; }
       }
     </style>
@@ -409,15 +409,16 @@ function buildPDFHTML(q){
 
       <div class="meta">
         <div class="meta-box">
-          <div class="meta-label">Preparado para</div>
+          <div class="meta-label">Cotización para</div>
           <div class="meta-val">${q.client||''}</div>
           ${q.company?`<div class="meta-sub">${q.company}</div>`:''}
-          ${q.seller?`<div class="seller-badge">Atendido por: ${q.seller}</div>`:''}
         </div>
-        <div class="meta-box right">
-          <div class="meta-label">Detalles de emisión</div>
-          <div class="meta-val">${date}</div>
+        <div class="meta-box">
+          <div class="meta-label">Información</div>
+          <div class="meta-val">${q.qNum||''}</div>
+          <div class="meta-sub">Emitida: ${date}</div>
           <div class="meta-sub">${validText}</div>
+          ${q.seller?`<div class="seller-badge">Vendedor: ${q.seller}</div>`:''}
         </div>
       </div>
 
@@ -452,29 +453,35 @@ function buildPDFHTML(q){
         <div class="fin-box">
           <div class="fin-lbl">${q.lbl1||'6 cuotas sin intereses'}</div>
           <div class="fin-val">$${(total/div1).toFixed(2)}</div>
-          <div class="fin-sub">mensuales</div>
+          <div class="fin-sub">por mes</div>
         </div>
         <div class="fin-box">
           <div class="fin-lbl">${q.lbl2||'10 cuotas sin intereses'}</div>
           <div class="fin-val">$${(total/div2).toFixed(2)}</div>
-          <div class="fin-sub">mensuales</div>
+          <div class="fin-sub">por mes</div>
         </div>
       </div>
 
       <div class="fin-title">Métodos de pago</div>
-      <div class="pay-box">
-        <span class="pay-banks">Banco Agrícola, BAC Credomatic, Banco Cuscatlán, Davivienda</span>
-        <span class="pay-sub">Aplica hasta 6 meses sin intereses con tarjetas de crédito participantes.</span>
+      <div class="pay-grid">
+        <div class="pay-box">
+          <div class="pay-banks">Banco agrícola, Credomatic, Cuscatlán, Davivienda</div>
+          <div class="pay-sub">Hasta 6 meses sin intereses</div>
+        </div>
+        <div class="pay-box">
+          <div class="pay-banks">Credisiman Visa</div>
+          <div class="pay-sub">Hasta 10 meses sin intereses</div>
+        </div>
       </div>
 
       ${q.notes?`<div class="notes"><strong style="color:var(--text)">Notas adicionales:</strong><br>${q.notes}</div>`:''}
       <div class="footer">
         <div>
-          • Precios expresados en Dólares Estadounidenses (USD).<br>
-          • ${validText} a partir de la fecha de emisión.
+          • Precios en USD<br>
+          • Cuotas con tarjetas participantes<br>
+          • ${validText} a partir de emisión
         </div>
         <div style="text-align:right">
-          <strong>MacStore El Salvador</strong><br>
           ${q.qNum||''}
         </div>
       </div>
