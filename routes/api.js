@@ -783,11 +783,19 @@ router.get('/categories', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/categories', requireAdminAPI, async (req, res) => {
+router.post('/categories', requireAdminAPI, upload.single('image'), async (req, res) => {
   try {
-    const { name, description, sort_order, bg_color } = req.body;
+    const { name, description, sort_order, bg_color, share_whatsapp } = req.body;
     if (!name) return res.status(400).json({ error:'Nombre requerido' });
-    const ref = await getFirestore().collection('categories').add({ name, slug:slugify(name), description:description||'', sort_order:parseInt(sort_order)||0, bg_color:bg_color||'', active:true, createdAt:new Date() });
+    let image_url = req.body.image_url || '';
+    if (req.file) image_url = await uploadToStorage(req.file.buffer, req.file.originalname, 'products');
+    const ref = await getFirestore().collection('categories').add({
+      name, slug:slugify(name), description:description||'',
+      image_url: image_url || '',
+      sort_order:parseInt(sort_order)||0, bg_color:bg_color||'',
+      share_whatsapp: share_whatsapp !== '0',
+      active:true, createdAt:new Date()
+    });
     res.status(201).json({ id: ref.id });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

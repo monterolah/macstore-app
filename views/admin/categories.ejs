@@ -31,14 +31,6 @@
       <input type="checkbox" id="catShareWA" checked style="accent-color:#25D366;width:16px;height:16px">
       Mostrar botón "Compartir por WhatsApp" en esta categoría
     </label>
-    <div class="adm-f">
-      <label>Color de fondo en home</label>
-      <div style="display:flex;gap:10px;align-items:center">
-        <input type="color" id="catBgColor" value="#f5f5f7" style="width:50px;height:38px;border:none;border-radius:8px;cursor:pointer">
-        <input type="text" id="catBgColorText" placeholder="#f5f5f7 o cualquier color CSS" oninput="document.getElementById('catBgColor').value=this.value" style="flex:1;border:1.5px solid var(--g3);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:inherit">
-      </div>
-      <div class="adm-f-hint">Color del showcase en la página de inicio</div>
-    </div>
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="adm-btn-p" onclick="saveCat()">Guardar categoría</button>
       <button class="adm-btn-s" onclick="resetCatForm()">Limpiar</button>
