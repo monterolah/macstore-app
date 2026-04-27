@@ -65,9 +65,12 @@
     <!-- REDES SOCIALES -->
     <div class="adm-fc" style="margin-bottom:14px">
       <div class="adm-fct">Redes sociales</div>
+      <p style="font-size:12px;color:#86868b;margin-bottom:10px">Pega la URL completa de tu perfil. Solo aparecen los que tengan URL.</p>
       <div class="adm-f"><label>Instagram</label><input id="s_ig" value="<%=settings.footer_instagram||''%>" placeholder="https://instagram.com/macstore"></div>
       <div class="adm-f"><label>Facebook</label><input id="s_fb" value="<%=settings.footer_facebook||''%>" placeholder="https://facebook.com/macstore"></div>
       <div class="adm-f"><label>TikTok</label><input id="s_tiktok" value="<%=settings.footer_tiktok||''%>" placeholder="https://tiktok.com/@macstore"></div>
+      <div class="adm-f"><label>YouTube</label><input id="s_yt" value="<%=settings.footer_youtube||''%>" placeholder="https://youtube.com/@macstore"></div>
+      <div class="adm-f"><label>X / Twitter</label><input id="s_tw" value="<%=settings.footer_twitter||''%>" placeholder="https://x.com/macstore"></div>
     </div>
 
     <!-- BARRA PROMOCIONAL -->
@@ -159,7 +162,13 @@
 
     <!-- FOOTER -->
     <div class="adm-fc" style="margin-bottom:14px">
-      <div class="adm-fct">Footer — columnas de links</div>
+      <div class="adm-fct">Footer</div>
+      <div class="adm-f">
+        <label>Descripción (columna izquierda)</label>
+        <textarea id="s_footer_about" style="min-height:64px" placeholder="Ej: Tu tienda Apple de confianza en El Salvador. Productos originales y garantía oficial."><%=settings.footer_about||''%></textarea>
+        <div class="adm-f-hint">Aparece bajo el logo/nombre en el footer. El logo del footer usa el mismo que subiste en "Logo de la tienda".</div>
+      </div>
+      <p style="font-size:12px;font-weight:600;color:var(--g4);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.03em">Columnas de links</p>
       <p style="font-size:12px;color:var(--g4);margin-bottom:12px">Cada columna tiene un título y links separados por líneas (formato: Texto|URL)</p>
       <% const footerCols = settings.footer_cols || [
         {title:'Soporte',links:'Financiamiento|#\nGarantía Apple|#\nEnvíos|#\nContacto|#'}
@@ -281,6 +290,9 @@ async function saveAllSettings(){
   fd.append('footer_instagram',  document.getElementById('s_ig').value);
   fd.append('footer_facebook',   document.getElementById('s_fb').value);
   fd.append('footer_tiktok',     document.getElementById('s_tiktok').value);
+  fd.append('footer_youtube',    document.getElementById('s_yt').value);
+  fd.append('footer_twitter',    document.getElementById('s_tw').value);
+  fd.append('footer_about',      document.getElementById('s_footer_about').value);
   fd.append('promo_bar_text',    document.getElementById('s_promo').value);
   fd.append('promo_bar_color',   document.getElementById('s_promo_color').value);
   fd.append('promo_bar_active',  document.getElementById('s_promo_on').checked?'1':'0');
